@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Finanzas IA</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="header">
+
+        <div>
+
+            <h1>💰 Finanzas IA</h1>
+
+            <p>Gestiona tus finanzas con Inteligencia Artificial</p>
+
+        </div>
+
+    </header>
+
+    <!-- =========================
+         REGISTRO
+    ========================== -->
+
+    <section class="card">
+
+        <h2>Registrar movimiento</h2>
+
+        <textarea
+            id="mensaje"
+            placeholder="Ejemplo: Compré un Monster por 8 y almorcé por 18"></textarea>
+
+        <button id="registrar">
+
+            <span id="textoBoton">
+
+                ➕ Registrar movimiento
+
+            </span>
+
+        </button>
+
+    </section>
+
+    <!-- =========================
+         RESPUESTA IA
+    ========================== -->
+
+    <section id="respuesta" class="card respuesta">
+
+        🤖 Esperando movimiento...
+
+    </section>
+
+    <!-- =========================
+         DASHBOARD
+    ========================== -->
+
+    <section class="dashboard">
+
+        <div class="card tarjeta">
+
+            <h3>📈 Ingresos</h3>
+
+            <span id="ingresos">S/ 0.00</span>
+
+        </div>
+
+        <div class="card tarjeta">
+
+            <h3>📉 Gastos</h3>
+
+            <span id="gastos">S/ 0.00</span>
+
+        </div>
+
+        <div class="card tarjeta saldo">
+
+            <h3>💰 Saldo</h3>
+
+            <span id="saldo">S/ 0.00</span>
+
+        </div>
+
+    </section>
+
+    <!-- =========================
+         GRÁFICO
+    ========================== -->
+
+<section class="grafico">
+
+    <h3>📊 Gastos por categoría</h3>
+
+    <div id="graficoCategorias"></div>
+
+</section>
+    <!-- =========================
+         ACTIVIDAD
+    ========================== -->
+
+    <section class="card">
+
+        <h2>📋 Actividad reciente</h2>
+
+        <div id="actividad"></div>
+
+    </section>
+
+    <!-- =========================
+         IA (PRÓXIMAMENTE)
+    ========================== -->
+
+    <section class="card">
+
+        <h2>🤖 Asistente Financiero</h2>
+
+        <div id="ia">
+
+            Próximamente...
+
+        </div>
+
+    </section>
+
+</div>
+
+<!-- =========================
+     TOAST
+========================== -->
+
+<div id="toast" class="toast">
+
+    <span id="toastTexto"></span>
+
+</div>
+
+<!-- =========================
+     LIBRERÍAS
+========================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script src="graficos.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
