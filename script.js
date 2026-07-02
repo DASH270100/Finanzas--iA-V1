@@ -115,7 +115,7 @@ async function obtenerMovimientos(){
 
                 descripcion: c[3]?.v ?? "",
 
-                monto: Number(c[4]?.v ?? 0)
+                monto: Number(c[5]?.v ?? 0)
 
             });
 
