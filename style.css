@@ -1,295 +1,1137 @@
-/*=========================
-  DESIGN SYSTEM
-=========================*/
+/*==================================================
+                FINANZAS IA v2.0
+                DARK PREMIUM UI
+====================================================*/
+
+
+/*==================================================
+                    GOOGLE FONT
+====================================================*/
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+
+/*==================================================
+                    VARIABLES
+====================================================*/
 
 :root{
 
-/* Colores */
+    /* Colores */
 
---bg:#09111f;
---surface:#121b2c;
---surface-hover:#182438;
---surface-2:#0f1728;
+    --bg:#09111F;
 
---border:#26354b;
+    --surface:#121B2C;
 
---primary:#7C5CFC;
---primary-hover:#9175ff;
+    --surface-light:#182438;
 
---green:#22C55E;
---red:#EF4444;
---yellow:#FACC15;
+    --surface-hover:#1F2D44;
 
---text:#F8FAFC;
---text-soft:#CBD5E1;
---text-muted:#94A3B8;
+    --border:#26354B;
 
+    --primary:#7C5CFC;
 
-/* Tipografía */
+    --primary-hover:#9478FF;
 
---font:"Montserrat",sans-serif;
+    --green:#22C55E;
 
+    --red:#EF4444;
 
-/* Bordes */
+    --yellow:#FACC15;
 
---radius-xs:10px;
---radius-sm:14px;
---radius-md:18px;
---radius-lg:24px;
+    --text:#F8FAFC;
+
+    --text-soft:#CBD5E1;
+
+    --text-muted:#94A3B8;
 
 
-/* Sombras */
 
---shadow-sm:
-0 5px 18px rgba(0,0,0,.25);
+    /* Bordes */
 
---shadow-md:
-0 10px 30px rgba(0,0,0,.35);
+    --radius-xs:10px;
 
---shadow-lg:
-0 25px 60px rgba(0,0,0,.45);
+    --radius-sm:14px;
+
+    --radius-md:18px;
+
+    --radius-lg:24px;
 
 
-/* Animaciones */
 
---transition:.25s ease;
+    /* Sombras */
+
+    --shadow-sm:
+    0 8px 18px rgba(0,0,0,.18);
+
+    --shadow-md:
+    0 15px 35px rgba(0,0,0,.28);
+
+    --shadow-lg:
+    0 25px 60px rgba(0,0,0,.40);
+
+
+
+    /* Animaciones */
+
+    --transition:.25s ease;
 
 }
+
+
+
+/*==================================================
+                    RESET
+====================================================*/
+
+*{
+
+    margin:0;
+
+    padding:0;
+
+    box-sizing:border-box;
+
+}
+
+
+
+html{
+
+    scroll-behavior:smooth;
+
+}
+
+
 
 body{
 
-font-family:var(--font);
+    font-family:"Montserrat",sans-serif;
 
-background:var(--bg);
+    background:var(--bg);
 
-color:var(--text);
-
-margin:0;
-
-padding:40px;
-
-line-height:1.5;
-
-}
-
-.app{
-    max-width:1100px;
-    margin:auto;
-}
-
-.header{
-    margin-bottom:28px;
-}
-
-.header h1{
-    font-size:42px;
-    margin-bottom:8px;
-}
-
-.header p{
-    color:var(--muted);
-}
-
-.card{
-    background:var(--surface);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:24px;
-    margin-bottom:24px;
-}
-
-.card h2,.card h3{
-    margin-bottom:18px;
-}
-
-textarea{
-    width:100%;
-    min-height:150px;
-    resize:none;
-    border:none;
-    outline:none;
-    border-radius:16px;
-    padding:18px;
-    background:var(--surface-2);
     color:var(--text);
-    font-size:16px;
+
+    min-height:100vh;
+
 }
 
-textarea:focus{
-    outline:2px solid rgba(16,185,129,.35);
-}
 
-button{
-    width:100%;
-    margin-top:18px;
-    border:none;
-    border-radius:16px;
-    padding:18px;
-    background:var(--primary);
-    color:white;
-    font-size:18px;
-    font-weight:bold;
-    cursor:pointer;
-    transition:.25s;
-}
 
-button:hover{
-    background:var(--primary-dark);
-    transform:translateY(-2px);
-}
+/*==================================================
+                    LAYOUT
+====================================================*/
 
-button:disabled{
-    opacity:.7;
-    cursor:not-allowed;
-    transform:none;
-}
+.layout{
 
-.dashboard{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:20px;
-    margin-bottom:24px;
+
+    grid-template-columns:270px 1fr;
+
+    min-height:100vh;
+
 }
 
-.tarjeta span{
-    display:block;
-    font-size:34px;
-    font-weight:bold;
-    color:var(--primary);
-}
 
-.saldo span{
-    color:#22c55e;
-}
 
-#graficoCategorias{
-    min-height:360px;
-}
+/*==================================================
+                    SIDEBAR
+====================================================*/
 
-#actividad{
+.sidebar{
+
+    background:#0D1524;
+
+    border-right:1px solid var(--border);
+
+    padding:34px;
+
     display:flex;
+
     flex-direction:column;
-    gap:14px;
+
+    justify-content:flex-start;
+
 }
 
-.movimiento{
-    background:var(--surface-2);
-    border:1px solid #334155;
-    border-radius:14px;
-    padding:16px;
-    transition:.2s;
-}
 
-.movimiento:hover{
-    border-color:var(--primary);
-}
 
-.movimiento-superior,
-.movimiento-inferior{
+.logo{
+
     display:flex;
-    justify-content:space-between;
+
     align-items:center;
-}
 
-.movimiento-inferior{
-    margin-top:8px;
-    color:var(--muted);
-    font-size:14px;
-}
+    gap:16px;
 
-.ingreso{color:#22c55e;}
-.gasto{color:var(--danger);}
-
-.toast{
-
-    position: fixed;
-
-    top: 24px;
-
-    right: 24px;
-
-    background: #16a34a;
-
-    color: white;
-
-    padding: 14px 22px;
-
-    border-radius: 12px;
-
-    font-weight: 600;
-
-    box-shadow: 0 10px 30px rgba(0,0,0,.25);
-
-    opacity: 0;
-
-    transform: translateY(-20px);
-
-    pointer-events: none;
-
-    transition:
-        opacity .3s ease,
-        transform .3s ease;
-
-    z-index: 9999;
-
-}
-.toast.mostrar{
-
-    opacity: 1;
-
-    transform: translateY(0);
+    margin-bottom:55px;
 
 }
 
-.toast.mostrar{
-    opacity:1;
-    transform:translateY(0);
-}
 
-.actualizando{
-    animation:pulse .45s;
-}
 
-@keyframes pulse{
-    0%{transform:scale(.98);opacity:.7;}
-    100%{transform:scale(1);opacity:1;}
-}
+.logo-icon{
 
-@media(max-width:768px){
-    body{padding:18px;}
-    .header h1{font-size:32px;}
-    .tarjeta span{font-size:28px;}
-}
-/* =========================
-   TARJETA DEL GRÁFICO
-========================= */
+    width:55px;
 
-.grafico{
+    height:55px;
 
-    background:#232c3d;
+    border-radius:18px;
 
-    border-radius:20px;
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        #5B46D8
+    );
 
-    padding:25px;
+    display:flex;
 
-    margin:30px 0;
+    align-items:center;
 
-    box-shadow:0 10px 25px rgba(0,0,0,.20);
+    justify-content:center;
+
+    font-size:24px;
+
+    box-shadow:var(--shadow-md);
 
 }
 
-.grafico h3{
+
+
+.logo h2{
+
+    font-size:22px;
+
+    font-weight:700;
+
+}
+
+
+
+.logo span{
+
+    color:var(--text-muted);
+
+    font-size:13px;
+
+}
+
+
+
+.sidebar nav{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+
+
+.sidebar nav a{
+
+    text-decoration:none;
+
+    color:var(--text-soft);
+
+    padding:15px 18px;
+
+    border-radius:14px;
+
+    transition:var(--transition);
+
+    cursor:pointer;
+
+    font-weight:500;
+
+}
+
+
+
+.sidebar nav a:hover{
+
+    background:var(--surface);
 
     color:#fff;
 
-    margin-bottom:20px;
+}
 
-    font-size:1.5rem;
+
+
+.sidebar nav .active{
+
+    background:linear-gradient(
+        135deg,
+        rgba(124,92,252,.20),
+        rgba(124,92,252,.08)
+    );
+
+    border:1px solid rgba(124,92,252,.25);
+
+    color:white;
+
+}
+
+
+
+/*==================================================
+                    CONTENIDO
+====================================================*/
+
+.contenido{
+
+    padding:42px;
+
+}
+
+
+
+/*==================================================
+                    HEADER
+====================================================*/
+
+.header{
+
+    margin-bottom:34px;
+
+}
+
+
+
+.saludo{
+
+    display:inline-block;
+
+    color:var(--primary);
+
+    font-size:14px;
+
+    font-weight:600;
+
+    margin-bottom:8px;
+
+}
+
+
+
+.header h1{
+
+    font-size:42px;
+
+    font-weight:800;
+
+    margin-bottom:10px;
+
+}
+
+
+
+.header p{
+
+    color:var(--text-muted);
+
+    font-size:16px;
+
+}
+
+
+
+/*==================================================
+                    CARD BASE
+====================================================*/
+
+.card{
+
+    background:var(--surface);
+
+    border:1px solid var(--border);
+
+    border-radius:22px;
+
+    padding:28px;
+
+    box-shadow:var(--shadow-sm);
+
+    transition:var(--transition);
+
+}
+
+
+
+.card:hover{
+
+    transform:translateY(-4px);
+
+    border-color:rgba(124,92,252,.35);
+
+    box-shadow:var(--shadow-md);
+
+}
+
+
+
+.card-title{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    margin-bottom:24px;
+
+}
+
+
+
+.card-title h2{
+
+    font-size:24px;
+
+    margin-bottom:6px;
+
+}
+
+
+
+.card-title p{
+
+    color:var(--text-muted);
+
+    font-size:14px;
+
+}
+
+
+
+.pill{
+
+    background:rgba(124,92,252,.15);
+
+    color:var(--primary);
+
+    border:1px solid rgba(124,92,252,.25);
+
+    padding:8px 14px;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+}
+/*==================================================
+            REGISTRAR MOVIMIENTO
+====================================================*/
+
+.registro{
+
+    margin-bottom:28px;
+
+}
+
+textarea{
+
+    width:100%;
+
+    min-height:170px;
+
+    resize:none;
+
+    border:none;
+
+    outline:none;
+
+    background:var(--surface-light);
+
+    color:var(--text);
+
+    padding:22px;
+
+    border-radius:18px;
+
+    font-family:"Montserrat",sans-serif;
+
+    font-size:15px;
+
+    line-height:1.7;
+
+    border:1px solid transparent;
+
+    transition:var(--transition);
+
+}
+
+textarea::placeholder{
+
+    color:var(--text-muted);
+
+}
+
+textarea:hover{
+
+    border-color:#334155;
+
+}
+
+textarea:focus{
+
+    border-color:var(--primary);
+
+    box-shadow:0 0 0 4px rgba(124,92,252,.15);
+
+}
+
+
+
+/*==================================================
+                    BOTONES
+====================================================*/
+
+button{
+
+    width:100%;
+
+    margin-top:22px;
+
+    border:none;
+
+    border-radius:18px;
+
+    padding:18px;
+
+    background:linear-gradient(
+
+        135deg,
+
+        var(--primary),
+
+        #6A4BFA
+
+    );
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+    box-shadow:
+
+    0 10px 25px rgba(124,92,252,.25);
+
+}
+
+button:hover{
+
+    transform:translateY(-3px);
+
+    background:linear-gradient(
+
+        135deg,
+
+        var(--primary-hover),
+
+        var(--primary)
+
+    );
+
+    box-shadow:
+
+    0 18px 40px rgba(124,92,252,.30);
+
+}
+
+button:active{
+
+    transform:scale(.98);
+
+}
+
+button:disabled{
+
+    opacity:.7;
+
+    cursor:not-allowed;
+
+    transform:none;
+
+}
+
+
+
+/*==================================================
+                RESPUESTA IA
+====================================================*/
+
+.respuesta{
+
+    margin-bottom:32px;
+
+    background:linear-gradient(
+
+        135deg,
+
+        rgba(124,92,252,.12),
+
+        rgba(124,92,252,.04)
+
+    );
+
+    border:1px solid rgba(124,92,252,.20);
+
+    color:var(--text-soft);
+
+    font-size:15px;
+
+    line-height:1.7;
+
+}
+
+
+
+/*==================================================
+                    DASHBOARD
+====================================================*/
+
+.dashboard{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:22px;
+
+    margin-bottom:34px;
+
+}
+
+
+
+.tarjeta{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+}
+
+
+
+.card-icon{
+
+    width:62px;
+
+    height:62px;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:26px;
+
+    background:rgba(124,92,252,.10);
+
+    border:1px solid rgba(124,92,252,.18);
+
+}
+
+
+
+.saldo .card-icon{
+
+    background:rgba(34,197,94,.12);
+
+    border:1px solid rgba(34,197,94,.20);
+
+}
+
+
+
+.card-info{
+
+    flex:1;
+
+}
+
+
+
+.card-label{
+
+    display:block;
+
+    color:var(--text-muted);
+
+    font-size:14px;
+
+    margin-bottom:8px;
+
+}
+
+
+
+.card-info h2{
+
+    font-size:34px;
+
+    font-weight:800;
+
+}
+
+
+
+#ingresos{
+
+    color:var(--primary);
+
+}
+
+
+
+#gastos{
+
+    color:var(--red);
+
+}
+
+
+
+#saldo{
+
+    color:var(--green);
+
+}
+
+
+
+/*==================================================
+            ANIMACIÓN TARJETAS
+====================================================*/
+
+.actualizando{
+
+    animation:pulse .45s;
+
+}
+
+@keyframes pulse{
+
+    0%{
+
+        transform:scale(.98);
+
+        opacity:.7;
+
+    }
+
+    100%{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+}
+/*==================================================
+                GRID PRINCIPAL
+====================================================*/
+
+.grid-principal{
+
+    display:grid;
+
+    grid-template-columns:1.2fr .8fr;
+
+    gap:24px;
+
+    margin-bottom:30px;
+
+}
+
+
+
+/*==================================================
+                GRAFICO
+====================================================*/
+
+.grafico{
+
+    overflow:hidden;
 
 }
 
 #graficoCategorias{
 
+    width:100%;
+
     min-height:380px;
+
+    margin-top:10px;
+
+}
+
+
+
+/*==================================================
+            ACTIVIDAD RECIENTE
+====================================================*/
+
+.actividad-card{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+#actividad{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+}
+
+.movimiento{
+
+    background:var(--surface-light);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:18px;
+
+    transition:var(--transition);
+
+}
+
+.movimiento:hover{
+
+    transform:translateY(-2px);
+
+    border-color:rgba(124,92,252,.35);
+
+    background:var(--surface-hover);
+
+}
+
+.movimiento-superior{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:8px;
+
+}
+
+.movimiento-nombre{
+
+    font-weight:600;
+
+    color:var(--text);
+
+}
+
+.movimiento-monto{
+
+    font-weight:700;
+
+}
+
+.movimiento-inferior{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    color:var(--text-muted);
+
+    font-size:13px;
+
+}
+
+.ingreso{
+
+    color:var(--green);
+
+}
+
+.gasto{
+
+    color:var(--red);
+
+}
+
+
+
+/*==================================================
+            ASISTENTE IA
+====================================================*/
+
+.ia-card{
+
+    margin-top:10px;
+
+}
+
+#ia{
+
+    min-height:180px;
+
+    border-radius:18px;
+
+    border:1px dashed rgba(124,92,252,.25);
+
+    background:linear-gradient(
+        180deg,
+        rgba(124,92,252,.08),
+        rgba(124,92,252,.02)
+    );
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:var(--text-muted);
+
+    font-size:18px;
+
+}
+
+
+
+/*==================================================
+                    TOAST
+====================================================*/
+
+.toast{
+
+    position:fixed;
+
+    top:30px;
+
+    right:30px;
+
+    background:#181f2f;
+
+    color:#fff;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:18px;
+
+    padding:18px 24px;
+
+    box-shadow:var(--shadow-lg);
+
+    opacity:0;
+
+    transform:translateY(-20px);
+
+    pointer-events:none;
+
+    transition:.30s;
+
+    z-index:9999;
+
+}
+
+.toast.mostrar{
+
+    opacity:1;
+
+    transform:translateY(0);
+
+}
+
+
+
+/*==================================================
+                SCROLLBAR
+====================================================*/
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#0d1524;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#2b3b57;
+
+    border-radius:50px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:var(--primary);
+
+}
+
+
+
+/*==================================================
+                RESPONSIVE
+====================================================*/
+
+@media(max-width:1200px){
+
+    .layout{
+
+        grid-template-columns:90px 1fr;
+
+    }
+
+    .logo h2,
+    .logo span,
+    .sidebar nav a{
+
+        display:none;
+
+    }
+
+    .logo{
+
+        justify-content:center;
+
+    }
+
+    .sidebar{
+
+        align-items:center;
+
+        padding:28px 16px;
+
+    }
+
+}
+
+@media(max-width:992px){
+
+    .dashboard{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .grid-principal{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media(max-width:768px){
+
+    .contenido{
+
+        padding:24px;
+
+    }
+
+    .header h1{
+
+        font-size:32px;
+
+    }
+
+    .card{
+
+        padding:22px;
+
+    }
+
+    .card-info h2{
+
+        font-size:28px;
+
+    }
+
+}
+
+@media(max-width:640px){
+
+    .layout{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .sidebar{
+
+        display:none;
+
+    }
+
+}
+
+
+
+/*==================================================
+            EFECTO PREMIUM
+====================================================*/
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    border-radius:22px;
+
+    pointer-events:none;
+
+    background:linear-gradient(
+
+        180deg,
+
+        rgba(255,255,255,.03),
+
+        transparent
+
+    );
+
+    opacity:.45;
+
+}
+
+.card{
+
+    position:relative;
+
+    overflow:hidden;
 
 }
