@@ -8,150 +8,375 @@
 
     <title>Finanzas IA</title>
 
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
-<div class="app">
+<div class="layout">
 
-    <!-- =========================
-         HEADER
-    ========================== -->
+    <!-- ===========================
+            SIDEBAR
+    ============================ -->
 
-    <header class="header">
+    <aside class="sidebar">
 
-        <div>
+        <div class="logo">
 
-            <h1>💰 Finanzas IA</h1>
+            <div class="logo-icon">
 
-            <p>Gestiona tus finanzas con Inteligencia Artificial</p>
+                💰
 
-        </div>
+            </div>
 
-    </header>
+            <div>
 
-    <!-- =========================
-         REGISTRO
-    ========================== -->
+                <h2>Finanzas IA</h2>
 
-    <section class="card">
+                <span>Personal Dashboard</span>
 
-        <h2>Registrar movimiento</h2>
-
-        <textarea
-            id="mensaje"
-            placeholder="Ejemplo: Compré un Monster por 8 y almorcé por 18"></textarea>
-
-        <button id="registrar">
-
-            <span id="textoBoton">
-
-                ➕ Registrar movimiento
-
-            </span>
-
-        </button>
-
-    </section>
-
-    <!-- =========================
-         RESPUESTA IA
-    ========================== -->
-
-    <section id="respuesta" class="card respuesta">
-
-        🤖 Esperando movimiento...
-
-    </section>
-
-    <!-- =========================
-         DASHBOARD
-    ========================== -->
-
-    <section class="dashboard">
-
-        <div class="card tarjeta">
-
-            <h3>📈 Ingresos</h3>
-
-            <span id="ingresos">S/ 0.00</span>
+            </div>
 
         </div>
 
-        <div class="card tarjeta">
+        <nav>
 
-            <h3>📉 Gastos</h3>
+            <a class="active">
 
-            <span id="gastos">S/ 0.00</span>
+                📊 Dashboard
 
-        </div>
+            </a>
 
-        <div class="card tarjeta saldo">
+            <a>
 
-            <h3>💰 Saldo</h3>
+                📈 Estadísticas
 
-            <span id="saldo">S/ 0.00</span>
+            </a>
 
-        </div>
+            <a>
 
-    </section>
+                🤖 Asistente IA
 
-    <!-- =========================
-         GRÁFICO
-    ========================== -->
+            </a>
 
-<section class="grafico">
+            <a>
 
-    <h3>📊 Gastos por categoría</h3>
+                ⚙ Configuración
 
-    <div id="graficoCategorias"></div>
+            </a>
 
-</section>
-    <!-- =========================
-         ACTIVIDAD
-    ========================== -->
+        </nav>
 
-    <section class="card">
+    </aside>
 
-        <h2>📋 Actividad reciente</h2>
+    <!-- ===========================
+            CONTENIDO
+    ============================ -->
 
-        <div id="actividad"></div>
+    <main class="contenido">
 
-    </section>
+        <!-- HEADER -->
 
-    <!-- =========================
-         IA (PRÓXIMAMENTE)
-    ========================== -->
+        <header class="header">
 
-    <section class="card">
+            <div>
 
-        <h2>🤖 Asistente Financiero</h2>
+                <span class="saludo">
 
-        <div id="ia">
+                    Bienvenido 👋
 
-            Próximamente...
+                </span>
 
-        </div>
+                <h1>
 
-    </section>
+                    Hola Diego
+
+                </h1>
+
+                <p>
+
+                    Gestiona tus finanzas con Inteligencia Artificial.
+
+                </p>
+
+            </div>
+
+        </header>
+
+        <!-- REGISTRAR -->
+
+        <section class="card registro">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>
+
+                        Registrar movimiento
+
+                    </h2>
+
+                    <p>
+
+                        Describe el movimiento de manera natural.
+
+                    </p>
+
+                </div>
+
+                <span class="pill">
+
+                    IA
+
+                </span>
+
+            </div>
+
+            <textarea
+
+                id="mensaje"
+
+                placeholder="Ejemplo: Compré un Monster por 8 soles y almorcé por 18."
+
+            ></textarea>
+
+            <button id="registrar">
+
+                <span id="textoBoton">
+
+                    ➕ Registrar movimiento
+
+                </span>
+
+            </button>
+
+        </section>
+                <!-- ===========================
+                RESPUESTA IA
+        ============================ -->
+
+        <section id="respuesta" class="card respuesta">
+
+            🤖 Esperando movimiento...
+
+        </section>
+
+        <!-- ===========================
+                DASHBOARD
+        ============================ -->
+
+        <section class="dashboard">
+
+            <div class="card tarjeta">
+
+                <div class="card-icon">
+
+                    📈
+
+                </div>
+
+                <div class="card-info">
+
+                    <span class="card-label">
+
+                        Ingresos
+
+                    </span>
+
+                    <h2 id="ingresos">
+
+                        S/ 0.00
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+            <div class="card tarjeta">
+
+                <div class="card-icon">
+
+                    📉
+
+                </div>
+
+                <div class="card-info">
+
+                    <span class="card-label">
+
+                        Gastos
+
+                    </span>
+
+                    <h2 id="gastos">
+
+                        S/ 0.00
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+            <div class="card tarjeta saldo">
+
+                <div class="card-icon">
+
+                    💰
+
+                </div>
+
+                <div class="card-info">
+
+                    <span class="card-label">
+
+                        Saldo actual
+
+                    </span>
+
+                    <h2 id="saldo">
+
+                        S/ 0.00
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ===========================
+                GRID PRINCIPAL
+        ============================ -->
+
+        <section class="grid-principal">
+
+            <!-- GRAFICO -->
+
+            <section class="card grafico">
+
+                <div class="card-title">
+
+                    <div>
+
+                        <h2>
+
+                            📊 Gastos por categoría
+
+                        </h2>
+
+                        <p>
+
+                            Distribución de tus gastos.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div id="graficoCategorias"></div>
+
+            </section>
+
+            <!-- ACTIVIDAD -->
+
+            <section class="card actividad-card">
+
+                <div class="card-title">
+
+                    <div>
+
+                        <h2>
+
+                            📋 Actividad reciente
+
+                        </h2>
+
+                        <p>
+
+                            Últimos movimientos registrados.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div id="actividad">
+
+                </div>
+
+            </section>
+
+        </section>
+
+        <!-- ===========================
+                ASISTENTE IA
+        ============================ -->
+
+        <section class="card ia-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>
+
+                        🤖 Asistente Financiero
+
+                    </h2>
+
+                    <p>
+
+                        Tu asesor inteligente de finanzas.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div id="ia">
+
+                Próximamente...
+
+            </div>
+
+        </section>
+
+    </main>
 
 </div>
 
-<!-- =========================
-     TOAST
-========================== -->
+<!-- ===========================
+        TOAST
+=========================== -->
 
-<div id="toast" class="toast">
+<div
+    id="toast"
+    class="toast">
 
-    <span id="toastTexto"></span>
+    <span id="toastTexto">
+
+    </span>
 
 </div>
 
-<!-- =========================
-     LIBRERÍAS
-========================== -->
+<!-- ===========================
+        LIBRERÍAS
+=========================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
