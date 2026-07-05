@@ -49,17 +49,11 @@ async function cargarGrafico() {
 
         labels:labels,
 
-        legend:{
-            position:"bottom",
-            fontSize:"15px",
-            fontFamily:"Montserrat",
-            labels:{
-                colors:"#ffffff"
-            }
-        },
-
-        dataLabels:{
-            enabled:true
+legend:{
+    show:false
+},
+dataLabels:{
+    enabled:false
         },
 
         noData:{
