@@ -1179,13 +1179,17 @@ button:disabled{
 
     padding:10px 18px;
 
+    border:none;
+
     border-radius:14px;
 
-    border:1px solid var(--border);
+    background:linear-gradient(
+        135deg,
+        #7C5CFC,
+        #6A4BFA
+    );
 
-    background:var(--surface-light);
-
-    color:var(--text);
+    color:#fff;
 
     font-size:14px;
 
@@ -1199,19 +1203,22 @@ button:disabled{
 
     cursor:pointer;
 
-    box-shadow:none;
+    box-shadow:0 8px 20px rgba(124,92,252,.25);
 
     transition:all .25s ease;
 
 }
-
 .filtro-mes:hover{
 
-    background:var(--surface-hover);
-
-    border-color:var(--primary);
+    background:linear-gradient(
+        135deg,
+        #9279FF,
+        #7C5CFC
+    );
 
     transform:translateY(-2px);
+
+    box-shadow:0 12px 26px rgba(124,92,252,.35);
 
 }
 
