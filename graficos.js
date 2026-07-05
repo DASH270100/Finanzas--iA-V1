@@ -67,21 +67,76 @@ const opciones = {
         width:0
     },
 
-    plotOptions:{
+   plotOptions:{
 
-        pie:{
+    pie:{
 
-            expandOnClick:false,
+        expandOnClick:false,
 
-            donut:{
+        donut:{
 
-                size:"72%"
+            size:"72%",
+
+            labels:{
+
+                show:true,
+
+                name:{
+                    show:false
+                },
+
+                value:{
+                    show:true,
+
+                    fontFamily:"Montserrat",
+
+                    fontSize:"34px",
+
+                    fontWeight:800,
+
+                    color:"#FFFFFF",
+
+                    offsetY:10,
+
+                    formatter:function(){
+
+                        const total = series.reduce((a,b)=>a+b,0);
+
+                        return "S/ " + total.toFixed(2);
+
+                    }
+
+                },
+
+                total:{
+
+                    show:true,
+
+                    label:"Total",
+
+                    fontFamily:"Montserrat",
+
+                    fontSize:"12px",
+
+                    fontWeight:500,
+
+                    color:"#94A3B8",
+
+                    formatter:function(){
+
+                        return "";
+
+                    }
+
+                }
 
             }
 
         }
 
-    },
+    }
+
+},
 
     dataLabels:{
         enabled:false
