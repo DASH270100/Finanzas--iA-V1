@@ -10,53 +10,70 @@ async function cargarGrafico() {
 
     gastos.forEach(m => {
 
-        categorias[m.categoria] = (categorias[m.categoria] || 0) + Number(m.monto);
+        categorias[m.categoria] =
+            (categorias[m.categoria] || 0) + Number(m.monto);
 
     });
 
     const labels = Object.keys(categorias);
+
     const series = Object.values(categorias);
 
-    if (grafico) {
+    if(grafico){
 
         grafico.destroy();
 
     }
 
-    chart:{
+    const opciones = {
 
-    type:"donut",
+        chart:{
 
-    height:430,
+            type:"donut",
 
-    toolbar:{
-        show:false
-    },
+            height:430,
 
-    animations:{
+            toolbar:{
+                show:false
+            },
 
-        enabled:true,
+            animations:{
+                enabled:true,
+                easing:"easeinout",
+                speed:900
+            }
 
-        easing:"easeinout",
-
-        speed:900
-
-    }
-},
-
-        dataLabels: {
-            enabled: true
         },
 
-        noData: {
-            text: "Sin datos"
+        series:series,
+
+        labels:labels,
+
+        legend:{
+            position:"bottom",
+            fontSize:"15px",
+            fontFamily:"Montserrat",
+            labels:{
+                colors:"#ffffff"
+            }
+        },
+
+        dataLabels:{
+            enabled:true
+        },
+
+        noData:{
+            text:"Sin datos"
         }
 
     };
 
     grafico = new ApexCharts(
+
         document.querySelector("#graficoCategorias"),
+
         opciones
+
     );
 
     grafico.render();
