@@ -1231,9 +1231,54 @@ button:disabled{
 
     font-size:11px;
 
-}
+/*==================================================
+                    INSIGHT
+====================================================*/
+
 .insight{
 
-    margin-top:50px;
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:14px;
+
+    margin-top:40px;
+
+    padding:18px;
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+}
+
+.insight-icon{
+
+    font-size:22px;
+
+    line-height:1;
+
+}
+
+#insightTitulo{
+
+    display:block;
+
+    margin-bottom:6px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+}
+
+#insightTexto{
+
+    color:var(--text-muted);
+
+    line-height:1.6;
 
 }
