@@ -23,22 +23,24 @@ async function cargarGrafico() {
 
     }
 
-    const opciones = {
+    chart:{
 
-        chart: {
-            type: "donut",
-            height: 350
-        },
+    type:"donut",
 
-        series: series,
+    height:430,
 
-        labels: labels,
+    toolbar:{
+        show:false
+    },
 
-        legend: {
-    position: "bottom",
-    fontSize: "14px",
-    labels: {
-        colors: "#ffffff"
+    animations:{
+
+        enabled:true,
+
+        easing:"easeinout",
+
+        speed:900
+
     }
 },
 
