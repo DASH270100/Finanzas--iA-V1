@@ -50,13 +50,15 @@ async function cargarGrafico() {
         labels: labels,
 
         colors: [
-            "#7C5CFC",
-            "#4F8EF7",
+
+            "#8B5CF6",
+            "#3B82F6",
             "#F59E0B",
-            "#22C55E",
+            "#10B981",
             "#EF4444",
             "#06B6D4",
-            "#A855F7"
+            "#EC4899"
+
         ],
 
         legend: {
@@ -64,7 +66,11 @@ async function cargarGrafico() {
         },
 
         stroke: {
-            width: 0
+
+            width: 6,
+
+            colors: ["#1B2333"]
+
         },
 
         plotOptions: {
@@ -75,7 +81,7 @@ async function cargarGrafico() {
 
                 donut: {
 
-                    size: "72%"
+                    size: "68%"
 
                 }
 
