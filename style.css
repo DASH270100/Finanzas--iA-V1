@@ -1286,13 +1286,15 @@ button:disabled{
             CENTRO DEL DONUT
 ==================================================*/
 
-  .contenedor-grafico{
+.contenedor-grafico{
 
     position:relative;
 
-    width:100%;
+    width:500px;
 
-    height:460px;
+    height:500px;
+
+    margin:20px auto 0;
 
 }
 #graficoCategorias{
