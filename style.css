@@ -1387,3 +1387,158 @@ button:disabled{
     line-height:1;
 
 }
+/*==================================================
+            FOOTER DEL GRÁFICO
+==================================================*/
+
+.grafico-footer{
+
+    display:grid;
+
+    grid-template-columns:220px 1fr;
+
+    gap:18px;
+
+    margin-top:28px;
+
+    align-items:stretch;
+
+}
+
+/*==================================================
+            TOTAL GASTADO
+==================================================*/
+
+.total-card{
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:22px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    transition:var(--transition);
+
+}
+
+.total-card:hover{
+
+    transform:translateY(-2px);
+
+    border-color:rgba(124,92,252,.35);
+
+}
+
+.total-label{
+
+    font-size:12px;
+
+    font-weight:600;
+
+    letter-spacing:2px;
+
+    text-transform:uppercase;
+
+    color:var(--text-muted);
+
+    margin-bottom:14px;
+
+}
+
+#totalGastado{
+
+    font-size:34px;
+
+    font-weight:800;
+
+    color:var(--text);
+
+    line-height:1;
+
+}
+
+/*==================================================
+                INSIGHT
+==================================================*/
+
+.insight{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:16px;
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:22px;
+
+    transition:var(--transition);
+
+}
+
+.insight:hover{
+
+    transform:translateY(-2px);
+
+    border-color:rgba(124,92,252,.35);
+
+}
+
+.insight-icon{
+
+    font-size:24px;
+
+    line-height:1;
+
+}
+
+#insightTitulo{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:var(--text);
+
+}
+
+#insightTexto{
+
+    color:var(--text-muted);
+
+    line-height:1.6;
+
+    margin:0;
+
+}
+
+/*==================================================
+                RESPONSIVE
+==================================================*/
+
+@media(max-width:900px){
+
+    .grafico-footer{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
