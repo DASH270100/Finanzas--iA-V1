@@ -1297,6 +1297,39 @@ button:disabled{
     margin:20px auto 0;
 
 }
+  /*=========================================
+        DISCO CENTRAL DEL DONUT
+=========================================*/
+
+.contenedor-grafico::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:50%;
+
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:175px;
+
+    height:175px;
+
+    border-radius:50%;
+
+    background:#1B2333;
+
+    border:2px solid rgba(255,255,255,.05);
+
+    box-shadow:
+        inset 0 0 25px rgba(255,255,255,.02),
+        0 10px 30px rgba(0,0,0,.30);
+
+    z-index:2;
+
+}
 #graficoCategorias{
 
     width:100%;
