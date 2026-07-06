@@ -31,7 +31,7 @@ async function cargarGrafico() {
 
             type: "donut",
 
-            height: 440,
+            height: 500,
 
             toolbar: {
                 show: false
