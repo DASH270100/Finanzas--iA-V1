@@ -919,11 +919,11 @@ button:disabled{
 
 .contenedor-grafico{
 
-    width:540px;
+    width:460px;
 
-    height:540px;
+    height:460px;
 
-    margin:0 auto;
+    margin:10px auto 20px;
 
 }
 
@@ -944,13 +944,13 @@ button:disabled{
 
     display:grid;
 
-    grid-template-columns:190px 1fr;
+    grid-template-columns:220px 1fr;
 
-    gap:18px;
-
-    margin-top:-10px;
+    gap:20px;
 
     align-items:stretch;
+
+    margin-top:10px;
 
 }
 
