@@ -175,8 +175,11 @@ async function cargarActividad(){
         const inicio=Math.max(0,filas.length-5);
 
         for(let i=filas.length-1;i>=inicio;i--){
-            const f=filas[i].c;
-            const fechaOriginal = f[0]?.v ?? "";
+    const f = filas[i].c;
+
+    console.log(f);
+
+    const fechaOriginal = f[0]?.v ?? "";
 
 console.log(fechaOriginal, typeof fechaOriginal);
 
