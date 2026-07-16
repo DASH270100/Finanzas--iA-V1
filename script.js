@@ -182,11 +182,14 @@ async function cargarDashboard(){
 
 }
 async function cargarActividad(){
+
     try{
+
         const json = await leerHoja(MOVIMIENTOS_URL);
         const filas = json.table.rows;
 
-        const iconos={
+        const iconos = {
+
             Comida:"🍔",
             Bebidas:"🥤",
             Transporte:"🚕",
@@ -195,46 +198,64 @@ async function cargarActividad(){
             Entretenimiento:"🎮",
             Compras:"🛍️",
             Hogar:"🏠"
+
         };
 
-        let html="";
-        const inicio=Math.max(0,filas.length-5);
+        let html = "";
 
-        for(let i=filas.length-1;i>=inicio;i--){
-    const f = filas[i].c;
+        const inicio = Math.max(0, filas.length - 5);
 
-    console.log(f);
+        for(let i = filas.length - 1; i >= inicio; i--){
 
-    const fechaOriginal = f[0]?.v ?? "";
+            const c = filas[i].c || [];
 
-console.log(fechaOriginal, typeof fechaOriginal);
+            const fechaOriginal = c[0]?.v ?? "";
+            const tipo = String(c[1]?.v ?? "").trim();
+            const categoria = String(c[2]?.v ?? "").trim();
+            const descripcion = String(c[3]?.v ?? "").trim();
 
-const fecha = formatearFecha(fechaOriginal);
-            const tipo=f[1]?.v ?? "";
-            const categoria=f[2]?.v ?? "";
-            const descripcion=f[3]?.v ?? "";
-            const monto=Number(f[4]?.v ?? 0);
+            const monto = Number(c[4]?.v);
 
-            html+=`
-            <div class="movimiento">
-                <div class="movimiento-superior">
-                    <div class="movimiento-nombre">${iconos[categoria]||"📦"} ${descripcion}</div>
-                    <div class="movimiento-monto ${tipo==="Ingreso"?"ingreso":"gasto"}">
-                        ${tipo==="Ingreso"?"+":"-"} S/ ${monto.toFixed(2)}
+            const fecha = formatearFecha(fechaOriginal);
+
+            html += `
+                <div class="movimiento">
+
+                    <div class="movimiento-superior">
+
+                        <div class="movimiento-nombre">
+                            ${iconos[categoria] || "📦"} ${descripcion}
+                        </div>
+
+                        <div class="movimiento-monto ${tipo === "Ingreso" ? "ingreso" : "gasto"}">
+
+                            ${tipo === "Ingreso" ? "+" : "-"} S/ ${isNaN(monto) ? "0.00" : monto.toFixed(2)}
+
+                        </div>
+
                     </div>
+
+                    <div class="movimiento-inferior">
+
+                        <span>${categoria}</span>
+
+                        <span>${fecha}</span>
+
+                    </div>
+
                 </div>
-                <div class="movimiento-inferior">
-                    <span>${categoria}</span>
-                    <span>${fecha}</span>
-                </div>
-            </div>`;
+            `;
+
         }
 
-        $("actividad").innerHTML=html;
+        $("actividad").innerHTML = html;
 
     }catch(e){
-        console.error(e);
+
+        console.error("Error cargando actividad:", e);
+
     }
+
 }
 // =========================
 // ANIMACIÓN DASHBOARD
