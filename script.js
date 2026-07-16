@@ -134,27 +134,53 @@ async function obtenerMovimientos(){
 }
 
 async function cargarDashboard(){
+
     try{
+
         const json = await leerHoja(DASHBOARD_URL);
         const filas = json.table.rows;
 
-        $("ingresos").textContent = "S/ " + Number(filas[0].c[1].v).toFixed(2);
-        $("gastos").textContent = "S/ " + Number(filas[1].c[1].v).toFixed(2);
-        $("saldo").textContent = "S/ " + Number(filas[2].c[1].v).toFixed(2);
+        $("ingresos").textContent =
+            "S/ " + Number(filas[0].c[1].v).toFixed(2);
+
+        $("gastos").textContent =
+            "S/ " + Number(filas[1].c[1].v).toFixed(2);
+
+        $("saldo").textContent =
+            "S/ " + Number(filas[2].c[1].v).toFixed(2);
+
         animarDashboard();
-        document.querySelector(".resumen").classList.add("actualizando");
-        document.querySelector(".saldo").classList.add("actualizando");
+
+        const resumen = document.querySelector(".resumen");
+        const saldo = document.querySelector(".saldo");
+
+        if(resumen){
+            resumen.classList.add("actualizando");
+        }
+
+        if(saldo){
+            saldo.classList.add("actualizando");
+        }
 
         setTimeout(()=>{
-            document.querySelector(".resumen").classList.remove("actualizando");
-            document.querySelector(".saldo").classList.remove("actualizando");
+
+            if(resumen){
+                resumen.classList.remove("actualizando");
+            }
+
+            if(saldo){
+                saldo.classList.remove("actualizando");
+            }
+
         },500);
 
     }catch(e){
-        console.error(e);
-    }
-}
 
+        console.error("Error cargando dashboard:", e);
+
+    }
+
+}
 async function cargarActividad(){
     try{
         const json = await leerHoja(MOVIMIENTOS_URL);
