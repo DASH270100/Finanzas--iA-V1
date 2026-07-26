@@ -352,13 +352,29 @@ async function cargarDeudas(){
 
         }
 
-        $("deudas").innerHTML = html;
+const botonToggle = $("toggleDeudas");
 
-    }catch(e){
+if (botonToggle) {
 
-        console.error("Error cargando deudas:", e);
+    if (pendientes.length > 5) {
+
+        botonToggle.style.display = "inline-flex";
+
+    } else {
+
+        botonToggle.style.display = "none";
 
     }
+
+}
+
+$("deudas").innerHTML = html;
+
+}catch(e){
+
+    console.error("Error cargando deudas:", e);
+
+}
 
 }
 // =========================
