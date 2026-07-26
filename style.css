@@ -1489,6 +1489,7 @@ button:disabled{
         180deg,
         #4b2a82 0%,
         #342055 100%
+        width: 300px;
     );
 
     border:1px solid rgba(155,92,255,.18);
