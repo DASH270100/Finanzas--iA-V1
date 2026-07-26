@@ -12,6 +12,9 @@ const DASHBOARD_URL =
 const MOVIMIENTOS_URL =
 `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Movimientos`;
 
+const DEUDAS_URL =
+`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Deudas`;
+
 const $ = (id)=>document.getElementById(id);
 
 // =========================
@@ -258,6 +261,82 @@ async function cargarActividad(){
 
 }
 // =========================
+// CARGAR DEUDAS
+// =========================
+
+async function cargarDeudas(){
+
+    try{
+
+        const json = await leerHoja(DEUDAS_URL);
+
+        const filas = json.table.rows;
+
+        let html = "";
+
+        filas.forEach(fila=>{
+
+            const c = fila.c || [];
+
+            const persona = c[0]?.v ?? "";
+            const fecha = c[1]?.v ?? "";
+            const monto = Number(c[2]?.v ?? 0);
+            const estado = String(c[3]?.v ?? "").trim();
+
+            if(estado !== "Pendiente") return;
+
+            html += `
+                <div class="movimiento">
+
+                    <div class="movimiento-superior">
+
+                        <div class="movimiento-nombre">
+
+                            👤 ${persona}
+
+                        </div>
+
+                        <div class="movimiento-monto ingreso">
+
+                            S/ ${monto.toFixed(2)}
+
+                        </div>
+
+                    </div>
+
+                    <div class="movimiento-inferior">
+
+                        <span>Prestado</span>
+
+                        <span>${formatearFecha(fecha)}</span>
+
+                    </div>
+
+                </div>
+            `;
+
+        });
+
+        if(html === ""){
+
+            html = `
+                <div style="text-align:center;padding:30px;color:#94A3B8;">
+                    🎉 No tienes deudas pendientes.
+                </div>
+            `;
+
+        }
+
+        $("deudas").innerHTML = html;
+
+    }catch(e){
+
+        console.error("Error cargando deudas:", e);
+
+    }
+
+}
+// =========================
 // ANIMACIÓN DASHBOARD
 // =========================
 
@@ -284,11 +363,13 @@ function animarDashboard(){
 }
 async function actualizarTodo(){
 
-    await cargarDashboard();
+await cargarDashboard();
 
-    await cargarActividad();
+await cargarActividad();
 
-    await cargarGrafico();
+await cargarGrafico();
+
+await cargarDeudas();
 
 }
 
