@@ -37,6 +37,7 @@ function mostrarToast(mensaje) {
     }, 3000);
 
 }
+
 // =========================
 // FORMATEAR FECHA
 // =========================
@@ -45,7 +46,6 @@ function formatearFecha(fechaTexto){
 
     if(!fechaTexto) return "";
 
-    // Eliminar comillas y espacios
     fechaTexto = String(fechaTexto)
         .replace(/"/g, "")
         .trim();
@@ -83,13 +83,19 @@ function formatearFecha(fechaTexto){
         month:"short"
     });
 
-
 }
+
 async function leerHoja(url){
+
     const r = await fetch(url);
     const t = await r.text();
-    return JSON.parse(t.substring(47).slice(0,-2));
+
+    return JSON.parse(
+        t.substring(47).slice(0,-2)
+    );
+
 }
+
 // =========================
 // OBTENER MOVIMIENTOS
 // =========================
@@ -101,14 +107,10 @@ async function obtenerMovimientos(){
         const json = await leerHoja(MOVIMIENTOS_URL);
 
         const filas = json.table.rows;
-        const pendientes = filas.filter(fila => {
-    const estado = String(fila.c?.[3]?.v ?? "").trim();
-    return estado === "Pendiente";
-});
 
         const movimientos = [];
 
-        pendientes.slice(0,5).forEach(fila=>{
+        filas.forEach(fila=>{
 
             const c = fila.c;
 
@@ -139,6 +141,9 @@ async function obtenerMovimientos(){
     }
 
 }
+// =========================
+// CARGAR DASHBOARD
+// =========================
 
 async function cargarDashboard(){
 
@@ -188,6 +193,11 @@ async function cargarDashboard(){
     }
 
 }
+
+// =========================
+// CARGAR ACTIVIDAD
+// =========================
+
 async function cargarActividad(){
 
     try{
@@ -264,6 +274,8 @@ async function cargarActividad(){
     }
 
 }
+let mostrarTodasLasDeudas = false;
+
 // =========================
 // CARGAR DEUDAS
 // =========================
@@ -285,7 +297,11 @@ async function cargarDeudas(){
         let html = "";
 
         // Mostrar solo las primeras 5
-        pendientes.slice(0,5).forEach(fila=>{
+        const deudasAMostrar = mostrarTodasLasDeudas
+    ? pendientes
+    : pendientes.slice(0,5);
+
+deudasAMostrar.forEach(fila=>{
 
             const c = fila.c || [];
 
@@ -359,6 +375,10 @@ if (botonToggle) {
     if (pendientes.length > 5) {
 
         botonToggle.style.display = "inline-flex";
+
+        botonToggle.textContent = mostrarTodasLasDeudas
+            ? "▲ Mostrar menos"
+            : "▼ Ver todas las deudas";
 
     } else {
 
@@ -480,7 +500,13 @@ console.log(r.type);
 }
 
 }
+$("toggleDeudas").addEventListener("click", () => {
 
+    mostrarTodasLasDeudas = !mostrarTodasLasDeudas;
+
+    cargarDeudas();
+
+});
 window.addEventListener("DOMContentLoaded",()=>{
     $("registrar").addEventListener("click",registrarMovimiento);
     actualizarTodo();
