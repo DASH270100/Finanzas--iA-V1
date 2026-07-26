@@ -276,18 +276,22 @@ async function cargarDeudas(){
 
         const filas = json.table.rows;
 
+        // Solo obtener deudas pendientes
+        const pendientes = filas.filter(fila => {
+            const estado = String(fila.c?.[3]?.v ?? "").trim();
+            return estado === "Pendiente";
+        });
+
         let html = "";
 
-        filas.forEach(fila=>{
+        // Mostrar solo las primeras 5
+        pendientes.slice(0,5).forEach(fila=>{
 
             const c = fila.c || [];
 
             const persona = c[0]?.v ?? "";
             const fecha = c[1]?.v ?? "";
             const monto = Number(c[2]?.v ?? 0);
-            const estado = String(c[3]?.v ?? "").trim();
-
-            if(estado !== "Pendiente") return;
 
             html += `
 <div class="deuda-card">
@@ -316,6 +320,27 @@ async function cargarDeudas(){
 `;
 
         });
+
+        // Actualizar contador
+        const contador = document.getElementById("contadorDeudas");
+
+        if(contador){
+
+            if(pendientes.length === 0){
+
+                contador.textContent = "No tienes préstamos pendientes";
+
+            }else if(pendientes.length === 1){
+
+                contador.textContent = "1 préstamo pendiente";
+
+            }else{
+
+                contador.textContent = `${pendientes.length} préstamos pendientes`;
+
+            }
+
+        }
 
         if(html === ""){
 
