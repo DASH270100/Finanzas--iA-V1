@@ -802,28 +802,15 @@ button:disabled{
 
 #deudas{
 
-    min-height:180px;
+    display:grid;
 
-    display:flex;
+    grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
 
-    justify-content:center;
+    gap:18px;
 
-    align-items:center;
+    margin-top:20px;
 
-    border-radius:18px;
-
-    border:1px dashed rgba(124,92,252,.25);
-
-    background:linear-gradient(
-
-        180deg,
-
-        rgba(124,92,252,.08),
-
-        rgba(124,92,252,.02)
-
-    );
-
+}
     color:var(--text-muted);
 
     font-size:18px;
@@ -1495,5 +1482,82 @@ button:disabled{
         display:none;
 
     }
+
+}
+/* =========================
+   TARJETAS DE DEUDAS
+========================= */
+
+.deuda-card{
+
+    background: linear-gradient(
+        180deg,
+        #4b2a82 0%,
+        #342055 100%
+    );
+
+    border:1px solid rgba(155,92,255,.18);
+
+    border-radius:18px;
+
+    padding:18px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+    transition:.25s ease;
+
+    box-shadow:
+        0 10px 24px rgba(0,0,0,.20);
+
+}
+
+.deuda-card:hover{
+
+    transform:translateY(-4px);
+
+    border-color:#8b5cf6;
+
+    box-shadow:
+        0 18px 35px rgba(107,33,168,.35);
+
+}
+
+.deuda-persona{
+
+    font-size:22px;
+
+    font-weight:700;
+
+    color:white;
+
+}
+
+.deuda-monto{
+
+    font-size:34px;
+
+    font-weight:800;
+
+    color:#ff5f73;
+
+}
+
+.deuda-fecha{
+
+    color:#cfc8ff;
+
+    font-size:15px;
+
+}
+
+.deuda-label{
+
+    color:#9ca3af;
+
+    font-size:14px;
 
 }
