@@ -101,10 +101,14 @@ async function obtenerMovimientos(){
         const json = await leerHoja(MOVIMIENTOS_URL);
 
         const filas = json.table.rows;
+        const pendientes = filas.filter(fila => {
+    const estado = String(fila.c?.[3]?.v ?? "").trim();
+    return estado === "Pendiente";
+});
 
         const movimientos = [];
 
-        filas.forEach(fila=>{
+        pendientes.slice(0,5).forEach(fila=>{
 
             const c = fila.c;
 
