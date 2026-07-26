@@ -286,34 +286,30 @@ async function cargarDeudas(){
             if(estado !== "Pendiente") return;
 
             html += `
-                <div class="movimiento">
+<div class="deuda-card">
 
-                    <div class="movimiento-superior">
+    <div class="deuda-persona">
+        👤 ${persona}
+    </div>
 
-                        <div class="movimiento-nombre">
+    <div class="deuda-monto">
+        S/ ${monto.toFixed(2)}
+    </div>
 
-                            👤 ${persona}
+    <div class="deuda-label">
+        💸 Préstamo pendiente
+    </div>
 
-                        </div>
+    <div class="deuda-fecha">
+        📅 ${formatearFecha(fecha)}
+    </div>
 
-                        <div class="movimiento-monto ingreso">
+    <button class="btn-deuda">
+        ✓ Pagado
+    </button>
 
-                            S/ ${monto.toFixed(2)}
-
-                        </div>
-
-                    </div>
-
-                    <div class="movimiento-inferior">
-
-                        <span>Prestado</span>
-
-                        <span>${formatearFecha(fecha)}</span>
-
-                    </div>
-
-                </div>
-            `;
+</div>
+`;
 
         });
 
