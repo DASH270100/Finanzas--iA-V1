@@ -803,8 +803,8 @@ button:disabled{
 #deudas{
     display:flex;
     flex-wrap:wrap;
-    justify-content:center;
     gap:20px;
+    justify-content:center;
 }
     color:var(--text-muted);
 
@@ -1577,4 +1577,7 @@ button:disabled{
     font-size:14px;
     font-weight:700;
 
+}
+.deudas-card{
+    grid-column: 1 / -1;
 }
