@@ -788,7 +788,47 @@ button:disabled{
     margin-bottom:32px;
 
 }
+/*==================================================
+                DEUDAS
+====================================================*/
 
+.deudas-card{
+
+    width:100%;
+
+    margin-bottom:32px;
+
+}
+
+#deudas{
+
+    min-height:180px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:18px;
+
+    border:1px dashed rgba(124,92,252,.25);
+
+    background:linear-gradient(
+
+        180deg,
+
+        rgba(124,92,252,.08),
+
+        rgba(124,92,252,.02)
+
+    );
+
+    color:var(--text-muted);
+
+    font-size:18px;
+
+}
 
 /*==================================================
                 TARJETA GRÁFICO
