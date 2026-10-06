@@ -1,513 +1,850 @@
-// Finanzas IA - Script v2.0
+// Finanzas IA - Script v3.0
+// Backend: Google Apps Script protegido con PIN (el Sheet ya no se lee desde el navegador).
+"use strict";
+
 // =========================
 // CONFIGURACIÓN
 // =========================
 
-const WEBHOOK = "https://hook.us2.make.com/bmcjqeay6jcuvxkif8utgscmi8tdidd5";
-const SHEET_ID = "1_7GeuQeIonqzuWCzRiWIjbg0xjbb1XpppYLM56pBU18";
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbyfEWrjGVOfzTpDpLri3TFVsgeU9cxBVBmQDE1JJHCIO50gqsjXTy7-4k5G9YYiPawWsA/exec";
 
-const DASHBOARD_URL =
-`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Dashboards`;
+const PIN_KEY = "finanzasia_pin";
 
-const MOVIMIENTOS_URL =
-`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Movimientos`;
+const MAX_CARACTERES = 500;
 
-const DEUDAS_URL =
-`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Deudas`;
+const $ = (id) => document.getElementById(id);
 
-const $ = (id)=>document.getElementById(id);
+const estado = {
+    movimientos: [],
+    deudas: [],
+    dashboard: [],
+    mes: null,
+    mostrarTodasLasDeudas: false
+};
+
+const ICONOS = {
+    comida: "🍔",
+    bebidas: "🥤",
+    transporte: "🚕",
+    sueldo: "💼",
+    salud: "🏥",
+    entretenimiento: "🎮",
+    gaming: "🎮",
+    compras: "🛍️",
+    hogar: "🏠",
+    ropa: "👕",
+    otros: "📦"
+};
 
 // =========================
-// TOAST
+// UTILIDADES
 // =========================
+
+const formatoMonto = new Intl.NumberFormat("es-PE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+});
+
+const numero = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+};
+
+const money = (n) => "S/ " + formatoMonto.format(numero(n));
+
+// Evita que texto de la hoja se ejecute como HTML
+function esc(valor) {
+
+    const mapa = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+    return String(valor ?? "").replace(/[&<>"']/g, (c) => mapa[c]);
+
+}
+
+const dormir = (ms) => new Promise((res) => setTimeout(res, ms));
+
+const esIngreso = (m) => m.tipo.toLowerCase() === "ingreso";
+
+const esGasto = (m) => m.tipo.toLowerCase() === "gasto";
+
+let toastTimer = null;
 
 function mostrarToast(mensaje) {
 
-    const toast = document.getElementById("toast");
-    const texto = document.getElementById("toastTexto");
+    $("toastTexto").textContent = mensaje;
 
-    texto.textContent = mensaje;
+    $("toast").classList.add("mostrar");
 
-    toast.classList.add("mostrar");
+    clearTimeout(toastTimer);
 
-    setTimeout(() => {
+    toastTimer = setTimeout(() => {
 
-        toast.classList.remove("mostrar");
+        $("toast").classList.remove("mostrar");
 
     }, 3000);
 
 }
 
-// =========================
-// FORMATEAR FECHA
-// =========================
+function animar(selector) {
 
-function formatearFecha(fechaTexto){
+    document.querySelectorAll(selector).forEach((el) => {
 
-    if(!fechaTexto) return "";
+        el.classList.remove("actualizando");
 
-    fechaTexto = String(fechaTexto)
-        .replace(/"/g, "")
-        .trim();
+        void el.offsetWidth;
 
-    const partes = fechaTexto.split("/");
+        el.classList.add("actualizando");
 
-    if(partes.length !== 3){
-        return fechaTexto;
-    }
+        setTimeout(() => el.classList.remove("actualizando"), 500);
 
-    const dia = Number(partes[0]);
-    const mes = Number(partes[1]) - 1;
-    const anio = Number(partes[2]);
-
-    const fecha = new Date(anio, mes, dia);
-
-    if (isNaN(fecha.getTime())) {
-        return fechaTexto;
-    }
-
-    const hoy = new Date();
-    const ayer = new Date();
-    ayer.setDate(hoy.getDate() - 1);
-
-    const mismaFecha = (a,b)=>
-        a.getDate()===b.getDate() &&
-        a.getMonth()===b.getMonth() &&
-        a.getFullYear()===b.getFullYear();
-
-    if(mismaFecha(fecha,hoy)) return "Hoy";
-    if(mismaFecha(fecha,ayer)) return "Ayer";
-
-    return fecha.toLocaleDateString("es-PE",{
-        day:"numeric",
-        month:"short"
     });
 
 }
 
-async function leerHoja(url){
+// =========================
+// FECHAS
+// =========================
 
-    const r = await fetch(url);
-    const t = await r.text();
+// Acepta "02/07/2026", "\"02/07/2026\"", "29-08-2026" y "2026-07-01T05:00:00.000Z"
+function parseFecha(valor) {
 
-    return JSON.parse(
-        t.substring(47).slice(0,-2)
+    if (valor === null || valor === undefined || valor === "") return null;
+
+    const t = String(valor).replace(/"/g, "").trim();
+
+    const m = t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
+    if (/^\d{4}-\d{2}-\d{2}T/.test(t)) {
+
+        const d = new Date(t);
+
+        return isNaN(d.getTime()) ? null : d;
+
+    }
+
+    return null;
+
+}
+
+function formatearFecha(fecha, original) {
+
+    if (!fecha) return original ? String(original).replace(/"/g, "") : "";
+
+    const hoy = new Date();
+
+    const ayer = new Date();
+
+    ayer.setDate(hoy.getDate() - 1);
+
+    const igual = (a, b) =>
+        a.getDate() === b.getDate() &&
+        a.getMonth() === b.getMonth() &&
+        a.getFullYear() === b.getFullYear();
+
+    if (igual(fecha, hoy)) return "Hoy";
+
+    if (igual(fecha, ayer)) return "Ayer";
+
+    return fecha.toLocaleDateString("es-PE", { day: "numeric", month: "short" });
+
+}
+
+const claveMes = (d) =>
+    d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+
+function nombreMes(clave) {
+
+    const [y, m] = clave.split("-").map(Number);
+
+    const t = new Date(y, m - 1, 1).toLocaleDateString("es-PE", {
+        month: "long",
+        year: "numeric"
+    });
+
+    return t.charAt(0).toUpperCase() + t.slice(1);
+
+}
+
+// =========================
+// PIN
+// =========================
+
+function leerPin() {
+    try { return localStorage.getItem(PIN_KEY) || ""; } catch (e) { return ""; }
+}
+
+function guardarPin(pin) {
+    try { localStorage.setItem(PIN_KEY, pin); } catch (e) { /* sin almacenamiento */ }
+}
+
+function borrarPin() {
+    try { localStorage.removeItem(PIN_KEY); } catch (e) { /* sin almacenamiento */ }
+}
+
+function pedirPin(mensaje = "") {
+
+    $("pinOverlay").hidden = false;
+
+    $("pinError").textContent = mensaje;
+
+    $("pinInput").value = "";
+
+    setTimeout(() => $("pinInput").focus(), 50);
+
+}
+
+class ErrorPin extends Error {}
+
+// =========================
+// API (Google Apps Script)
+// =========================
+
+// Se envía como text/plain para evitar preflight de CORS con Apps Script
+async function api(accion, extra = {}, pin = leerPin()) {
+
+    const r = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ accion, pin, ...extra })
+    });
+
+    if (!r.ok) throw new Error("Error de red (" + r.status + ")");
+
+    const data = await r.json();
+
+    if (!data.ok) {
+
+        if (data.error === "PIN incorrecto") throw new ErrorPin(data.error);
+
+        throw new Error(data.error || "Error desconocido");
+
+    }
+
+    return data;
+
+}
+
+function sinEncabezado(filas, primeraCelda) {
+
+    if (filas.length && String(filas[0][0] ?? "").trim().toLowerCase() === primeraCelda) {
+
+        return filas.slice(1);
+
+    }
+
+    return filas;
+
+}
+
+function normalizarDatos(data) {
+
+    const movimientos = sinEncabezado(data.movimientos || [], "fecha")
+        .map((f, idx) => ({
+            idx,
+            fechaTexto: String(f[0] ?? "").replace(/"/g, "").trim(),
+            fecha: parseFecha(f[0]),
+            tipo: String(f[1] ?? "").trim(),
+            categoria: String(f[2] ?? "").trim(),
+            descripcion: String(f[3] ?? "").trim(),
+            monto: numero(f[4])
+        }))
+        .filter((m) => m.fechaTexto !== "" || m.descripcion !== "");
+
+    const deudas = sinEncabezado(data.deudas || [], "persona")
+        .map((f) => ({
+            persona: String(f[0] ?? "").trim(),
+            fechaTexto: String(f[1] ?? "").replace(/"/g, "").trim(),
+            fecha: parseFecha(f[1]),
+            monto: numero(f[2]),
+            estado: String(f[3] ?? "").trim()
+        }))
+        .filter((d) => d.persona !== "");
+
+    return { movimientos, deudas, dashboard: data.dashboard || [] };
+
+}
+
+async function cargarDatos() {
+
+    const data = await api("leer");
+
+    const n = normalizarDatos(data);
+
+    estado.movimientos = n.movimientos;
+
+    estado.deudas = n.deudas;
+
+    estado.dashboard = n.dashboard;
+
+}
+
+// =========================
+// DASHBOARD
+// =========================
+
+// Busca por etiqueta ("Ingresos", "Gastos", "Saldo"), no por posición de fila
+function valorDashboard(etiqueta) {
+
+    const fila = estado.dashboard.find(
+        (f) => String(f[0] ?? "").trim().toLowerCase() === etiqueta
+    );
+
+    return fila ? numero(fila[1]) : 0;
+
+}
+
+function renderDashboard() {
+
+    $("ingresos").textContent = money(valorDashboard("ingresos"));
+
+    $("gastos").textContent = money(valorDashboard("gastos"));
+
+    $("saldo").textContent = money(valorDashboard("saldo"));
+
+}
+
+// =========================
+// ACTIVIDAD RECIENTE
+// =========================
+
+function iconoDe(m) {
+
+    return ICONOS[m.categoria.toLowerCase()] || (esIngreso(m) ? "💵" : "📦");
+
+}
+
+function renderActividad() {
+
+    const recientes = [...estado.movimientos]
+        .sort((a, b) =>
+            ((b.fecha ? b.fecha.getTime() : 0) - (a.fecha ? a.fecha.getTime() : 0)) ||
+            (b.idx - a.idx)
+        )
+        .slice(0, 5);
+
+    if (!recientes.length) {
+
+        $("actividad").innerHTML = '<p class="vacio">Aún no hay movimientos registrados.</p>';
+
+        return;
+
+    }
+
+    $("actividad").innerHTML = recientes.map((m) => `
+        <div class="movimiento">
+
+            <div class="movimiento-superior">
+
+                <div class="movimiento-nombre">
+                    ${iconoDe(m)} ${esc(m.descripcion || m.categoria)}
+                </div>
+
+                <div class="movimiento-monto ${esIngreso(m) ? "ingreso" : "gasto"}">
+                    ${esIngreso(m) ? "+" : "-"} ${money(m.monto)}
+                </div>
+
+            </div>
+
+            <div class="movimiento-inferior">
+
+                <span>${esc(m.categoria)}</span>
+
+                <span>${esc(formatearFecha(m.fecha, m.fechaTexto))}</span>
+
+            </div>
+
+        </div>
+    `).join("");
+
+}
+
+// =========================
+// GRÁFICO POR MES
+// =========================
+
+function gastosDelPeriodo(clave) {
+
+    return estado.movimientos.filter((m) =>
+        esGasto(m) &&
+        (clave === "all" || (m.fecha && claveMes(m.fecha) === clave))
     );
 
 }
 
-// =========================
-// OBTENER MOVIMIENTOS
-// =========================
+const sumar = (lista) => lista.reduce((s, m) => s + m.monto, 0);
 
-async function obtenerMovimientos(){
+function actualizarSelectorMes() {
 
-    try{
+    const meses = new Set();
 
-        const json = await leerHoja(MOVIMIENTOS_URL);
+    estado.movimientos.forEach((m) => {
+        if (m.fecha) meses.add(claveMes(m.fecha));
+    });
 
-        const filas = json.table.rows;
+    const actual = claveMes(new Date());
 
-        const movimientos = [];
+    meses.add(actual);
 
-        filas.forEach(fila=>{
+    const lista = [...meses].sort().reverse();
 
-            const c = fila.c;
+    if (!estado.mes || (estado.mes !== "all" && !meses.has(estado.mes))) {
 
-            movimientos.push({
-
-                fecha: c[0]?.v ?? "",
-
-                tipo: c[1]?.v ?? "",
-
-                categoria: c[2]?.v ?? "",
-
-                descripcion: c[3]?.v ?? "",
-
-                monto: Number(c[4]?.v ?? 0)
-
-            });
-
-        });
-
-        return movimientos;
-
-    }catch(error){
-
-        console.error("Error obteniendo movimientos:", error);
-
-        return [];
+        estado.mes = gastosDelPeriodo(actual).length
+            ? actual
+            : (lista.find((c) => gastosDelPeriodo(c).length) || actual);
 
     }
+
+    $("filtroMes").innerHTML =
+        lista.map((c) => `<option value="${c}">${esc(nombreMes(c))}</option>`).join("") +
+        '<option value="all">Todo el historial</option>';
+
+    $("filtroMes").value = estado.mes;
 
 }
-// =========================
-// CARGAR DASHBOARD
-// =========================
 
-async function cargarDashboard(){
+function renderResumenPeriodo() {
 
-    try{
+    const gastos = gastosDelPeriodo(estado.mes);
 
-        const json = await leerHoja(DASHBOARD_URL);
-        const filas = json.table.rows;
+    const total = sumar(gastos);
 
-        $("ingresos").textContent =
-            "S/ " + Number(filas[0].c[1].v).toFixed(2);
+    const grupos = renderGrafico(gastos);
 
-        $("gastos").textContent =
-            "S/ " + Number(filas[1].c[1].v).toFixed(2);
+    $("totalGastado").textContent = money(total);
 
-        $("saldo").textContent =
-            "S/ " + Number(filas[2].c[1].v).toFixed(2);
+    $("subtituloGrafico").textContent = estado.mes === "all"
+        ? "Distribución de todos tus gastos"
+        : "Distribución de tus gastos en " + nombreMes(estado.mes);
 
-        animarDashboard();
+    if (!grupos.length) {
 
-        const resumen = document.querySelector(".resumen");
-        const saldo = document.querySelector(".saldo");
+        $("insightTitulo").textContent = "Sin gastos en este periodo";
 
-        if(resumen){
-            resumen.classList.add("actualizando");
-        }
+        $("insightTexto").textContent = "Registra un movimiento y aquí verás tu análisis.";
 
-        if(saldo){
-            saldo.classList.add("actualizando");
-        }
-
-        setTimeout(()=>{
-
-            if(resumen){
-                resumen.classList.remove("actualizando");
-            }
-
-            if(saldo){
-                saldo.classList.remove("actualizando");
-            }
-
-        },500);
-
-    }catch(e){
-
-        console.error("Error cargando dashboard:", e);
+        return;
 
     }
+
+    const top = grupos[0];
+
+    const pct = total > 0 ? Math.round((top.total / total) * 100) : 0;
+
+    let texto = `${money(top.total)} · ${pct}% de tus gastos`;
+
+    if (estado.mes !== "all") {
+
+        const [y, m] = estado.mes.split("-").map(Number);
+
+        const previo = claveMes(new Date(y, m - 2, 1));
+
+        const totalPrevio = sumar(gastosDelPeriodo(previo));
+
+        if (totalPrevio > 0) {
+
+            const dif = Math.round(((total - totalPrevio) / totalPrevio) * 100);
+
+            texto += dif === 0
+                ? ` · Igual que en ${nombreMes(previo)}`
+                : ` · ${Math.abs(dif)}% ${dif > 0 ? "más" : "menos"} que en ${nombreMes(previo)}`;
+
+        }
+
+    }
+
+    $("insightTitulo").textContent = `${top.nombre} es tu mayor gasto`;
+
+    $("insightTexto").textContent = texto;
 
 }
 
 // =========================
-// CARGAR ACTIVIDAD
+// DEUDAS
 // =========================
 
-async function cargarActividad(){
+function renderDeudas() {
 
-    try{
+    const pendientes = estado.deudas.filter(
+        (d) => d.estado.toLowerCase() === "pendiente"
+    );
 
-        const json = await leerHoja(MOVIMIENTOS_URL);
-        const filas = json.table.rows;
+    const visibles = estado.mostrarTodasLasDeudas ? pendientes : pendientes.slice(0, 5);
 
-        const iconos = {
+    if (pendientes.length === 0) {
 
-            Comida:"🍔",
-            Bebidas:"🥤",
-            Transporte:"🚕",
-            Sueldo:"💼",
-            Salud:"🏥",
-            Entretenimiento:"🎮",
-            Compras:"🛍️",
-            Hogar:"🏠"
+        $("contadorDeudas").textContent = "No tienes préstamos pendientes";
 
-        };
+    } else {
 
-        let html = "";
+        const etiqueta = pendientes.length === 1
+            ? "1 préstamo pendiente"
+            : `${pendientes.length} préstamos pendientes`;
 
-        const inicio = Math.max(0, filas.length - 5);
-
-        for(let i = filas.length - 1; i >= inicio; i--){
-
-            const c = filas[i].c || [];
-
-            const fechaOriginal = c[0]?.v ?? "";
-            const tipo = String(c[1]?.v ?? "").trim();
-            const categoria = String(c[2]?.v ?? "").trim();
-            const descripcion = String(c[3]?.v ?? "").trim();
-
-            const monto = Number(c[4]?.v);
-
-            const fecha = formatearFecha(fechaOriginal);
-
-            html += `
-                <div class="movimiento">
-
-                    <div class="movimiento-superior">
-
-                        <div class="movimiento-nombre">
-                            ${iconos[categoria] || "📦"} ${descripcion}
-                        </div>
-
-                        <div class="movimiento-monto ${tipo === "Ingreso" ? "ingreso" : "gasto"}">
-
-                            ${tipo === "Ingreso" ? "+" : "-"} S/ ${isNaN(monto) ? "0.00" : monto.toFixed(2)}
-
-                        </div>
-
-                    </div>
-
-                    <div class="movimiento-inferior">
-
-                        <span>${categoria}</span>
-
-                        <span>${fecha}</span>
-
-                    </div>
-
-                </div>
-            `;
-
-        }
-
-        $("actividad").innerHTML = html;
-
-    }catch(e){
-
-        console.error("Error cargando actividad:", e);
+        $("contadorDeudas").textContent = `${etiqueta} · ${money(sumar(pendientes))} en total`;
 
     }
 
-}
-let mostrarTodasLasDeudas = false;
+    $("deudas").innerHTML = visibles.length
+        ? visibles.map((d) => `
+            <div class="deuda-card">
 
-// =========================
-// CARGAR DEUDAS
-// =========================
+                <div class="deuda-persona">👤 ${esc(d.persona)}</div>
 
-async function cargarDeudas(){
+                <div class="deuda-monto">${money(d.monto)}</div>
 
-    try{
+                <div class="deuda-label">💸 Préstamo pendiente</div>
 
-        const json = await leerHoja(DEUDAS_URL);
+                <div class="deuda-fecha">📅 ${esc(formatearFecha(d.fecha, d.fechaTexto))}</div>
 
-        const filas = json.table.rows;
+                <button class="btn-deuda" type="button">✓ Pagado</button>
 
-        // Solo obtener deudas pendientes
-        const pendientes = filas.filter(fila => {
-            const estado = String(fila.c?.[3]?.v ?? "").trim();
-            return estado === "Pendiente";
-        });
+            </div>
+        `).join("")
+        : '<p class="vacio">🎉 No tienes deudas pendientes.</p>';
 
-        let html = "";
-
-        // Mostrar solo las primeras 5
-        const deudasAMostrar = mostrarTodasLasDeudas
-    ? pendientes
-    : pendientes.slice(0,5);
-
-deudasAMostrar.forEach(fila=>{
-
-            const c = fila.c || [];
-
-            const persona = c[0]?.v ?? "";
-            const fecha = c[1]?.v ?? "";
-            const monto = Number(c[2]?.v ?? 0);
-
-            html += `
-<div class="deuda-card">
-
-    <div class="deuda-persona">
-        👤 ${persona}
-    </div>
-
-    <div class="deuda-monto">
-        S/ ${monto.toFixed(2)}
-    </div>
-
-    <div class="deuda-label">
-        💸 Préstamo pendiente
-    </div>
-
-    <div class="deuda-fecha">
-        📅 ${formatearFecha(fecha)}
-    </div>
-
-    <button class="btn-deuda">
-        ✓ Pagado
-    </button>
-
-</div>
-`;
-
-        });
-
-        // Actualizar contador
-        const contador = document.getElementById("contadorDeudas");
-
-        if(contador){
-
-            if(pendientes.length === 0){
-
-                contador.textContent = "No tienes préstamos pendientes";
-
-            }else if(pendientes.length === 1){
-
-                contador.textContent = "1 préstamo pendiente";
-
-            }else{
-
-                contador.textContent = `${pendientes.length} préstamos pendientes`;
-
-            }
-
-        }
-
-        if(html === ""){
-
-            html = `
-                <div style="text-align:center;padding:30px;color:#94A3B8;">
-                    🎉 No tienes deudas pendientes.
-                </div>
-            `;
-
-        }
-
-const botonToggle = $("toggleDeudas");
-
-if (botonToggle) {
+    const toggle = $("toggleDeudas");
 
     if (pendientes.length > 5) {
 
-        botonToggle.style.display = "inline-flex";
+        toggle.style.display = "inline-flex";
 
-        botonToggle.textContent = mostrarTodasLasDeudas
+        toggle.textContent = estado.mostrarTodasLasDeudas
             ? "▲ Mostrar menos"
             : "▼ Ver todas las deudas";
 
     } else {
 
-        botonToggle.style.display = "none";
+        toggle.style.display = "none";
 
     }
 
 }
 
-$("deudas").innerHTML = html;
-
-}catch(e){
-
-    console.error("Error cargando deudas:", e);
-
-}
-
-}
 // =========================
-// ANIMACIÓN DASHBOARD
+// RENDER GENERAL
 // =========================
 
-function animarDashboard(){
+function renderTodo() {
 
-    const tarjetas = document.querySelectorAll(".tarjeta, .saldo");
+    renderDashboard();
 
-    tarjetas.forEach((tarjeta)=>{
+    renderActividad();
 
-        tarjeta.classList.add("actualizando");
+    actualizarSelectorMes();
 
-    });
+    renderResumenPeriodo();
 
-    setTimeout(()=>{
-
-        tarjetas.forEach((tarjeta)=>{
-
-            tarjeta.classList.remove("actualizando");
-
-        });
-
-    },500);
-
-}
-async function actualizarTodo(){
-
-await cargarDashboard();
-
-await cargarActividad();
-
-await cargarGrafico();
-
-await cargarDeudas();
+    renderDeudas();
 
 }
 
-async function registrarMovimiento(){
+function mostrarErrorCarga(mostrar) {
 
-    const texto=$("mensaje").value.trim();
+    $("errorCarga").hidden = !mostrar;
 
-    if(!texto){
-        alert("Escribe un movimiento.");
+}
+
+function manejarError(e) {
+
+    if (e instanceof ErrorPin) {
+
+        borrarPin();
+
+        pedirPin("PIN incorrecto. Inténtalo de nuevo.");
+
         return;
+
     }
-
-    const boton=$("registrar");
-    const textoBoton=$("textoBoton");
-
-    boton.disabled=true;
-    textoBoton.textContent="⏳ Registrando...";
-    $("respuesta").textContent="🤖 Analizando movimiento...";
-
-    try{
-
-        const r = await fetch(WEBHOOK,{
-    method:"POST",
-    headers:{
-        "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-        mensaje:texto
-    })
-});
-
-console.log(r.status);
-console.log(r.ok);
-console.log(r.type);
-
-        if(!r.ok) throw new Error("Error del webhook");
-
-        $("mensaje").value="";
-        $("respuesta").textContent="📊 Actualizando información...";
-
-        await new Promise(res=>setTimeout(res,3000));
-
-        await actualizarTodo();
-
-        textoBoton.textContent="✅ Registrado";
-
-       setTimeout(()=>{
-
-    textoBoton.textContent="➕ Registrar movimiento";
-
-    boton.disabled=false;
-
-    mostrarToast("✅ Movimiento registrado");
-
-},1200);
-
-    }catch(e){
 
     console.error(e);
 
-    boton.disabled = false;
-
-    textoBoton.textContent = "➕ Registrar movimiento";
-
-    mostrarToast("❌ No se pudo al registrar el movimiento");
+    mostrarErrorCarga(true);
 
 }
 
+async function actualizarTodo() {
+
+    try {
+
+        await cargarDatos();
+
+        mostrarErrorCarga(false);
+
+        renderTodo();
+
+        animar(".tarjeta");
+
+    } catch (e) {
+
+        manejarError(e);
+
+    }
+
 }
-$("toggleDeudas").addEventListener("click", () => {
 
-    mostrarTodasLasDeudas = !mostrarTodasLasDeudas;
+// =========================
+// REGISTRAR MOVIMIENTO
+// =========================
 
-    cargarDeudas();
+// Espera a que Make escriba la fila en el Sheet (en vez de un tiempo fijo)
+async function esperarNuevos(cantidadAntes) {
 
-});
-window.addEventListener("DOMContentLoaded",()=>{
-    $("registrar").addEventListener("click",registrarMovimiento);
-    actualizarTodo();
+    for (let i = 0; i < 10; i++) {
+
+        await dormir(1500);
+
+        await cargarDatos();
+
+        if (estado.movimientos.length > cantidadAntes) {
+
+            await dormir(1500); // por si el mensaje generó más de una fila
+
+            await cargarDatos();
+
+            return estado.movimientos.slice(cantidadAntes);
+
+        }
+
+    }
+
+    return null;
+
+}
+
+function mostrarRegistrados(nuevos) {
+
+    const caja = $("respuesta");
+
+    if (nuevos === null) {
+
+        caja.textContent = "⏳ Enviado, pero todavía no aparece en la hoja. Recarga en unos segundos.";
+
+        return;
+
+    }
+
+    const lineas = nuevos.map((m) =>
+        `${esIngreso(m) ? "📈" : "📉"} ${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)} · ` +
+        `<strong>${esIngreso(m) ? "+" : "-"} ${money(m.monto)}</strong>`
+    );
+
+    caja.innerHTML =
+        `✅ Registrado${nuevos.length > 1 ? ` (${nuevos.length} movimientos)` : ""}:<br>` +
+        lineas.join("<br>");
+
+}
+
+async function registrarMovimiento() {
+
+    const texto = $("mensaje").value.trim();
+
+    if (!texto) {
+
+        mostrarToast("✍️ Escribe un movimiento primero");
+
+        return;
+
+    }
+
+    if (texto.length > MAX_CARACTERES) {
+
+        mostrarToast(`Máximo ${MAX_CARACTERES} caracteres`);
+
+        return;
+
+    }
+
+    const boton = $("registrar");
+
+    const textoBoton = $("textoBoton");
+
+    boton.disabled = true;
+
+    textoBoton.textContent = "⏳ Registrando...";
+
+    $("respuesta").textContent = "🤖 Analizando movimiento...";
+
+    const cantidadAntes = estado.movimientos.length;
+
+    try {
+
+        await api("registrar", { mensaje: texto });
+
+        $("mensaje").value = "";
+
+        $("respuesta").textContent = "📊 Guardando en la hoja...";
+
+        const nuevos = await esperarNuevos(cantidadAntes);
+
+        estado.mes = null; // vuelve al mes más reciente con gastos
+
+        renderTodo();
+
+        animar(".tarjeta");
+
+        mostrarRegistrados(nuevos);
+
+        mostrarToast(nuevos === null ? "⏳ Enviado, aún procesando" : "✅ Movimiento registrado");
+
+    } catch (e) {
+
+        if (e instanceof ErrorPin) {
+
+            manejarError(e);
+
+        } else {
+
+            console.error(e);
+
+            $("respuesta").textContent = "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
+
+            $("mensaje").value = texto;
+
+            mostrarToast("❌ No se pudo registrar el movimiento");
+
+        }
+
+    } finally {
+
+        boton.disabled = false;
+
+        textoBoton.textContent = "➕ Registrar movimiento";
+
+    }
+
+}
+
+// =========================
+// EVENTOS
+// =========================
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    $("registrar").addEventListener("click", registrarMovimiento);
+
+    $("mensaje").addEventListener("keydown", (e) => {
+
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+
+            e.preventDefault();
+
+            registrarMovimiento();
+
+        }
+
+    });
+
+    $("filtroMes").addEventListener("change", (e) => {
+
+        estado.mes = e.target.value;
+
+        renderResumenPeriodo();
+
+    });
+
+    $("toggleDeudas").addEventListener("click", () => {
+
+        estado.mostrarTodasLasDeudas = !estado.mostrarTodasLasDeudas;
+
+        renderDeudas();
+
+    });
+
+    // "Pagado" necesita una acción en el backend; por ahora avisa
+    $("deudas").addEventListener("click", (e) => {
+
+        if (e.target.closest(".btn-deuda")) {
+
+            mostrarToast("🚧 Marcar como pagado desde la web: próximamente");
+
+        }
+
+    });
+
+    document.querySelectorAll("[data-proximamente]").forEach((a) => {
+
+        a.addEventListener("click", (e) => {
+
+            e.preventDefault();
+
+            mostrarToast("🚧 Próximamente");
+
+        });
+
+    });
+
+    $("bloquear").addEventListener("click", () => {
+
+        borrarPin();
+
+        location.reload();
+
+    });
+
+    $("reintentar").addEventListener("click", actualizarTodo);
+
+    $("pinForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const pin = $("pinInput").value.trim();
+
+        if (!pin) return;
+
+        const boton = $("pinBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "Verificando...";
+
+        try {
+
+            const data = await api("leer", {}, pin);
+
+            guardarPin(pin);
+
+            const n = normalizarDatos(data);
+
+            estado.movimientos = n.movimientos;
+
+            estado.deudas = n.deudas;
+
+            estado.dashboard = n.dashboard;
+
+            $("pinOverlay").hidden = true;
+
+            mostrarErrorCarga(false);
+
+            renderTodo();
+
+        } catch (err) {
+
+            $("pinError").textContent = err instanceof ErrorPin
+                ? "PIN incorrecto."
+                : "No se pudo conectar. Revisa tu internet.";
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Entrar";
+
+        }
+
+    });
+
+    if (leerPin()) {
+
+        actualizarTodo();
+
+    } else {
+
+        pedirPin();
+
+    }
+
 });
