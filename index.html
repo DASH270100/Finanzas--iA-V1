@@ -5,13 +5,16 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#09111F">
 
     <title>Finanzas IA</title>
+
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💰%3C/text%3E%3C/svg%3E">
 
     <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- CSS -->
@@ -20,6 +23,37 @@
 </head>
 
 <body>
+
+<!-- ===========================
+        PIN
+=========================== -->
+
+<div id="pinOverlay" class="pin-overlay" hidden>
+
+    <form id="pinForm" class="card pin-box">
+
+        <div class="logo-icon">🔒</div>
+
+        <h2>Finanzas IA</h2>
+
+        <p>Ingresa tu PIN para ver tus datos.</p>
+
+        <input
+            id="pinInput"
+            name="pin"
+            type="password"
+            autocomplete="current-password"
+            placeholder="PIN"
+            aria-label="PIN"
+            required>
+
+        <div id="pinError" class="pin-error" role="alert"></div>
+
+        <button id="pinBoton" type="submit">Entrar</button>
+
+    </form>
+
+</div>
 
 <div class="layout">
 
@@ -31,11 +65,7 @@
 
         <div class="logo">
 
-            <div class="logo-icon">
-
-                💰
-
-            </div>
+            <div class="logo-icon">💰</div>
 
             <div>
 
@@ -47,30 +77,22 @@
 
         </div>
 
-        <nav>
+        <nav aria-label="Principal">
 
-            <a class="active">
-
-                📊 Dashboard
-
+            <a href="#inicio" class="active" aria-current="page">
+                <span class="nav-icon">📊</span><span class="nav-text">Dashboard</span>
             </a>
 
-            <a>
-
-                📈 Estadísticas
-
+            <a href="#" data-proximamente aria-disabled="true" title="Próximamente">
+                <span class="nav-icon">📈</span><span class="nav-text">Estadísticas</span>
             </a>
 
-            <a>
-
-                🤖 Asistente IA
-
+            <a href="#" data-proximamente aria-disabled="true" title="Próximamente">
+                <span class="nav-icon">🤖</span><span class="nav-text">Asistente IA</span>
             </a>
 
-            <a>
-
-                ⚙ Configuración
-
+            <a href="#" data-proximamente aria-disabled="true" title="Próximamente">
+                <span class="nav-icon">⚙</span><span class="nav-text">Configuración</span>
             </a>
 
         </nav>
@@ -85,31 +107,31 @@
 
         <!-- HEADER -->
 
-        <header class="header">
+        <header class="header" id="inicio">
 
             <div>
 
-                <span class="saludo">
+                <span class="saludo">Bienvenido 👋</span>
 
-                    Bienvenido 👋
+                <h1>Hola DASH</h1>
 
-                </span>
-
-                <h1>
-
-                    Hola DASH
-
-                </h1>
-
-                <p>
-
-                    Gestiona tus finanzas con Inteligencia Artificial.
-
-                </p>
+                <p>Gestiona tus finanzas con Inteligencia Artificial.</p>
 
             </div>
 
+            <button id="bloquear" class="btn-bloquear" type="button">🔒 Bloquear</button>
+
         </header>
+
+        <!-- ERROR DE CARGA -->
+
+        <div id="errorCarga" class="aviso-error" role="alert" hidden>
+
+            <span>⚠️ No se pudieron cargar los datos. Revisa tu conexión e inténtalo otra vez.</span>
+
+            <button id="reintentar" type="button">Reintentar</button>
+
+        </div>
 
         <!-- REGISTRAR -->
 
@@ -119,85 +141,50 @@
 
                 <div>
 
-                    <h2>
+                    <h2>Registrar movimiento</h2>
 
-                        Registrar movimiento
-
-                    </h2>
-
-                    <p>
-
-                        Describe el movimiento de manera natural.
-
-                    </p>
+                    <p>Describe el movimiento de manera natural. Ctrl + Enter para enviar.</p>
 
                 </div>
 
-                <span class="pill">
-
-                    IA
-
-                </span>
+                <span class="pill">IA</span>
 
             </div>
 
             <textarea
-
                 id="mensaje"
+                maxlength="500"
+                placeholder="Ejemplo: Compré un Monster por 8 soles y almorcé por 18."></textarea>
 
-                placeholder="Ejemplo: Compré un Monster por 8 soles y almorcé por 18."
+            <button id="registrar" type="button">
 
-            ></textarea>
-
-            <button id="registrar">
-
-                <span id="textoBoton">
-
-                    ➕ Registrar movimiento
-
-                </span>
+                <span id="textoBoton">➕ Registrar movimiento</span>
 
             </button>
 
         </section>
 
-        <!-- ===========================
-                RESPUESTA IA
-        ============================ -->
+        <!-- RESPUESTA IA -->
 
-        <section id="respuesta" class="card respuesta">
+        <section id="respuesta" class="card respuesta" aria-live="polite">
 
             🤖 Esperando movimiento...
 
         </section>
 
-        <!-- ===========================
-                DASHBOARD
-        ============================ -->
+        <!-- DASHBOARD -->
 
         <section class="dashboard">
 
             <div class="card tarjeta">
 
-                <div class="card-icon">
-
-                    📈
-
-                </div>
+                <div class="card-icon">📈</div>
 
                 <div class="card-info">
 
-                    <span class="card-label">
+                    <span class="card-label">Ingresos</span>
 
-                        Ingresos
-
-                    </span>
-
-                    <h2 id="ingresos">
-
-                        S/ 0.00
-
-                    </h2>
+                    <h2 id="ingresos">S/ 0.00</h2>
 
                 </div>
 
@@ -205,25 +192,13 @@
 
             <div class="card tarjeta">
 
-                <div class="card-icon">
-
-                    📉
-
-                </div>
+                <div class="card-icon">📉</div>
 
                 <div class="card-info">
 
-                    <span class="card-label">
+                    <span class="card-label">Gastos</span>
 
-                        Gastos
-
-                    </span>
-
-                    <h2 id="gastos">
-
-                        S/ 0.00
-
-                    </h2>
+                    <h2 id="gastos">S/ 0.00</h2>
 
                 </div>
 
@@ -231,34 +206,21 @@
 
             <div class="card tarjeta saldo">
 
-                <div class="card-icon">
-
-                    💰
-
-                </div>
+                <div class="card-icon">💰</div>
 
                 <div class="card-info">
 
-                    <span class="card-label">
+                    <span class="card-label">Saldo actual</span>
 
-                        Saldo actual
-
-                    </span>
-
-                    <h2 id="saldo">
-
-                        S/ 0.00
-
-                    </h2>
+                    <h2 id="saldo">S/ 0.00</h2>
 
                 </div>
 
             </div>
 
         </section>
-                <!-- ===========================
-                GRID PRINCIPAL
-        ============================ -->
+
+        <!-- GRID PRINCIPAL -->
 
         <section class="grid-principal">
 
@@ -272,16 +234,11 @@
 
                         <h2>Gastos por categoría</h2>
 
-                        <p>Distribución de tus gastos este mes</p>
+                        <p id="subtituloGrafico">Distribución de tus gastos</p>
 
                     </div>
 
-                    <button class="filtro-mes">
-
-                        Este mes
-                        <span>▼</span>
-
-                    </button>
+                    <select id="filtroMes" class="filtro-mes" aria-label="Periodo del gráfico"></select>
 
                 </div>
 
@@ -295,41 +252,21 @@
 
                     <div class="total-card">
 
-                        <span class="total-label">
+                        <span class="total-label">TOTAL GASTADO</span>
 
-                            TOTAL GASTADO
-
-                        </span>
-
-                        <strong id="totalGastado">
-
-                            S/ 0.00
-
-                        </strong>
+                        <strong id="totalGastado">S/ 0.00</strong>
 
                     </div>
 
                     <div class="insight">
 
-                        <div class="insight-icon">
-
-                            💡
-
-                        </div>
+                        <div class="insight-icon">💡</div>
 
                         <div>
 
-                            <strong id="insightTitulo">
+                            <strong id="insightTitulo">Analizando gastos...</strong>
 
-                                Analizando gastos...
-
-                            </strong>
-
-                            <p id="insightTexto">
-
-                                Esperando información...
-
-                            </p>
+                            <p id="insightTexto">Esperando información...</p>
 
                         </div>
 
@@ -338,7 +275,8 @@
                 </div>
 
             </section>
-                        <!-- ACTIVIDAD -->
+
+            <!-- ACTIVIDAD -->
 
             <section class="card actividad-card">
 
@@ -346,23 +284,17 @@
 
                     <div>
 
-                        <h2>
+                        <h2>📋 Actividad reciente</h2>
 
-                            📋 Actividad reciente
-
-                        </h2>
-
-                        <p>
-
-                            Últimos movimientos registrados.
-
-                        </p>
+                        <p>Últimos movimientos registrados.</p>
 
                     </div>
 
                 </div>
 
                 <div id="actividad">
+
+                    <p class="vacio">Cargando…</p>
 
                 </div>
 
@@ -371,49 +303,44 @@
         </section>
 
         <!-- DEUDAS -->
-<section class="card deudas-card">
 
-    <div class="card-title">
+        <section class="card deudas-card">
 
-        <div>
+            <div class="card-title">
 
-            <h2>
+                <div>
 
-                💸 Deudas pendientes
+                    <h2>💸 Deudas pendientes</h2>
 
-            </h2>
+                    <p id="contadorDeudas">Cargando...</p>
 
-            <p id="contadorDeudas">
-                Cargando...
-            </p>
+                </div>
 
-        </div>
+            </div>
 
-    </div>
+            <div id="deudas">
 
-    <div id="deudas">
+                <p class="vacio">Cargando…</p>
 
-        Próximamente...
+            </div>
 
-    </div>
+            <div class="deudas-footer">
 
-    <div class="deudas-footer">
+                <button
+                    id="toggleDeudas"
+                    class="btn-toggle-deudas"
+                    type="button"
+                    style="display:none;">
 
-        <button
-            id="toggleDeudas"
-            class="btn-toggle-deudas"
-            style="display:none;"
-            ▼ Ver todas las deudas
+                    ▼ Ver todas las deudas
 
-        </button>
+                </button>
 
-    </div>
+            </div>
 
-</section>
+        </section>
 
-        <!-- ===========================
-                ASISTENTE IA
-        ============================ -->
+        <!-- ASISTENTE IA -->
 
         <section class="card ia-card">
 
@@ -421,22 +348,15 @@
 
                 <div>
 
-                    <h2>
+                    <h2>🤖 Asistente Financiero</h2>
 
-                        🤖 Asistente Financiero
-
-                    </h2>
-
-                    <p>
-
-                        Tu asesor inteligente de finanzas.
-
-                    </p>
+                    <p>Tu asesor inteligente de finanzas.</p>
 
                 </div>
 
             </div>
-                        <div id="ia">
+
+            <div id="ia">
 
                 Próximamente...
 
@@ -448,25 +368,17 @@
 
 </div>
 
-<!-- ===========================
-        TOAST
-=========================== -->
+<!-- TOAST -->
 
-<div
-    id="toast"
-    class="toast">
+<div id="toast" class="toast" role="status">
 
-    <span id="toastTexto">
-
-    </span>
+    <span id="toastTexto"></span>
 
 </div>
 
-<!-- ===========================
-        LIBRERÍAS
-=========================== -->
+<!-- LIBRERÍAS (ApexCharts fijado a la versión 3) -->
 
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
 <script src="graficos.js"></script>
 
