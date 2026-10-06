@@ -627,6 +627,15 @@ function mostrarRegistrados(nuevos) {
 
     }
 
+    // Un solo mensaje no genera decenas de filas: si pasa, no listamos todo
+    if (nuevos.length > 5) {
+
+        caja.textContent = "✅ Registrado. Revisa tu actividad reciente aquí abajo.";
+
+        return;
+
+    }
+
     const lineas = nuevos.map((m) =>
         `${esIngreso(m) ? "📈" : "📉"} ${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)} · ` +
         `<strong>${esIngreso(m) ? "+" : "-"} ${money(m.monto)}</strong>`
@@ -668,9 +677,12 @@ async function registrarMovimiento() {
 
     $("respuesta").textContent = "🤖 Analizando movimiento...";
 
-    const cantidadAntes = estado.movimientos.length;
-
     try {
+
+        // Punto de partida fresco: así sabemos exactamente qué filas son nuevas
+        await cargarDatos();
+
+        const cantidadAntes = estado.movimientos.length;
 
         await api("registrar", { mensaje: texto });
 
