@@ -1,27 +1,64 @@
+// Finanzas IA - Gráficos v3.0
+// Depende de script.js: usa money() y recibe los gastos ya filtrados por periodo.
+
 let grafico = null;
 
-async function cargarGrafico() {
+const COLORES_GRAFICO = [
+    "#8B5CF6", "#3B82F6", "#F59E0B", "#10B981", "#EF4444",
+    "#06B6D4", "#EC4899", "#84CC16", "#F97316", "#6366F1"
+];
 
-    const movimientos = await obtenerMovimientos();
+// "comida", "Comida " y "COMIDA" cuentan como la misma categoría
+function nombreCategoria(categoria) {
 
-    const gastos = movimientos.filter(m => m.tipo === "Gasto");
+    const t = String(categoria || "").trim();
 
-    const categorias = {};
+    if (!t) return "Sin categoría";
 
-    gastos.forEach(m => {
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 
-        categorias[m.categoria] =
-            (categorias[m.categoria] || 0) + Number(m.monto);
+}
+
+// Devuelve [{ nombre, total }] ordenado de mayor a menor
+function agruparGastos(gastos) {
+
+    const mapa = new Map();
+
+    gastos.forEach((m) => {
+
+        const nombre = nombreCategoria(m.categoria);
+
+        mapa.set(nombre, (mapa.get(nombre) || 0) + m.monto);
 
     });
 
-    const labels = Object.keys(categorias);
+    return [...mapa.entries()]
+        .map(([nombre, total]) => ({ nombre, total }))
+        .sort((a, b) => b.total - a.total);
 
-    const series = Object.values(categorias);
+}
+
+function renderGrafico(gastos) {
+
+    const grupos = agruparGastos(gastos);
+
+    const contenedor = document.querySelector("#graficoCategorias");
 
     if (grafico) {
 
         grafico.destroy();
+
+        grafico = null;
+
+    }
+
+    contenedor.innerHTML = "";
+
+    if (typeof ApexCharts === "undefined") {
+
+        contenedor.innerHTML = '<p class="vacio">No se pudo cargar el gráfico.</p>';
+
+        return grupos;
 
     }
 
@@ -31,45 +68,47 @@ async function cargarGrafico() {
 
             type: "donut",
 
-            height: 500,
+            height: "100%",
 
-            toolbar: {
-                show: false
-            },
+            fontFamily: "Montserrat, sans-serif",
+
+            toolbar: { show: false },
 
             animations: {
                 enabled: true,
                 easing: "easeinout",
-                speed: 900
+                speed: 700
             }
 
         },
 
-        series: series,
+        series: grupos.map((g) => g.total),
 
-        labels: labels,
+        labels: grupos.map((g) => g.nombre),
 
-        colors: [
-
-            "#8B5CF6",
-            "#3B82F6",
-            "#F59E0B",
-            "#10B981",
-            "#EF4444",
-            "#06B6D4",
-            "#EC4899"
-
-        ],
+        colors: COLORES_GRAFICO,
 
         legend: {
-            show: false
+
+            show: true,
+
+            position: "bottom",
+
+            fontSize: "13px",
+
+            labels: { colors: "#CBD5E1" },
+
+            markers: { width: 10, height: 10, radius: 10 },
+
+            itemMargin: { horizontal: 10, vertical: 4 }
+
         },
 
         stroke: {
 
             width: 6,
 
-            colors: ["#1B2333"]
+            colors: ["#121B2C"]
 
         },
 
@@ -81,7 +120,30 @@ async function cargarGrafico() {
 
                 donut: {
 
-                    size: "68%"
+                    size: "68%",
+
+                    labels: {
+
+                        show: true,
+
+                        name: { color: "#94A3B8", fontSize: "14px" },
+
+                        value: {
+                            color: "#F8FAFC",
+                            fontSize: "24px",
+                            fontWeight: 800,
+                            formatter: (val) => money(val)
+                        },
+
+                        total: {
+                            show: true,
+                            label: "Total",
+                            color: "#94A3B8",
+                            formatter: (w) =>
+                                money(w.globals.seriesTotals.reduce((a, b) => a + b, 0))
+                        }
+
+                    }
 
                 }
 
@@ -89,42 +151,30 @@ async function cargarGrafico() {
 
         },
 
-        dataLabels: {
-            enabled: false
-        },
+        dataLabels: { enabled: false },
 
         tooltip: {
 
             theme: "dark",
 
-            y: {
-
-                formatter: function (val) {
-
-                    return "S/ " + val.toFixed(2);
-
-                }
-
-            }
+            y: { formatter: (val) => money(val) }
 
         },
 
         noData: {
 
-            text: "Sin datos"
+            text: "Sin gastos en este periodo",
+
+            style: { color: "#94A3B8", fontSize: "15px" }
 
         }
 
     };
 
-    grafico = new ApexCharts(
-
-        document.querySelector("#graficoCategorias"),
-
-        opciones
-
-    );
+    grafico = new ApexCharts(contenedor, opciones);
 
     grafico.render();
+
+    return grupos;
 
 }
