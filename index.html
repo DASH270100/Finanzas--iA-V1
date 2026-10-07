@@ -87,6 +87,10 @@
                 <span class="nav-icon">📈</span><span class="nav-text">Estadísticas</span>
             </a>
 
+            <a href="#fijos" data-vista="fijos">
+                <span class="nav-icon">🗓️</span><span class="nav-text">Planificar</span>
+            </a>
+
             <a href="#asistente" data-vista="asistente">
                 <span class="nav-icon">🤖</span><span class="nav-text">Asistente IA</span>
             </a>
@@ -134,6 +138,10 @@
         </div>
 
         <div id="vista-dashboard" class="vista">
+
+        <!-- AVISO GASTOS FIJOS -->
+
+        <button id="avisoFijos" class="aviso-fijos" type="button" hidden></button>
 
         <!-- REGISTRAR -->
 
@@ -419,6 +427,106 @@
             <p class="presupuesto-nota">Si la categoría ya tiene presupuesto, se actualiza.</p>
 
             <datalist id="categoriasPresupuesto"></datalist>
+
+        </section>
+
+        </div>
+
+        <!-- VISTA GASTOS FIJOS Y METAS (PLANIFICAR) -->
+
+        <div id="vista-fijos" class="vista vista-stack" hidden>
+
+        <section class="card fijos-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🔁 Gastos fijos</h2>
+
+                    <p id="subtituloFijos">Lo que pagas cada mes, con su fecha de cobro.</p>
+
+                </div>
+
+            </div>
+
+            <div id="fijos">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="fijoForm" class="presupuesto-form fijo-form">
+
+                <label>Nombre
+                    <input id="fijoNombre" type="text" maxlength="60"
+                        placeholder="Ej: Alquiler, Spotify" autocomplete="off" required>
+                </label>
+
+                <label>Categoría
+                    <input id="fijoCategoria" type="text" maxlength="40"
+                        list="categoriasPresupuesto" placeholder="Ej: Hogar" autocomplete="off">
+                </label>
+
+                <label>Monto (S/)
+                    <input id="fijoMonto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="1150" required>
+                </label>
+
+                <label>Día de cobro
+                    <input id="fijoDia" type="number" step="1" min="1" max="31"
+                        inputmode="numeric" placeholder="5" required>
+                </label>
+
+                <button id="fijoBoton" type="submit">Guardar fijo</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Si el nombre ya existe, se actualiza. Si el mes tiene menos días (por ejemplo, día 31 en febrero), se cuenta el último día del mes.</p>
+
+        </section>
+
+        <section class="card metas-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🏁 Metas de ahorro</h2>
+
+                    <p id="subtituloMetas">Aparta plata para lo que quieres lograr.</p>
+
+                </div>
+
+            </div>
+
+            <div id="metas">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="metaForm" class="presupuesto-form meta-form">
+
+                <label>Nombre de la meta
+                    <input id="metaNombre" type="text" maxlength="60"
+                        placeholder="Ej: Mini depa, Viaje" autocomplete="off" required>
+                </label>
+
+                <label>Objetivo (S/)
+                    <input id="metaObjetivo" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="3450" required>
+                </label>
+
+                <label>Fecha límite (opcional)
+                    <input id="metaFecha" type="date">
+                </label>
+
+                <button id="metaBoton" type="submit">Guardar meta</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Lo que apartas aquí es solo un registro: no cambia tu saldo ni crea gastos. Si la meta ya existe, se actualiza sin borrar lo ahorrado.</p>
 
         </section>
 
