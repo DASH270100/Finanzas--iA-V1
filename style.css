@@ -2381,3 +2381,23 @@ html{ scroll-behavior:smooth; }
 }
 
 .grafico-meses{ min-height:280px; }
+
+
+/*==================================================
+        v3.5 - PESTAÑAS
+====================================================*/
+
+.vista[hidden]{ display:none; }
+
+.vista-stack{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+}
+
+.vista-stack > .card{ margin:0; }
+
+.estadisticas-card .card-title{
+    align-items:flex-start;
+    gap:16px;
+}
