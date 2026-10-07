@@ -2503,3 +2503,162 @@ html{ scroll-behavior:smooth; }
 @media(max-width:480px){
     .burbuja{ max-width:92%; }
 }
+
+
+/*==================================================
+        v3.8 - GASTOS FIJOS
+====================================================*/
+
+#fijos{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:18px;
+}
+
+.fijo-item{
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-left:4px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.fijo-item.estado-hecho{ border-left-color:#10B981; }
+.fijo-item.estado-futuro{ border-left-color:var(--primary); }
+.fijo-item.estado-pronto{ border-left-color:#F59E0B; }
+.fijo-item.estado-hoy{ border-left-color:#F59E0B; }
+.fijo-item.estado-vencido{ border-left-color:#EF4444; }
+
+.fijo-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.fijo-nombre{ font-weight:700; color:var(--text); overflow-wrap:anywhere; }
+
+.fijo-monto{ font-weight:800; color:var(--text); }
+
+.fijo-detalle{ font-size:13px; color:var(--text-muted); }
+
+.fijo-estado{ font-size:13px; font-weight:600; color:var(--text-soft); }
+
+.estado-hecho .fijo-estado{ color:#34D399; }
+.estado-pronto .fijo-estado,
+.estado-hoy .fijo-estado{ color:#FBBF24; }
+.estado-vencido .fijo-estado{ color:#FCA5A5; }
+
+.fijo-acciones{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:8px;
+}
+
+.fijo-acciones .mov-btn[disabled]{ opacity:.6; cursor:default; }
+
+.fijo-form{ grid-template-columns:1.4fr 1fr 130px 110px auto; }
+
+@media(max-width:900px){
+    .fijo-form{ grid-template-columns:1fr 1fr; }
+    .fijo-form button{ grid-column:1 / -1; }
+}
+
+@media(max-width:700px){
+    .fijo-form{ grid-template-columns:1fr; }
+}
+
+.aviso-fijos{
+    display:block;
+    width:100%;
+    margin:0 0 20px;
+    padding:14px 18px;
+    text-align:left;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    color:#FDE68A;
+    background:rgba(245,158,11,.10);
+    border:1px solid rgba(245,158,11,.35);
+    border-radius:var(--radius-sm);
+    box-shadow:none;
+    cursor:pointer;
+}
+
+.aviso-fijos[hidden]{ display:none; }
+
+.aviso-fijos:hover{ background:rgba(245,158,11,.16); }
+
+
+/*==================================================
+        v3.9 - METAS DE AHORRO
+====================================================*/
+
+.metas-card{ margin:0; }
+
+#metas{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:18px;
+}
+
+.meta-item{
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.meta-progreso{ background:var(--primary); }
+
+.meta-estado{ font-size:13px; font-weight:600; color:var(--text-soft); }
+.meta-estado.nivel-ok{ color:#34D399; }
+.meta-estado.nivel-exceso{ color:#FCA5A5; }
+
+.meta-aporte{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+}
+
+.meta-monto{
+    flex:1;
+    min-width:120px;
+    padding:10px 12px;
+    font-family:inherit;
+    font-size:14px;
+    color:var(--text);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    outline:none;
+}
+
+.meta-monto:focus{
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(124,92,252,.15);
+}
+
+.meta-form{ grid-template-columns:1.4fr 1fr 1fr auto; }
+
+.meta-form input[type="date"]{ color-scheme:dark; }
+
+@media(max-width:900px){
+    .meta-form{ grid-template-columns:1fr 1fr; }
+    .meta-form button{ grid-column:1 / -1; }
+}
+
+@media(max-width:700px){
+    .meta-form{ grid-template-columns:1fr; }
+}
