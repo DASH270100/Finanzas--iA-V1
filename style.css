@@ -2323,3 +2323,61 @@ select.filtro-mes{
     }
 
 }
+
+
+/*==================================================
+        v3.4 - ESTADÍSTICAS
+====================================================*/
+
+html{ scroll-behavior:smooth; }
+
+.estadisticas-card{ scroll-margin-top:16px; }
+
+.stat-tiles{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+    gap:14px;
+    margin-top:18px;
+}
+
+.stat-tile{
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:16px;
+    min-width:0;
+}
+
+.stat-icono{ font-size:22px; margin-bottom:8px; }
+
+.stat-etiqueta{
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+}
+
+.stat-valor{
+    margin-top:4px;
+    font-size:22px;
+    font-weight:800;
+    color:var(--text);
+    overflow-wrap:anywhere;
+}
+
+.stat-nota{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--text-muted);
+    overflow-wrap:anywhere;
+}
+
+.stat-subtitulo{
+    margin:26px 0 8px;
+    font-size:15px;
+    font-weight:700;
+    color:var(--text-soft);
+}
+
+.grafico-meses{ min-height:280px; }
