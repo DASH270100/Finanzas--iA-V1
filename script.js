@@ -22,7 +22,8 @@ const estado = {
     deudas: [],
     dashboard: [],
     mes: null,
-    mostrarTodasLasDeudas: false
+    mostrarTodasLasDeudas: false,
+    editando: null
 };
 
 const ICONOS = {
@@ -270,9 +271,11 @@ function sinEncabezado(filas, primeraCelda) {
 
 function normalizarDatos(data) {
 
-    const movimientos = sinEncabezado(data.movimientos || [], "fecha")
+    // "fila" es el número de fila en la hoja Movimientos (la 1 es el encabezado)
+    const movimientos = (data.movimientos || [])
         .map((f, idx) => ({
             idx,
+            fila: idx + 1,
             fechaTexto: String(f[0] ?? "").replace(/"/g, "").trim(),
             fecha: parseFecha(f[0]),
             tipo: String(f[1] ?? "").trim(),
@@ -280,7 +283,10 @@ function normalizarDatos(data) {
             descripcion: String(f[3] ?? "").trim(),
             monto: numero(f[4])
         }))
-        .filter((m) => m.fechaTexto !== "" || m.descripcion !== "");
+        .filter((m) =>
+            (m.fechaTexto !== "" || m.descripcion !== "") &&
+            m.fechaTexto.toLowerCase() !== "fecha"
+        );
 
     // "fila" es el número de fila en la hoja Deudas (la 1 es el encabezado)
     const deudas = (data.deudas || [])
@@ -391,8 +397,17 @@ function renderActividad() {
 
     }
 
-    $("actividad").innerHTML = recientes.map((m) => `
-        <div class="movimiento">
+    const categorias = [...new Set(
+        estado.movimientos.map((m) => m.categoria).filter(Boolean)
+    )].sort();
+
+    const opcionesCategorias = categorias
+        .map((c) => `<option value="${esc(c)}"></option>`)
+        .join("");
+
+    $("actividad").innerHTML = recientes.map((m) =>
+        estado.editando === m.fila ? formularioEdicion(m) : `
+        <div class="movimiento" data-fila="${m.fila}">
 
             <div class="movimiento-superior">
 
@@ -414,8 +429,62 @@ function renderActividad() {
 
             </div>
 
+            <div class="movimiento-acciones">
+
+                <button class="mov-btn" type="button" data-accion="editar"
+                    aria-label="Editar movimiento">✏️ Editar</button>
+
+                <button class="mov-btn mov-btn-borrar" type="button" data-accion="borrar"
+                    aria-label="Borrar movimiento">🗑️ Borrar</button>
+
+            </div>
+
         </div>
-    `).join("");
+    `).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>`;
+
+}
+
+function formularioEdicion(m) {
+
+    return `
+        <div class="movimiento mov-form" data-fila="${m.fila}">
+
+            <label>Descripción
+                <input data-campo="descripcion" type="text" maxlength="100"
+                    value="${esc(m.descripcion)}">
+            </label>
+
+            <div class="mov-form-fila">
+
+                <label>Categoría
+                    <input data-campo="categoria" type="text" maxlength="40"
+                        list="listaCategorias" value="${esc(m.categoria)}">
+                </label>
+
+                <label>Monto (S/)
+                    <input data-campo="monto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" value="${m.monto}">
+                </label>
+
+            </div>
+
+            <label>Tipo
+                <select data-campo="tipo">
+                    <option value="Gasto" ${esGasto(m) ? "selected" : ""}>Gasto</option>
+                    <option value="Ingreso" ${esIngreso(m) ? "selected" : ""}>Ingreso</option>
+                </select>
+            </label>
+
+            <div class="mov-form-acciones">
+
+                <button class="mov-btn" type="button" data-accion="cancelar">Cancelar</button>
+
+                <button class="mov-btn mov-btn-primario" type="button" data-accion="guardar">Guardar</button>
+
+            </div>
+
+        </div>
+    `;
 
 }
 
@@ -794,6 +863,205 @@ async function registrarMovimiento() {
 }
 
 // =========================
+// EDITAR Y BORRAR MOVIMIENTOS
+// =========================
+
+const origenDe = (m) => ({
+    tipo: m.tipo,
+    categoria: m.categoria,
+    descripcion: m.descripcion,
+    monto: m.monto
+});
+
+function buscarMovimiento(fila) {
+
+    const m = estado.movimientos.find((x) => x.fila === fila);
+
+    if (!m) throw new Error("No se encontró el movimiento. Recarga la página.");
+
+    return m;
+
+}
+
+async function guardarMovimiento(fila, valores) {
+
+    const m = buscarMovimiento(fila);
+
+    await api("editar", { fila, orig: origenDe(m), nuevo: valores });
+
+    estado.editando = null;
+
+    await cargarDatos();
+
+    renderTodo();
+
+    animar(".tarjeta");
+
+}
+
+async function eliminarMovimiento(fila) {
+
+    const m = buscarMovimiento(fila);
+
+    await api("borrar", { fila, orig: origenDe(m) });
+
+    estado.editando = null;
+
+    await cargarDatos();
+
+    renderTodo();
+
+    animar(".tarjeta");
+
+}
+
+function errorDeAccion(e) {
+
+    if (e instanceof ErrorPin) {
+
+        manejarError(e);
+
+        return;
+
+    }
+
+    console.error(e);
+
+    mostrarToast("❌ " + (e.message || "No se pudo completar la acción"));
+
+    actualizarTodo();
+
+}
+
+async function accionActividad(boton) {
+
+    const accion = boton.dataset.accion;
+
+    const tarjeta = boton.closest("[data-fila]");
+
+    if (!tarjeta) return;
+
+    const fila = Number(tarjeta.dataset.fila);
+
+    if (accion === "editar") {
+
+        estado.editando = fila;
+
+        renderActividad();
+
+        const primero = $("actividad").querySelector('[data-campo="descripcion"]');
+
+        if (primero) primero.focus();
+
+        return;
+
+    }
+
+    if (accion === "cancelar") {
+
+        estado.editando = null;
+
+        renderActividad();
+
+        return;
+
+    }
+
+    if (boton.disabled) return;
+
+    if (accion === "guardar") {
+
+        const campo = (n) => tarjeta.querySelector(`[data-campo="${n}"]`).value;
+
+        const valores = {
+            tipo: campo("tipo"),
+            categoria: campo("categoria").trim() || "Otros",
+            descripcion: campo("descripcion").trim(),
+            monto: Number(campo("monto"))
+        };
+
+        if (!valores.descripcion) {
+
+            mostrarToast("✍️ Escribe una descripción");
+
+            return;
+
+        }
+
+        if (!(valores.monto > 0)) {
+
+            mostrarToast("💲 El monto debe ser mayor que 0");
+
+            return;
+
+        }
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarMovimiento(fila, valores);
+
+            mostrarToast("✅ Movimiento actualizado");
+
+        } catch (e) {
+
+            errorDeAccion(e);
+
+        }
+
+        return;
+
+    }
+
+    if (accion === "borrar") {
+
+        // Primer toque: pide confirmar. Si no confirma en 4 segundos, vuelve a la normalidad.
+        if (!boton.dataset.confirmando) {
+
+            boton.dataset.confirmando = "1";
+
+            boton.textContent = "¿Seguro? Toca otra vez";
+
+            setTimeout(() => {
+
+                if (boton.isConnected && boton.dataset.confirmando) {
+
+                    delete boton.dataset.confirmando;
+
+                    boton.textContent = "🗑️ Borrar";
+
+                }
+
+            }, 4000);
+
+            return;
+
+        }
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Borrando...";
+
+        try {
+
+            await eliminarMovimiento(fila);
+
+            mostrarToast("🗑️ Movimiento borrado");
+
+        } catch (e) {
+
+            errorDeAccion(e);
+
+        }
+
+    }
+
+}
+
+// =========================
 // PAGAR UNA DEUDA
 // =========================
 
@@ -912,6 +1180,15 @@ window.addEventListener("DOMContentLoaded", () => {
         const boton = e.target.closest(".btn-deuda");
 
         if (boton) pagarDeuda(boton);
+
+    });
+
+    // Editar y borrar movimientos de la actividad reciente
+    $("actividad").addEventListener("click", (e) => {
+
+        const boton = e.target.closest("[data-accion]");
+
+        if (boton) accionActividad(boton);
 
     });
 
