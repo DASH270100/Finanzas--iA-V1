@@ -87,7 +87,7 @@
                 <span class="nav-icon">📈</span><span class="nav-text">Estadísticas</span>
             </a>
 
-            <a href="#" data-proximamente aria-disabled="true" title="Próximamente">
+            <a href="#asistente" data-vista="asistente">
                 <span class="nav-icon">🤖</span><span class="nav-text">Asistente IA</span>
             </a>
 
@@ -342,30 +342,6 @@
 
         </section>
 
-        <!-- ASISTENTE IA -->
-
-        <section class="card ia-card">
-
-            <div class="card-title">
-
-                <div>
-
-                    <h2>🤖 Asistente Financiero</h2>
-
-                    <p>Tu asesor inteligente de finanzas.</p>
-
-                </div>
-
-            </div>
-
-            <div id="ia">
-
-                Próximamente...
-
-            </div>
-
-        </section>
-
         </div>
 
         <!-- VISTA ESTADÍSTICAS Y PRESUPUESTO -->
@@ -443,6 +419,55 @@
             <p class="presupuesto-nota">Si la categoría ya tiene presupuesto, se actualiza.</p>
 
             <datalist id="categoriasPresupuesto"></datalist>
+
+        </section>
+
+        </div>
+
+        <!-- VISTA ASISTENTE IA -->
+
+        <div id="vista-asistente" class="vista" hidden>
+
+        <section class="card asistente-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🤖 Asistente financiero</h2>
+
+                    <p>Pregúntame sobre tus gastos, ingresos, deudas y presupuestos.</p>
+
+                </div>
+
+                <button id="chatLimpiar" class="mov-btn" type="button">Limpiar chat</button>
+
+            </div>
+
+            <div id="chat" class="chat" aria-live="polite"></div>
+
+            <div id="sugerencias" class="sugerencias">
+
+                <button type="button" class="chip" data-pregunta="¿En qué gasté más este mes?">¿En qué gasté más este mes?</button>
+
+                <button type="button" class="chip" data-pregunta="¿Cómo voy comparado con el mes pasado?">¿Cómo voy vs el mes pasado?</button>
+
+                <button type="button" class="chip" data-pregunta="¿Quién me debe plata?">¿Quién me debe plata?</button>
+
+                <button type="button" class="chip" data-pregunta="¿Cómo voy con mis presupuestos?">¿Cómo voy con mis presupuestos?</button>
+
+            </div>
+
+            <form id="chatForm" class="chat-form">
+
+                <input id="chatInput" type="text" maxlength="300" autocomplete="off"
+                    placeholder="Ej: ¿Me alcanza para comprarme algo de S/ 200?" aria-label="Tu pregunta" required>
+
+                <button id="chatBoton" type="submit">Enviar</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Responde con los datos de tu hoja. Puede equivocarse: revisa los montos importantes.</p>
 
         </section>
 
