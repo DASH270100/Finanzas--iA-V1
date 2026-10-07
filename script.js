@@ -536,11 +536,17 @@ function actualizarSelectorMes() {
 
     }
 
-    $("filtroMes").innerHTML =
+    const opciones =
         lista.map((c) => `<option value="${c}">${esc(nombreMes(c))}</option>`).join("") +
         '<option value="all">Todo el historial</option>';
 
-    $("filtroMes").value = estado.mes;
+    ["filtroMes", "filtroMesStats"].forEach((id) => {
+
+        $(id).innerHTML = opciones;
+
+        $(id).value = estado.mes;
+
+    });
 
 }
 
@@ -701,7 +707,8 @@ function renderEstadisticas() {
 
     const totalIngresos = sumar(ingresos);
 
-    $("subtituloEstadisticas").textContent = "Resumen de " + nombreMes(periodo);
+    $("subtituloEstadisticas").textContent = "Resumen de " + nombreMes(periodo) +
+        ((!estado.mes || estado.mes === "all") ? " (mes actual)" : "");
 
     // Barras: últimos 6 meses terminando en el periodo elegido
     const meses = [];
@@ -723,7 +730,7 @@ function renderEstadisticas() {
 
     }
 
-    renderBarrasMeses(meses);
+    if (!$("vista-estadisticas").hidden) renderBarrasMeses(meses);
 
     if (!gastos.length && !ingresos.length) {
 
@@ -790,6 +797,53 @@ function renderEstadisticas() {
             <div class="stat-nota">${t.nota}</div>
         </div>
     `).join("");
+
+}
+
+// =========================
+// PESTAÑAS (Dashboard / Estadísticas)
+// =========================
+
+function mostrarVista(nombre) {
+
+    if (nombre !== "dashboard" && nombre !== "estadisticas") nombre = "dashboard";
+
+    $("vista-dashboard").hidden = nombre !== "dashboard";
+
+    $("vista-estadisticas").hidden = nombre !== "estadisticas";
+
+    document.querySelectorAll("nav a[data-vista]").forEach((a) => {
+
+        const activo = a.dataset.vista === nombre;
+
+        a.classList.toggle("active", activo);
+
+        if (activo) a.setAttribute("aria-current", "page");
+
+        else a.removeAttribute("aria-current");
+
+    });
+
+    // Los gráficos se dibujan con la pestaña visible (si no, salen sin tamaño)
+    if (nombre === "estadisticas") renderEstadisticas();
+
+    else renderResumenPeriodo();
+
+    window.scrollTo({ top: 0 });
+
+}
+
+function cambiarMes(valor) {
+
+    estado.mes = valor;
+
+    ["filtroMes", "filtroMesStats"].forEach((id) => { $(id).value = valor; });
+
+    renderResumenPeriodo();
+
+    renderEstadisticas();
+
+    renderPresupuestos();
 
 }
 
@@ -1419,15 +1473,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    $("filtroMes").addEventListener("change", (e) => {
+    $("filtroMes").addEventListener("change", (e) => cambiarMes(e.target.value));
 
-        estado.mes = e.target.value;
+    $("filtroMesStats").addEventListener("change", (e) => cambiarMes(e.target.value));
 
-        renderResumenPeriodo();
+    document.querySelectorAll("nav a[data-vista]").forEach((a) => {
 
-        renderEstadisticas();
+        a.addEventListener("click", (e) => {
 
-        renderPresupuestos();
+            e.preventDefault();
+
+            mostrarVista(a.dataset.vista);
+
+        });
 
     });
 
