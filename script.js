@@ -1324,7 +1324,7 @@ async function eliminarMovimiento(fila) {
 
     const m = buscarMovimiento(fila);
 
-    await api("borrar", { fila, orig: origenDe(m) });
+    const data = await api("borrar", { fila, orig: origenDe(m) });
 
     estado.editando = null;
 
@@ -1333,6 +1333,8 @@ async function eliminarMovimiento(fila) {
     renderTodo();
 
     animar(".tarjeta");
+
+    return data.deuda || "";
 
 }
 
@@ -1444,7 +1446,11 @@ async function accionActividad(boton) {
 
             boton.dataset.confirmando = "1";
 
-            boton.textContent = "¿Seguro? Toca otra vez";
+            const mov = estado.movimientos.find((x) => x.fila === fila);
+
+            boton.textContent = mov && esPrestamo(mov) ? "¿Seguro? Quita también la deuda"
+                : mov && esReembolso(mov) ? "¿Seguro? La deuda vuelve a pendiente"
+                : "¿Seguro? Toca otra vez";
 
             setTimeout(() => {
 
@@ -1468,9 +1474,13 @@ async function accionActividad(boton) {
 
         try {
 
-            await eliminarMovimiento(fila);
+            const deuda = await eliminarMovimiento(fila);
 
-            mostrarToast("🗑️ Movimiento borrado");
+            mostrarToast(
+                deuda === "eliminada" ? "🗑️ Movimiento y deuda borrados"
+                : deuda === "reabierta" ? "🗑️ Reembolso borrado · la deuda volvió a pendiente"
+                : "🗑️ Movimiento borrado"
+            );
 
         } catch (e) {
 
