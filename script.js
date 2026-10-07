@@ -338,7 +338,8 @@ function valorDashboard(etiqueta) {
 function renderDashboard() {
 
     // Ingresos y gastos reales: sin préstamos ni reembolsos.
-    // El saldo sigue viniendo de la hoja (el dinero que realmente tienes no cambia).
+    // El saldo es todo lo que entró menos todo lo que salió (incluye préstamos y reembolsos),
+    // calculado aquí desde Movimientos y no desde la hoja Dashboards.
     const hayMovimientos = estado.movimientos.length > 0;
 
     const ingresos = hayMovimientos
@@ -353,7 +354,11 @@ function renderDashboard() {
 
     $("gastos").textContent = money(gastos);
 
-    $("saldo").textContent = money(valorDashboard("saldo"));
+    const saldo = hayMovimientos
+        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter(esGasto))
+        : valorDashboard("saldo");
+
+    $("saldo").textContent = money(saldo);
 
 }
 
