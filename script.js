@@ -26,7 +26,9 @@ const estado = {
     editando: null,
     presupuestos: [],
     chat: [],
-    pensando: false
+    pensando: false,
+    fijos: [],
+    metas: []
 };
 
 const ICONOS = {
@@ -311,7 +313,28 @@ function normalizarDatos(data) {
         }))
         .filter((p) => String(p.categoria).toLowerCase() !== "categoría" && p.limite > 0);
 
-    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos };
+    // Gastos fijos: [Nombre, Categoría, Monto, Día, Último registro]
+    const fijos = (data.fijos || [])
+        .map((f) => ({
+            nombre: String(f[0] ?? "").trim(),
+            categoria: String(f[1] ?? "").trim() || "Otros",
+            monto: numero(f[2]),
+            dia: Math.min(31, Math.max(1, Math.round(numero(f[3])) || 1)),
+            ultimo: parseFecha(f[4])
+        }))
+        .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.monto > 0);
+
+    // Metas de ahorro: [Nombre, Objetivo, Ahorrado, Fecha límite]
+    const metas = (data.metas || [])
+        .map((f) => ({
+            nombre: String(f[0] ?? "").trim(),
+            objetivo: numero(f[1]),
+            ahorrado: numero(f[2]),
+            fecha: parseFecha(f[3])
+        }))
+        .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.objetivo > 0);
+
+    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas };
 
 }
 
@@ -326,6 +349,10 @@ function aplicarDatos(data) {
     estado.dashboard = n.dashboard;
 
     estado.presupuestos = n.presupuestos;
+
+    estado.fijos = n.fijos;
+
+    estado.metas = n.metas;
 
 }
 
@@ -806,7 +833,7 @@ function renderEstadisticas() {
 // PESTAÑAS (Dashboard / Estadísticas)
 // =========================
 
-const VISTAS = ["dashboard", "estadisticas", "asistente"];
+const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente"];
 
 function mostrarVista(nombre) {
 
@@ -831,7 +858,7 @@ function mostrarVista(nombre) {
 
     else if (nombre === "dashboard") renderResumenPeriodo();
 
-    else renderChat();
+    else if (nombre === "asistente") renderChat();
 
     window.scrollTo({ top: 0 });
 
@@ -954,6 +981,300 @@ async function enviarPregunta(texto) {
 }
 
 // =========================
+// GASTOS FIJOS
+// =========================
+
+const MS_DIA = 86400000;
+
+const fechaCorta = (d) =>
+    d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "");
+
+// Calcula cuándo se cobra y en qué estado está este mes
+function infoFijo(f) {
+
+    const hoy = new Date();
+
+    const h0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+    // Si el mes tiene menos días, se cobra el último día del mes
+    const fechaEn = (y, m) => {
+
+        const ultimoDia = new Date(y, m + 1, 0).getDate();
+
+        return new Date(y, m, Math.min(f.dia, ultimoDia));
+
+    };
+
+    if (f.ultimo && claveMes(f.ultimo) === claveMes(hoy)) {
+
+        const prox = fechaEn(h0.getFullYear(), h0.getMonth() + 1);
+
+        return {
+            estado: "hecho",
+            texto: `Registrado este mes ✓ · próximo cobro: ${fechaCorta(prox)}`
+        };
+
+    }
+
+    const cobro = fechaEn(h0.getFullYear(), h0.getMonth());
+
+    const dias = Math.round((cobro - h0) / MS_DIA);
+
+    if (dias < 0) {
+
+        const n = -dias;
+
+        return {
+            estado: "vencido",
+            texto: `Se cobró el ${fechaCorta(cobro)} · hace ${n} ${n === 1 ? "día" : "días"}, sin registrar`
+        };
+
+    }
+
+    if (dias === 0) return { estado: "hoy", texto: `Se cobra hoy (${fechaCorta(cobro)})` };
+
+    return {
+        estado: dias <= 3 ? "pronto" : "futuro",
+        texto: `Próximo cobro: ${fechaCorta(cobro)} · ${dias === 1 ? "mañana" : `en ${dias} días`}`
+    };
+
+}
+
+function renderFijos() {
+
+    const items = estado.fijos
+        .map((f) => ({ ...f, info: infoFijo(f) }))
+        .sort((a, b) => a.dia - b.dia);
+
+    const total = items.reduce((t, f) => t + f.monto, 0);
+
+    $("subtituloFijos").textContent = items.length
+        ? `${items.length} ${items.length === 1 ? "gasto fijo" : "gastos fijos"} · ${money(total)} al mes`
+        : "Lo que pagas cada mes, con su fecha de cobro.";
+
+    if (!items.length) {
+
+        $("fijos").innerHTML =
+            '<p class="vacio">Aún no tienes gastos fijos. Agrega el primero abajo (alquiler, suscripciones…).</p>';
+
+    } else {
+
+        $("fijos").innerHTML = items.map((f) => `
+            <div class="fijo-item estado-${f.info.estado}" data-nombre="${esc(f.nombre)}"
+                data-categoria="${esc(f.categoria)}" data-monto="${f.monto}" data-dia="${f.dia}">
+
+                <div class="fijo-top">
+
+                    <span class="fijo-nombre">🔁 ${esc(f.nombre)}</span>
+
+                    <span class="fijo-monto">${money(f.monto)}</span>
+
+                </div>
+
+                <div class="fijo-detalle">
+                    ${esc(f.categoria)} · se cobra el día ${f.dia} de cada mes
+                </div>
+
+                <div class="fijo-estado">${esc(f.info.texto)}</div>
+
+                <div class="fijo-acciones">
+
+                    <button class="mov-btn mov-btn-primario" type="button" data-fijo="registrar"
+                        ${f.info.estado === "hecho" ? "disabled" : ""}>
+                        ${f.info.estado === "hecho" ? "✓ Registrado" : "Registrar ahora"}
+                    </button>
+
+                    <button class="mov-btn" type="button" data-fijo="editar">Cambiar</button>
+
+                    <button class="mov-btn mov-btn-borrar" type="button" data-fijo="quitar">Quitar</button>
+
+                </div>
+
+            </div>
+        `).join("");
+
+    }
+
+    renderAvisoFijos(items);
+
+}
+
+// Aviso en el Dashboard: fijos que vencen pronto o ya vencieron sin registrar
+function renderAvisoFijos(items) {
+
+    const pendientes = items.filter((f) => ["vencido", "hoy", "pronto"].includes(f.info.estado));
+
+    const aviso = $("avisoFijos");
+
+    if (!pendientes.length) {
+
+        aviso.hidden = true;
+
+        return;
+
+    }
+
+    const nombres = pendientes.slice(0, 3).map((f) => {
+
+        const cuando = f.info.estado === "vencido" ? "vencido"
+            : f.info.estado === "hoy" ? "hoy"
+            : "pronto";
+
+        return `${f.nombre} (${cuando})`;
+
+    }).join(", ");
+
+    aviso.textContent =
+        `🔔 ${pendientes.length} ${pendientes.length === 1 ? "gasto fijo" : "gastos fijos"} por registrar: ${nombres}${pendientes.length > 3 ? "…" : ""} · Ver`;
+
+    aviso.hidden = false;
+
+}
+
+async function guardarFijo(datos) {
+
+    await api("fijo", datos);
+
+    await cargarDatos();
+
+    renderTodo();
+
+}
+
+// =========================
+// METAS DE AHORRO
+// =========================
+
+// yyyy-mm-dd para el campo de fecha
+const aInputFecha = (d) =>
+    d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+
+function infoMeta(m) {
+
+    const falta = Math.max(0, m.objetivo - m.ahorrado);
+
+    const pct = m.ahorrado / m.objetivo;
+
+    if (falta === 0) return { nivel: "ok", texto: "¡Meta lograda! 🎉", pct };
+
+    let texto = `Te faltan ${money(falta)}`;
+
+    let nivel = "normal";
+
+    if (m.fecha) {
+
+        const hoy = new Date();
+
+        const h0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+        const dias = Math.round((m.fecha - h0) / MS_DIA);
+
+        if (dias < 0) {
+
+            texto += ` · la fecha (${fechaCorta(m.fecha)} ${m.fecha.getFullYear()}) ya pasó`;
+
+            nivel = "exceso";
+
+        } else {
+
+            const meses = Math.max(1, Math.ceil(dias / 30));
+
+            texto += ` · para el ${fechaCorta(m.fecha)} ${m.fecha.getFullYear()} (en ${dias} ${dias === 1 ? "día" : "días"})` +
+                ` necesitas ~${money(falta / meses)} al mes`;
+
+        }
+
+    }
+
+    return { nivel, texto, pct };
+
+}
+
+function renderMetas() {
+
+    const items = estado.metas.map((m) => ({ ...m, info: infoMeta(m) }));
+
+    const totalAhorrado = items.reduce((t, m) => t + m.ahorrado, 0);
+
+    $("subtituloMetas").textContent = items.length
+        ? `${items.length} ${items.length === 1 ? "meta" : "metas"} · ${money(totalAhorrado)} apartados`
+        : "Aparta plata para lo que quieres lograr.";
+
+    if (!items.length) {
+
+        $("metas").innerHTML =
+            '<p class="vacio">Aún no tienes metas. Crea la primera abajo (por ejemplo, tu mini depa).</p>';
+
+        return;
+
+    }
+
+    $("metas").innerHTML = items.map((m) => {
+
+        const ancho = Math.min(100, Math.round(m.info.pct * 100));
+
+        return `
+            <div class="meta-item" data-nombre="${esc(m.nombre)}" data-objetivo="${m.objetivo}"
+                data-fecha="${m.fecha ? aInputFecha(m.fecha) : ""}">
+
+                <div class="presupuesto-top">
+
+                    <span class="presupuesto-nombre">🏁 ${esc(m.nombre)}</span>
+
+                    <span class="presupuesto-monto">${money(m.ahorrado)} de ${money(m.objetivo)}</span>
+
+                </div>
+
+                <div class="presupuesto-barra" role="progressbar"
+                    aria-valuemin="0" aria-valuemax="100" aria-valuenow="${ancho}"
+                    aria-label="Avance de ${esc(m.nombre)}">
+
+                    <div class="presupuesto-progreso ${m.info.nivel === "ok" ? "nivel-ok" : "meta-progreso"}"
+                        style="width:${ancho}%"></div>
+
+                </div>
+
+                <div class="meta-estado nivel-${m.info.nivel}">
+                    ${Math.round(m.info.pct * 100)}% · ${esc(m.info.texto)}
+                </div>
+
+                <div class="meta-aporte">
+
+                    <input class="meta-monto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="Monto (S/)" aria-label="Monto a aportar o retirar">
+
+                    <button class="mov-btn mov-btn-primario" type="button" data-meta="aportar">＋ Aportar</button>
+
+                    <button class="mov-btn" type="button" data-meta="retirar">− Retirar</button>
+
+                </div>
+
+                <div class="fijo-acciones">
+
+                    <button class="mov-btn" type="button" data-meta="editar">Cambiar</button>
+
+                    <button class="mov-btn mov-btn-borrar" type="button" data-meta="quitar">Quitar</button>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+async function guardarMeta(datos) {
+
+    await api("meta", datos);
+
+    await cargarDatos();
+
+    renderTodo();
+
+}
+
+// =========================
 // RENDER GENERAL
 // =========================
 
@@ -970,6 +1291,10 @@ function renderTodo() {
     renderEstadisticas();
 
     renderPresupuestos();
+
+    renderFijos();
+
+    renderMetas();
 
     renderDeudas();
 
@@ -1592,6 +1917,303 @@ window.addEventListener("DOMContentLoaded", () => {
     $("filtroMes").addEventListener("change", (e) => cambiarMes(e.target.value));
 
     $("filtroMesStats").addEventListener("change", (e) => cambiarMes(e.target.value));
+
+    // Gastos fijos: guardar, registrar, cambiar y quitar
+    $("fijoForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const datos = {
+            nombre: $("fijoNombre").value.trim(),
+            categoria: nombreCategoria($("fijoCategoria").value) === "Sin categoría"
+                ? "Otros"
+                : nombreCategoria($("fijoCategoria").value),
+            monto: Number($("fijoMonto").value),
+            dia: Number($("fijoDia").value)
+        };
+
+        if (!datos.nombre || !(datos.monto > 0) || !Number.isInteger(datos.dia) || datos.dia < 1 || datos.dia > 31) {
+
+            mostrarToast("💲 Revisa el nombre, el monto y el día (1 al 31)");
+
+            return;
+
+        }
+
+        const boton = $("fijoBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarFijo(datos);
+
+            $("fijoForm").reset();
+
+            mostrarToast(`✅ Gasto fijo "${datos.nombre}" guardado`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar fijo";
+
+        }
+
+    });
+
+    $("fijos").addEventListener("click", async (e) => {
+
+        const boton = e.target.closest("[data-fijo]");
+
+        if (!boton || boton.disabled) return;
+
+        const item = boton.closest("[data-nombre]");
+
+        const nombre = item.dataset.nombre;
+
+        const accion = boton.dataset.fijo;
+
+        if (accion === "editar") {
+
+            $("fijoNombre").value = nombre;
+
+            $("fijoCategoria").value = item.dataset.categoria;
+
+            $("fijoMonto").value = item.dataset.monto;
+
+            $("fijoDia").value = item.dataset.dia;
+
+            $("fijoMonto").focus();
+
+            return;
+
+        }
+
+        // Registrar y quitar piden un segundo toque para evitar errores
+        if (!boton.dataset.confirmando) {
+
+            const original = boton.textContent.trim();
+
+            boton.dataset.confirmando = "1";
+
+            boton.textContent = accion === "registrar"
+                ? `¿Registrar ${money(item.dataset.monto)}?`
+                : "¿Seguro?";
+
+            setTimeout(() => {
+
+                if (boton.isConnected && boton.dataset.confirmando) {
+
+                    delete boton.dataset.confirmando;
+
+                    boton.textContent = original;
+
+                }
+
+            }, 4000);
+
+            return;
+
+        }
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳";
+
+        try {
+
+            if (accion === "registrar") {
+
+                await api("pagarFijo", { nombre });
+
+                await cargarDatos();
+
+                renderTodo();
+
+                animar(".tarjeta");
+
+                mostrarToast(`✅ ${nombre} registrado como gasto`);
+
+            } else {
+
+                await guardarFijo({ nombre, quitar: true });
+
+                mostrarToast(`🗑️ "${nombre}" quitado de tus fijos`);
+
+            }
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        }
+
+    });
+
+    // Metas de ahorro: guardar, aportar, retirar, cambiar y quitar
+    $("metaForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const datos = {
+            nombre: $("metaNombre").value.trim(),
+            objetivo: Number($("metaObjetivo").value),
+            fecha: $("metaFecha").value
+        };
+
+        if (!datos.nombre || !(datos.objetivo > 0)) {
+
+            mostrarToast("💲 Revisa el nombre y el objetivo");
+
+            return;
+
+        }
+
+        const boton = $("metaBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarMeta(datos);
+
+            $("metaForm").reset();
+
+            mostrarToast(`✅ Meta "${datos.nombre}" guardada`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar meta";
+
+        }
+
+    });
+
+    $("metas").addEventListener("click", async (e) => {
+
+        const boton = e.target.closest("[data-meta]");
+
+        if (!boton || boton.disabled) return;
+
+        const item = boton.closest("[data-nombre]");
+
+        const nombre = item.dataset.nombre;
+
+        const accion = boton.dataset.meta;
+
+        if (accion === "editar") {
+
+            $("metaNombre").value = nombre;
+
+            $("metaObjetivo").value = item.dataset.objetivo;
+
+            $("metaFecha").value = item.dataset.fecha;
+
+            $("metaObjetivo").focus();
+
+            return;
+
+        }
+
+        if (accion === "aportar" || accion === "retirar") {
+
+            const campo = item.querySelector(".meta-monto");
+
+            const monto = Number(campo.value);
+
+            if (!(monto > 0)) {
+
+                mostrarToast("💲 Escribe un monto mayor que 0");
+
+                campo.focus();
+
+                return;
+
+            }
+
+            boton.disabled = true;
+
+            try {
+
+                await api("aporte", { nombre, monto: accion === "aportar" ? monto : -monto });
+
+                await cargarDatos();
+
+                renderTodo();
+
+                mostrarToast(accion === "aportar"
+                    ? `✅ Aportaste ${money(monto)} a ${nombre}`
+                    : `↩️ Retiraste ${money(monto)} de ${nombre}`);
+
+            } catch (err) {
+
+                boton.disabled = false;
+
+                errorDeAccion(err);
+
+            }
+
+            return;
+
+        }
+
+        // Quitar: segundo toque para confirmar
+        if (!boton.dataset.confirmando) {
+
+            boton.dataset.confirmando = "1";
+
+            boton.textContent = "¿Seguro?";
+
+            setTimeout(() => {
+
+                if (boton.isConnected && boton.dataset.confirmando) {
+
+                    delete boton.dataset.confirmando;
+
+                    boton.textContent = "Quitar";
+
+                }
+
+            }, 4000);
+
+            return;
+
+        }
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳";
+
+        try {
+
+            await guardarMeta({ nombre, quitar: true });
+
+            mostrarToast(`🗑️ Meta "${nombre}" quitada`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        }
+
+    });
+
+    $("avisoFijos").addEventListener("click", () => mostrarVista("fijos"));
 
     $("chatForm").addEventListener("submit", (e) => {
 
