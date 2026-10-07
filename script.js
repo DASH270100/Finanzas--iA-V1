@@ -24,7 +24,9 @@ const estado = {
     mes: null,
     mostrarTodasLasDeudas: false,
     editando: null,
-    presupuestos: []
+    presupuestos: [],
+    chat: [],
+    pensando: false
 };
 
 const ICONOS = {
@@ -804,13 +806,13 @@ function renderEstadisticas() {
 // PESTAÑAS (Dashboard / Estadísticas)
 // =========================
 
+const VISTAS = ["dashboard", "estadisticas", "asistente"];
+
 function mostrarVista(nombre) {
 
-    if (nombre !== "dashboard" && nombre !== "estadisticas") nombre = "dashboard";
+    if (!VISTAS.includes(nombre)) nombre = "dashboard";
 
-    $("vista-dashboard").hidden = nombre !== "dashboard";
-
-    $("vista-estadisticas").hidden = nombre !== "estadisticas";
+    VISTAS.forEach((v) => { $("vista-" + v).hidden = v !== nombre; });
 
     document.querySelectorAll("nav a[data-vista]").forEach((a) => {
 
@@ -827,7 +829,9 @@ function mostrarVista(nombre) {
     // Los gráficos se dibujan con la pestaña visible (si no, salen sin tamaño)
     if (nombre === "estadisticas") renderEstadisticas();
 
-    else renderResumenPeriodo();
+    else if (nombre === "dashboard") renderResumenPeriodo();
+
+    else renderChat();
 
     window.scrollTo({ top: 0 });
 
@@ -844,6 +848,108 @@ function cambiarMes(valor) {
     renderEstadisticas();
 
     renderPresupuestos();
+
+}
+
+// =========================
+// ASISTENTE IA (chat)
+// =========================
+
+// Texto seguro: escapa HTML y deja **negrita** y saltos de línea
+function textoChat(t) {
+
+    return esc(t)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br>");
+
+}
+
+function renderChat() {
+
+    const caja = $("chat");
+
+    if (!estado.chat.length && !estado.pensando) {
+
+        caja.innerHTML = '<p class="vacio">Hazme una pregunta sobre tus finanzas 👇</p>';
+
+        $("sugerencias").hidden = false;
+
+        return;
+
+    }
+
+    $("sugerencias").hidden = estado.chat.length > 0;
+
+    caja.innerHTML = estado.chat.map((m) => `
+        <div class="burbuja ${m.rol === "usuario" ? "burbuja-yo" : "burbuja-ia"}${m.error ? " burbuja-error" : ""}">
+            ${textoChat(m.texto)}
+        </div>
+    `).join("") + (estado.pensando
+        ? '<div class="burbuja burbuja-ia burbuja-pensando">Pensando…</div>'
+        : "");
+
+    caja.scrollTop = caja.scrollHeight;
+
+}
+
+async function enviarPregunta(texto) {
+
+    texto = texto.trim();
+
+    if (!texto || estado.pensando) return;
+
+    // Solo mandamos las respuestas buenas como contexto
+    const historial = estado.chat
+        .filter((m) => !m.error)
+        .map((m) => ({ rol: m.rol, texto: m.texto }));
+
+    estado.chat.push({ rol: "usuario", texto });
+
+    estado.pensando = true;
+
+    $("chatInput").value = "";
+
+    $("chatBoton").disabled = true;
+
+    renderChat();
+
+    try {
+
+        const data = await api("preguntar", { pregunta: texto, historial });
+
+        estado.chat.push({ rol: "asistente", texto: data.respuesta });
+
+    } catch (e) {
+
+        if (e instanceof ErrorPin) {
+
+            estado.pensando = false;
+
+            manejarError(e);
+
+            return;
+
+        }
+
+        console.error(e);
+
+        estado.chat.push({
+            rol: "asistente",
+            texto: "⚠️ " + (e.message || "No pude responder ahora. Inténtalo otra vez."),
+            error: true
+        });
+
+    } finally {
+
+        estado.pensando = false;
+
+        $("chatBoton").disabled = false;
+
+        renderChat();
+
+        $("chatInput").focus();
+
+    }
 
 }
 
@@ -1476,6 +1582,30 @@ window.addEventListener("DOMContentLoaded", () => {
     $("filtroMes").addEventListener("change", (e) => cambiarMes(e.target.value));
 
     $("filtroMesStats").addEventListener("change", (e) => cambiarMes(e.target.value));
+
+    $("chatForm").addEventListener("submit", (e) => {
+
+        e.preventDefault();
+
+        enviarPregunta($("chatInput").value);
+
+    });
+
+    $("sugerencias").addEventListener("click", (e) => {
+
+        const chip = e.target.closest("[data-pregunta]");
+
+        if (chip) enviarPregunta(chip.dataset.pregunta);
+
+    });
+
+    $("chatLimpiar").addEventListener("click", () => {
+
+        estado.chat = [];
+
+        renderChat();
+
+    });
 
     document.querySelectorAll("nav a[data-vista]").forEach((a) => {
 
