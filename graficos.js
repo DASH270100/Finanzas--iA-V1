@@ -2,6 +2,7 @@
 // Depende de script.js: usa money() y recibe los gastos ya filtrados por periodo.
 
 let grafico = null;
+let graficoMeses = null;
 
 const COLORES_GRAFICO = [
     "#8B5CF6", "#3B82F6", "#F59E0B", "#10B981", "#EF4444",
@@ -176,5 +177,83 @@ function renderGrafico(gastos) {
     grafico.render();
 
     return grupos;
+
+}
+
+// Barras de ingresos vs gastos por mes. meses = [{ etiqueta, ingresos, gastos }]
+function renderBarrasMeses(meses) {
+
+    const contenedor = document.querySelector("#graficoMeses");
+
+    if (graficoMeses) {
+
+        graficoMeses.destroy();
+
+        graficoMeses = null;
+
+    }
+
+    contenedor.innerHTML = "";
+
+    if (typeof ApexCharts === "undefined") {
+
+        contenedor.innerHTML = '<p class="vacio">No se pudo cargar el gráfico.</p>';
+
+        return;
+
+    }
+
+    graficoMeses = new ApexCharts(contenedor, {
+
+        chart: {
+            type: "bar",
+            height: 280,
+            fontFamily: "Montserrat, sans-serif",
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 600 }
+        },
+
+        series: [
+            { name: "Ingresos", data: meses.map((m) => m.ingresos) },
+            { name: "Gastos", data: meses.map((m) => m.gastos) }
+        ],
+
+        xaxis: {
+            categories: meses.map((m) => m.etiqueta),
+            labels: { style: { colors: "#94A3B8" } },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+
+        yaxis: {
+            labels: {
+                style: { colors: "#94A3B8" },
+                formatter: (v) => "S/ " + Math.round(v)
+            }
+        },
+
+        colors: ["#22C55E", "#EF4444"],
+
+        plotOptions: { bar: { borderRadius: 6, columnWidth: "55%" } },
+
+        dataLabels: { enabled: false },
+
+        grid: { borderColor: "#26354B", strokeDashArray: 4 },
+
+        legend: {
+            position: "top",
+            horizontalAlign: "right",
+            labels: { colors: "#CBD5E1" },
+            markers: { radius: 10 }
+        },
+
+        tooltip: {
+            theme: "dark",
+            y: { formatter: (val) => money(val) }
+        }
+
+    });
+
+    graficoMeses.render();
 
 }
