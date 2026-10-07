@@ -282,15 +282,17 @@ function normalizarDatos(data) {
         }))
         .filter((m) => m.fechaTexto !== "" || m.descripcion !== "");
 
-    const deudas = sinEncabezado(data.deudas || [], "persona")
-        .map((f) => ({
+    // "fila" es el número de fila en la hoja Deudas (la 1 es el encabezado)
+    const deudas = (data.deudas || [])
+        .map((f, i) => ({
+            fila: i + 1,
             persona: String(f[0] ?? "").trim(),
             fechaTexto: String(f[1] ?? "").replace(/"/g, "").trim(),
             fecha: parseFecha(f[1]),
             monto: numero(f[2]),
             estado: String(f[3] ?? "").trim()
         }))
-        .filter((d) => d.persona !== "");
+        .filter((d) => d.persona !== "" && d.persona.toLowerCase() !== "persona");
 
     return { movimientos, deudas, dashboard: data.dashboard || [] };
 
@@ -551,7 +553,12 @@ function renderDeudas() {
 
                 <div class="deuda-fecha">📅 ${esc(formatearFecha(d.fecha, d.fechaTexto))}</div>
 
-                <button class="btn-deuda" type="button">✓ Pagado</button>
+                <button
+                    class="btn-deuda"
+                    type="button"
+                    data-fila="${d.fila}"
+                    data-persona="${esc(d.persona)}"
+                    data-monto="${d.monto}">✓ Pagado</button>
 
             </div>
         `).join("")
@@ -782,6 +789,83 @@ async function registrarMovimiento() {
 }
 
 // =========================
+// PAGAR UNA DEUDA
+// =========================
+
+async function pagarDeuda(boton) {
+
+    if (boton.disabled) return;
+
+    const persona = boton.dataset.persona;
+
+    const monto = numero(boton.dataset.monto);
+
+    // Primer toque: pide confirmar. Si no confirma en 4 segundos, vuelve a la normalidad.
+    if (!boton.dataset.confirmando) {
+
+        boton.dataset.confirmando = "1";
+
+        boton.textContent = "¿Seguro? Toca otra vez";
+
+        setTimeout(() => {
+
+            if (boton.isConnected && boton.dataset.confirmando) {
+
+                delete boton.dataset.confirmando;
+
+                boton.textContent = "✓ Pagado";
+
+            }
+
+        }, 4000);
+
+        return;
+
+    }
+
+    boton.disabled = true;
+
+    boton.textContent = "⏳ Registrando...";
+
+    try {
+
+        await api("pagar", {
+            fila: Number(boton.dataset.fila),
+            persona,
+            monto
+        });
+
+        // El Apps Script ya escribió el reembolso: traemos los datos actualizados
+        await cargarDatos();
+
+        renderTodo();
+
+        animar(".tarjeta");
+
+        mostrarToast(`✅ ${persona} pagó ${money(monto)} · reembolso registrado`);
+
+    } catch (e) {
+
+        if (e instanceof ErrorPin) {
+
+            manejarError(e);
+
+            return;
+
+        }
+
+        console.error(e);
+
+        mostrarToast("❌ " + (e.message || "No se pudo marcar como pagado"));
+
+        // Si la deuda ya no estaba pendiente, refrescamos para que desaparezca
+        actualizarTodo();
+
+    }
+
+}
+
+// =========================
 // EVENTOS
 // =========================
 
@@ -817,14 +901,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    // "Pagado" necesita una acción en el backend; por ahora avisa
+    // Marcar una deuda como pagada (dos toques, para evitar clics por error)
     $("deudas").addEventListener("click", (e) => {
 
-        if (e.target.closest(".btn-deuda")) {
+        const boton = e.target.closest(".btn-deuda");
 
-            mostrarToast("🚧 Marcar como pagado desde la web: próximamente");
-
-        }
+        if (boton) pagarDeuda(boton);
 
     });
 
