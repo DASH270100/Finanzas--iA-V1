@@ -668,6 +668,132 @@ function renderDeudas() {
 }
 
 // =========================
+// ESTADÍSTICAS
+// =========================
+
+const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function renderEstadisticas() {
+
+    const hoy = new Date();
+
+    const actual = claveMes(hoy);
+
+    // Con "Todo el historial" las estadísticas usan el mes actual
+    const periodo = (!estado.mes || estado.mes === "all") ? actual : estado.mes;
+
+    const [y, mm] = periodo.split("-").map(Number);
+
+    const esActual = periodo === actual;
+
+    const diasMes = new Date(y, mm, 0).getDate();
+
+    const diasTranscurridos = esActual ? hoy.getDate() : diasMes;
+
+    const delPeriodo = (f) => estado.movimientos.filter((m) =>
+        f(m) && m.fecha && claveMes(m.fecha) === periodo);
+
+    const gastos = delPeriodo(esGastoReal);
+
+    const ingresos = delPeriodo(esIngresoReal);
+
+    const totalGastos = sumar(gastos);
+
+    const totalIngresos = sumar(ingresos);
+
+    $("subtituloEstadisticas").textContent = "Resumen de " + nombreMes(periodo);
+
+    // Barras: últimos 6 meses terminando en el periodo elegido
+    const meses = [];
+
+    for (let i = 5; i >= 0; i--) {
+
+        const d = new Date(y, mm - 1 - i, 1);
+
+        const c = claveMes(d);
+
+        const enMes = (f) => sumar(estado.movimientos.filter((m) =>
+            f(m) && m.fecha && claveMes(m.fecha) === c));
+
+        meses.push({
+            etiqueta: d.toLocaleDateString("es-PE", { month: "short" }).replace(".", ""),
+            ingresos: enMes(esIngresoReal),
+            gastos: enMes(esGastoReal)
+        });
+
+    }
+
+    renderBarrasMeses(meses);
+
+    if (!gastos.length && !ingresos.length) {
+
+        $("statTiles").innerHTML = '<p class="vacio">Sin movimientos en este periodo.</p>';
+
+        return;
+
+    }
+
+    const promedio = totalGastos / Math.max(1, diasTranscurridos);
+
+    const proyeccion = promedio * diasMes;
+
+    const mayor = gastos.reduce((a, b) => (b.monto > (a ? a.monto : 0) ? b : a), null);
+
+    const porDia = new Array(7).fill(0);
+
+    gastos.forEach((m) => { porDia[m.fecha.getDay()] += m.monto; });
+
+    const maxDia = Math.max(...porDia);
+
+    const diaCaro = maxDia > 0 ? DIAS_SEMANA[porDia.indexOf(maxDia)] : null;
+
+    const ahorro = totalIngresos - totalGastos;
+
+    const tiles = [
+        {
+            icono: "📅",
+            etiqueta: "Promedio diario",
+            valor: money(promedio),
+            nota: `En ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}`
+        },
+        {
+            icono: "🔮",
+            etiqueta: esActual ? "Proyección a fin de mes" : "Total del mes",
+            valor: money(esActual ? proyeccion : totalGastos),
+            nota: esActual ? "Si sigues a este ritmo" : "Gastos reales del mes"
+        },
+        {
+            icono: "💥",
+            etiqueta: "Mayor gasto",
+            valor: mayor ? money(mayor.monto) : "—",
+            nota: mayor ? esc(mayor.descripcion || mayor.categoria) : "Sin gastos"
+        },
+        {
+            icono: "🗓️",
+            etiqueta: "Día que más gastas",
+            valor: diaCaro ? diaCaro.charAt(0).toUpperCase() + diaCaro.slice(1) : "—",
+            nota: diaCaro ? money(maxDia) + " en total" : "Sin gastos"
+        },
+        {
+            icono: ahorro >= 0 ? "🐷" : "⚠️",
+            etiqueta: ahorro >= 0 ? "Te sobró" : "Gastaste de más",
+            valor: money(Math.abs(ahorro)),
+            nota: `${money(totalIngresos)} de ingresos`
+        }
+    ];
+
+    $("statTiles").innerHTML = tiles.map((t) => `
+        <div class="stat-tile">
+            <div class="stat-icono">${t.icono}</div>
+            <div class="stat-etiqueta">${t.etiqueta}</div>
+            <div class="stat-valor">${t.valor}</div>
+            <div class="stat-nota">${t.nota}</div>
+        </div>
+    `).join("");
+
+}
+
+// =========================
 // RENDER GENERAL
 // =========================
 
@@ -680,6 +806,8 @@ function renderTodo() {
     actualizarSelectorMes();
 
     renderResumenPeriodo();
+
+    renderEstadisticas();
 
     renderPresupuestos();
 
@@ -1296,6 +1424,8 @@ window.addEventListener("DOMContentLoaded", () => {
         estado.mes = e.target.value;
 
         renderResumenPeriodo();
+
+        renderEstadisticas();
 
         renderPresupuestos();
 
