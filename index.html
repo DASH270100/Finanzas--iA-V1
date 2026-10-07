@@ -302,6 +302,50 @@
 
         </section>
 
+        <!-- PRESUPUESTO -->
+
+        <section class="card presupuesto-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🎯 Presupuesto por categoría</h2>
+
+                    <p id="subtituloPresupuesto">Fija un límite mensual por categoría y sigue cuánto te queda.</p>
+
+                </div>
+
+            </div>
+
+            <div id="presupuestos">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="presForm" class="presupuesto-form">
+
+                <label>Categoría
+                    <input id="presCategoria" type="text" maxlength="40"
+                        list="categoriasPresupuesto" placeholder="Ej: Comida" autocomplete="off" required>
+                </label>
+
+                <label>Límite mensual (S/)
+                    <input id="presLimite" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="300" required>
+                </label>
+
+                <button id="presBoton" type="submit">Guardar presupuesto</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Si la categoría ya tiene presupuesto, se actualiza.</p>
+
+            <datalist id="categoriasPresupuesto"></datalist>
+
+        </section>
+
         <!-- DEUDAS -->
 
         <section class="card deudas-card">
