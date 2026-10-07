@@ -1907,3 +1907,191 @@ select.filtro-mes{
     }
 
 }
+
+/*==================================================
+        v3.2 · Editar y borrar movimientos
+====================================================*/
+
+.movimiento-acciones{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:8px;
+
+    margin-top:10px;
+
+}
+
+.mov-btn{
+
+    width:auto;
+
+    margin:0;
+
+    min-height:36px;
+
+    padding:8px 14px;
+
+    font-family:inherit;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    color:var(--text-muted);
+
+    background:var(--surface-light);
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    box-shadow:none;
+
+    cursor:pointer;
+
+}
+
+.mov-btn:hover{
+
+    color:var(--text);
+
+    background:var(--surface-hover);
+
+    box-shadow:none;
+
+    transform:none;
+
+}
+
+.mov-btn:disabled{
+
+    opacity:.6;
+
+    cursor:default;
+
+}
+
+.mov-btn-borrar:hover{
+
+    color:#FCA5A5;
+
+    border-color:rgba(239,68,68,.45);
+
+}
+
+.mov-btn-primario{
+
+    color:#fff;
+
+    background:var(--primary);
+
+    border-color:var(--primary);
+
+}
+
+.mov-btn-primario:hover{
+
+    color:#fff;
+
+    background:var(--primary-hover);
+
+}
+
+.mov-form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.mov-form label{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:6px;
+
+    font-size:12px;
+
+    font-weight:600;
+
+    color:var(--text-muted);
+
+}
+
+.mov-form input,
+.mov-form select{
+
+    width:100%;
+
+    padding:11px 12px;
+
+    font-family:inherit;
+
+    font-size:15px;
+
+    color:var(--text);
+
+    background:var(--surface-light);
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    outline:none;
+
+}
+
+.mov-form input:focus,
+.mov-form select:focus{
+
+    border-color:var(--primary);
+
+    box-shadow:0 0 0 3px rgba(124,92,252,.15);
+
+}
+
+.mov-form select option{
+
+    background:var(--surface);
+
+    color:var(--text);
+
+}
+
+.mov-form-fila{
+
+    display:grid;
+
+    grid-template-columns:1fr 130px;
+
+    gap:12px;
+
+}
+
+.mov-form-acciones{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:8px;
+
+}
+
+@media(max-width:480px){
+
+    .mov-form-fila{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
