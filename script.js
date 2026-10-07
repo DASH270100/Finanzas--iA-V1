@@ -23,7 +23,8 @@ const estado = {
     dashboard: [],
     mes: null,
     mostrarTodasLasDeudas: false,
-    editando: null
+    editando: null,
+    presupuestos: []
 };
 
 const ICONOS = {
@@ -300,7 +301,15 @@ function normalizarDatos(data) {
         }))
         .filter((d) => d.persona !== "" && d.persona.toLowerCase() !== "persona");
 
-    return { movimientos, deudas, dashboard: data.dashboard || [] };
+    // Presupuestos: [Categoría, Límite]
+    const presupuestos = (data.presupuestos || [])
+        .map((f) => ({
+            categoria: nombreCategoria(f[0]),
+            limite: numero(f[1])
+        }))
+        .filter((p) => String(p.categoria).toLowerCase() !== "categoría" && p.limite > 0);
+
+    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos };
 
 }
 
@@ -313,6 +322,8 @@ function aplicarDatos(data) {
     estado.deudas = n.deudas;
 
     estado.dashboard = n.dashboard;
+
+    estado.presupuestos = n.presupuestos;
 
 }
 
@@ -670,6 +681,8 @@ function renderTodo() {
 
     renderResumenPeriodo();
 
+    renderPresupuestos();
+
     renderDeudas();
 
 }
@@ -859,6 +872,126 @@ async function registrarMovimiento() {
         textoBoton.textContent = "➕ Registrar movimiento";
 
     }
+
+}
+
+// =========================
+// PRESUPUESTO POR CATEGORÍA
+// =========================
+
+function renderPresupuestos() {
+
+    // Si el gráfico está en "Todo el historial", el presupuesto usa el mes actual
+    const periodo = (!estado.mes || estado.mes === "all")
+        ? claveMes(new Date())
+        : estado.mes;
+
+    const gastadoPor = new Map();
+
+    gastosDelPeriodo(periodo).forEach((m) => {
+
+        const c = nombreCategoria(m.categoria);
+
+        gastadoPor.set(c, (gastadoPor.get(c) || 0) + m.monto);
+
+    });
+
+    // Sugerencias para el formulario: categorías que ya usas y las que ya tienen límite
+    const categorias = new Set(estado.movimientos.map((m) => nombreCategoria(m.categoria)));
+
+    estado.presupuestos.forEach((p) => categorias.add(p.categoria));
+
+    $("categoriasPresupuesto").innerHTML = [...categorias]
+        .sort()
+        .map((c) => `<option value="${esc(c)}"></option>`)
+        .join("");
+
+    const items = estado.presupuestos
+        .map((p) => ({ ...p, gastado: gastadoPor.get(p.categoria) || 0 }))
+        .sort((a, b) => (b.gastado / b.limite) - (a.gastado / a.limite));
+
+    if (!items.length) {
+
+        $("subtituloPresupuesto").textContent =
+            "Fija un límite mensual por categoría y sigue cuánto te queda.";
+
+        $("presupuestos").innerHTML =
+            '<p class="vacio">Aún no tienes presupuestos. Elige una categoría abajo y fija su límite.</p>';
+
+        return;
+
+    }
+
+    const totalLimite = items.reduce((t, p) => t + p.limite, 0);
+
+    const totalGastado = items.reduce((t, p) => t + p.gastado, 0);
+
+    $("subtituloPresupuesto").textContent =
+        `${nombreMes(periodo)} · ${money(totalGastado)} gastados de ${money(totalLimite)}`;
+
+    $("presupuestos").innerHTML = items.map((p) => {
+
+        const pct = p.gastado / p.limite;
+
+        const nivel = pct > 1 ? "exceso" : pct >= 0.8 ? "alerta" : "ok";
+
+        const resto = p.limite - p.gastado;
+
+        const mensaje = resto >= 0
+            ? `Te quedan ${money(resto)}`
+            : `Te pasaste por ${money(-resto)}`;
+
+        const ancho = Math.min(100, Math.round(pct * 100));
+
+        const icono = ICONOS[p.categoria.toLowerCase()] || "📦";
+
+        return `
+            <div class="presupuesto-item" data-categoria="${esc(p.categoria)}" data-limite="${p.limite}">
+
+                <div class="presupuesto-top">
+
+                    <span class="presupuesto-nombre">${icono} ${esc(p.categoria)}</span>
+
+                    <span class="presupuesto-monto">${money(p.gastado)} de ${money(p.limite)}</span>
+
+                </div>
+
+                <div class="presupuesto-barra" role="progressbar"
+                    aria-valuemin="0" aria-valuemax="100" aria-valuenow="${ancho}"
+                    aria-label="Gastado en ${esc(p.categoria)}">
+
+                    <div class="presupuesto-progreso nivel-${nivel}" style="width:${ancho}%"></div>
+
+                </div>
+
+                <div class="presupuesto-pie">
+
+                    <span class="presupuesto-mensaje nivel-${nivel}">${mensaje} · ${Math.round(pct * 100)}%</span>
+
+                    <span class="presupuesto-acciones">
+
+                        <button class="mov-btn" type="button" data-pres="editar">Cambiar</button>
+
+                        <button class="mov-btn mov-btn-borrar" type="button" data-pres="quitar">Quitar</button>
+
+                    </span>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+async function guardarPresupuesto(categoria, limite) {
+
+    await api("presupuesto", { categoria, limite });
+
+    await cargarDatos();
+
+    renderTodo();
 
 }
 
@@ -1164,6 +1297,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
         renderResumenPeriodo();
 
+        renderPresupuestos();
+
     });
 
     $("toggleDeudas").addEventListener("click", () => {
@@ -1180,6 +1315,118 @@ window.addEventListener("DOMContentLoaded", () => {
         const boton = e.target.closest(".btn-deuda");
 
         if (boton) pagarDeuda(boton);
+
+    });
+
+    // Presupuestos: guardar, cambiar y quitar
+    $("presForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const categoria = nombreCategoria($("presCategoria").value);
+
+        const limite = Number($("presLimite").value);
+
+        if (!$("presCategoria").value.trim() || !(limite > 0)) {
+
+            mostrarToast("💲 Elige una categoría y un límite mayor que 0");
+
+            return;
+
+        }
+
+        const boton = $("presBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarPresupuesto(categoria, limite);
+
+            $("presCategoria").value = "";
+
+            $("presLimite").value = "";
+
+            mostrarToast(`✅ Presupuesto de ${categoria} guardado`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar presupuesto";
+
+        }
+
+    });
+
+    $("presupuestos").addEventListener("click", async (e) => {
+
+        const boton = e.target.closest("[data-pres]");
+
+        if (!boton) return;
+
+        const item = boton.closest("[data-categoria]");
+
+        const categoria = item.dataset.categoria;
+
+        if (boton.dataset.pres === "editar") {
+
+            $("presCategoria").value = categoria;
+
+            $("presLimite").value = item.dataset.limite;
+
+            $("presLimite").focus();
+
+            return;
+
+        }
+
+        if (boton.disabled) return;
+
+        // Quitar: pide confirmar con un segundo toque
+        if (!boton.dataset.confirmando) {
+
+            boton.dataset.confirmando = "1";
+
+            boton.textContent = "¿Seguro?";
+
+            setTimeout(() => {
+
+                if (boton.isConnected && boton.dataset.confirmando) {
+
+                    delete boton.dataset.confirmando;
+
+                    boton.textContent = "Quitar";
+
+                }
+
+            }, 4000);
+
+            return;
+
+        }
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳";
+
+        try {
+
+            await guardarPresupuesto(categoria, 0);
+
+            mostrarToast(`🗑️ Presupuesto de ${categoria} quitado`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        }
 
     });
 
