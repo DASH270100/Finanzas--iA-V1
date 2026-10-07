@@ -79,11 +79,11 @@
 
         <nav aria-label="Principal">
 
-            <a href="#inicio" class="active" aria-current="page">
+            <a href="#inicio" class="active" aria-current="page" data-vista="dashboard">
                 <span class="nav-icon">📊</span><span class="nav-text">Dashboard</span>
             </a>
 
-            <a href="#estadisticas">
+            <a href="#estadisticas" data-vista="estadisticas">
                 <span class="nav-icon">📈</span><span class="nav-text">Estadísticas</span>
             </a>
 
@@ -132,6 +132,8 @@
             <button id="reintentar" type="button">Reintentar</button>
 
         </div>
+
+        <div id="vista-dashboard" class="vista">
 
         <!-- REGISTRAR -->
 
@@ -302,78 +304,6 @@
 
         </section>
 
-        <!-- ESTADÍSTICAS -->
-
-        <section class="card estadisticas-card" id="estadisticas">
-
-            <div class="card-title">
-
-                <div>
-
-                    <h2>📈 Estadísticas</h2>
-
-                    <p id="subtituloEstadisticas">Tu ritmo de gasto y cómo vienen tus meses.</p>
-
-                </div>
-
-            </div>
-
-            <div id="statTiles" class="stat-tiles">
-
-                <p class="vacio">Cargando…</p>
-
-            </div>
-
-            <h3 class="stat-subtitulo">Ingresos vs gastos (últimos 6 meses)</h3>
-
-            <div id="graficoMeses" class="grafico-meses"></div>
-
-        </section>
-
-        <!-- PRESUPUESTO -->
-
-        <section class="card presupuesto-card">
-
-            <div class="card-title">
-
-                <div>
-
-                    <h2>🎯 Presupuesto por categoría</h2>
-
-                    <p id="subtituloPresupuesto">Fija un límite mensual por categoría y sigue cuánto te queda.</p>
-
-                </div>
-
-            </div>
-
-            <div id="presupuestos">
-
-                <p class="vacio">Cargando…</p>
-
-            </div>
-
-            <form id="presForm" class="presupuesto-form">
-
-                <label>Categoría
-                    <input id="presCategoria" type="text" maxlength="40"
-                        list="categoriasPresupuesto" placeholder="Ej: Comida" autocomplete="off" required>
-                </label>
-
-                <label>Límite mensual (S/)
-                    <input id="presLimite" type="number" step="0.01" min="0.01"
-                        inputmode="decimal" placeholder="300" required>
-                </label>
-
-                <button id="presBoton" type="submit">Guardar presupuesto</button>
-
-            </form>
-
-            <p class="presupuesto-nota">Si la categoría ya tiene presupuesto, se actualiza.</p>
-
-            <datalist id="categoriasPresupuesto"></datalist>
-
-        </section>
-
         <!-- DEUDAS -->
 
         <section class="card deudas-card">
@@ -435,6 +365,88 @@
             </div>
 
         </section>
+
+        </div>
+
+        <!-- VISTA ESTADÍSTICAS Y PRESUPUESTO -->
+
+        <div id="vista-estadisticas" class="vista vista-stack" hidden>
+
+        <!-- ESTADÍSTICAS -->
+
+        <section class="card estadisticas-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>📈 Estadísticas</h2>
+
+                    <p id="subtituloEstadisticas">Tu ritmo de gasto y cómo vienen tus meses.</p>
+
+                </div>
+
+                <select id="filtroMesStats" class="filtro-mes" aria-label="Periodo de las estadísticas"></select>
+
+            </div>
+
+            <div id="statTiles" class="stat-tiles">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <h3 class="stat-subtitulo">Ingresos vs gastos (últimos 6 meses)</h3>
+
+            <div id="graficoMeses" class="grafico-meses"></div>
+
+        </section>
+
+        <!-- PRESUPUESTO -->
+
+        <section class="card presupuesto-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🎯 Presupuesto por categoría</h2>
+
+                    <p id="subtituloPresupuesto">Fija un límite mensual por categoría y sigue cuánto te queda.</p>
+
+                </div>
+
+            </div>
+
+            <div id="presupuestos">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="presForm" class="presupuesto-form">
+
+                <label>Categoría
+                    <input id="presCategoria" type="text" maxlength="40"
+                        list="categoriasPresupuesto" placeholder="Ej: Comida" autocomplete="off" required>
+                </label>
+
+                <label>Límite mensual (S/)
+                    <input id="presLimite" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="300" required>
+                </label>
+
+                <button id="presBoton" type="submit">Guardar presupuesto</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Si la categoría ya tiene presupuesto, se actualiza.</p>
+
+            <datalist id="categoriasPresupuesto"></datalist>
+
+        </section>
+
+        </div>
 
     </main>
 
