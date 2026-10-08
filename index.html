@@ -15,7 +15,15 @@
     <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Estilo elegido (se aplica antes de pintar para que no parpadee) -->
+    <script>
+        try {
+            var t = localStorage.getItem("finanzas_tema");
+            if (t === "iridiscente" || t === "atardecer") document.documentElement.setAttribute("data-tema", t);
+        } catch (e) {}
+    </script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
@@ -644,6 +652,37 @@
                     <h2>⚙ Configuración</h2>
 
                     <p>Ajustes de la app.</p>
+
+                </div>
+
+            </div>
+
+            <div class="config-bloque config-bloque-col">
+
+                <div>
+
+                    <h3>🎨 Apariencia</h3>
+
+                    <p>Elige cómo quieres ver la app. Se guarda en este dispositivo.</p>
+
+                </div>
+
+                <div class="temas" role="radiogroup" aria-label="Estilo de la app">
+
+                    <button type="button" class="tema-opcion" role="radio" aria-checked="true" data-tema="noche">
+                        <span class="tema-muestra m-noche"></span>
+                        <span>Noche<small>Oscuro con morado</small></span>
+                    </button>
+
+                    <button type="button" class="tema-opcion" role="radio" aria-checked="false" data-tema="iridiscente">
+                        <span class="tema-muestra m-iridiscente"></span>
+                        <span>Iridiscente<small>Claro y de vidrio</small></span>
+                    </button>
+
+                    <button type="button" class="tema-opcion" role="radio" aria-checked="false" data-tema="atardecer">
+                        <span class="tema-muestra m-atardecer"></span>
+                        <span>Atardecer<small>Noche azul y sol naranja</small></span>
+                    </button>
 
                 </div>
 
