@@ -36,15 +36,15 @@
 
         <h2>Finanzas IA</h2>
 
-        <p>Ingresa tu PIN para ver tus datos.</p>
+        <p>Ingresa tu código para ver tus datos.</p>
 
         <input
             id="pinInput"
             name="pin"
             type="password"
             autocomplete="current-password"
-            placeholder="PIN"
-            aria-label="PIN"
+            placeholder="Código"
+            aria-label="Código"
             required>
 
         <div id="pinError" class="pin-error" role="alert"></div>
@@ -660,6 +660,69 @@
                 </div>
 
                 <button id="demoEntrar" type="button">▶ Entrar al modo demo</button>
+
+            </div>
+
+        </section>
+
+        <!-- PANEL DE ADMINISTRACIÓN (solo se muestra al administrador) -->
+
+        <section id="adminCard" class="card admin-card" hidden>
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>👑 Panel de administración</h2>
+
+                    <p id="adminResumen">Las personas que tienen acceso a la app.</p>
+
+                </div>
+
+            </div>
+
+            <div id="adminLista" class="admin-lista">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="adminForm" class="admin-form" autocomplete="off">
+
+                <h3>Dar acceso a una persona</h3>
+
+                <div class="admin-form-fila">
+
+                    <label>Nombre
+                        <input id="adminNombre" type="text" maxlength="40" placeholder="Ej: María" required>
+                    </label>
+
+                    <label>Código
+                        <span class="campo-con-boton">
+                            <input id="adminCodigo" type="text" maxlength="60" placeholder="Escríbelo tú" required>
+                            <button id="adminSugerir" class="mov-btn" type="button">Sugerir</button>
+                        </span>
+                    </label>
+
+                    <label>Pagado hasta (opcional)
+                        <input id="adminPagado" type="date">
+                    </label>
+
+                    <button id="adminCrear" type="submit">Crear acceso</button>
+
+                </div>
+
+                <p id="adminAviso" class="admin-aviso" role="status"></p>
+
+            </form>
+
+            <div id="adminListo" class="admin-listo" hidden>
+
+                <strong id="adminListoTitulo"></strong>
+
+                <textarea id="adminListoTexto" readonly rows="4"></textarea>
+
+                <button id="adminCopiar" class="mov-btn" type="button">📋 Copiar mensaje para WhatsApp</button>
 
             </div>
 
