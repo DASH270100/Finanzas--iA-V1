@@ -1,4 +1,4 @@
-// Finanzas IA - Script v3.1
+// Finanzas IA - Script v3.2
 // Backend: Google Apps Script protegido con PIN (el Sheet ya no se lee desde el navegador).
 "use strict";
 
@@ -424,6 +424,27 @@ function iconoDe(m) {
 
 }
 
+// Pantalla vacía con guía: icono, título, explicación y (opcional) un ejemplo que se puede tocar
+function vacioGuia(icono, titulo, texto, ejemplo) {
+
+    return `
+        <div class="vacio-guia">
+            <div class="vacio-icono">${icono}</div>
+            <strong>${esc(titulo)}</strong>
+            <p>${esc(texto)}</p>
+            ${ejemplo ? `<button type="button" class="chip-ejemplo" data-ejemplo="${esc(ejemplo)}">Probar: ${esc(ejemplo)}</button>` : ""}
+        </div>
+    `;
+
+}
+
+// La tarjeta de bienvenida solo aparece mientras no haya ningún movimiento
+function renderBienvenida() {
+
+    $("bienvenida").hidden = estado.movimientos.length > 0;
+
+}
+
 function renderActividad() {
 
     const recientes = [...estado.movimientos]
@@ -435,7 +456,11 @@ function renderActividad() {
 
     if (!recientes.length) {
 
-        $("actividad").innerHTML = '<p class="vacio">Aún no hay movimientos registrados.</p>';
+        $("actividad").innerHTML = vacioGuia(
+            "📋", "Aún no hay movimientos",
+            "Aquí verás tus últimos movimientos y podrás editarlos o borrarlos.",
+            "almuerzo 15"
+        );
 
         return;
 
@@ -599,9 +624,13 @@ function renderResumenPeriodo() {
 
     if (!grupos.length) {
 
-        $("insightTitulo").textContent = "Sin gastos en este periodo";
+        $("insightTitulo").textContent = estado.movimientos.length
+            ? "Sin gastos en este periodo"
+            : "Tu análisis aparecerá aquí";
 
-        $("insightTexto").textContent = "Registra un movimiento y aquí verás tu análisis.";
+        $("insightTexto").textContent = estado.movimientos.length
+            ? "Prueba con otro mes o registra un gasto."
+            : "Registra tu primer gasto y te diré en qué se va tu plata.";
 
         return;
 
@@ -686,7 +715,13 @@ function renderDeudas() {
 
             </div>
         `).join("")
-        : '<p class="vacio">🎉 No tienes deudas pendientes.</p>';
+        : (estado.movimientos.length
+            ? '<p class="vacio">🎉 No tienes deudas pendientes.</p>'
+            : vacioGuia(
+                "🤝", "Sin préstamos por ahora",
+                "Si le prestas plata a alguien, escríbelo y quedará aquí hasta que te la devuelva.",
+                "presté 50 a Juan"
+            ));
 
     const toggle = $("toggleDeudas");
 
@@ -767,7 +802,13 @@ function renderEstadisticas() {
 
     if (!gastos.length && !ingresos.length) {
 
-        $("statTiles").innerHTML = '<p class="vacio">Sin movimientos en este periodo.</p>';
+        $("statTiles").innerHTML = estado.movimientos.length
+            ? '<p class="vacio">Sin movimientos en este periodo.</p>'
+            : vacioGuia(
+                "📊", "Todavía no hay datos para mostrar",
+                "Con unos cuantos movimientos verás aquí tus promedios, tu mayor gasto y cómo cambian mes a mes.",
+                "taxi 10"
+            );
 
         return;
 
@@ -1059,7 +1100,8 @@ function renderFijos() {
     if (!items.length) {
 
         $("fijos").innerHTML =
-            '<p class="vacio">Aún no tienes gastos fijos. Agrega el primero abajo (alquiler, suscripciones…).</p>';
+            vacioGuia("📌", "Aún no tienes gastos fijos",
+                "Alquiler, internet, suscripciones: agrégalos abajo y la app te avisa cuando toca pagarlos.");
 
     } else {
 
@@ -1207,7 +1249,8 @@ function renderMetas() {
     if (!items.length) {
 
         $("metas").innerHTML =
-            '<p class="vacio">Aún no tienes metas. Crea la primera abajo (por ejemplo, tu mini depa).</p>';
+            vacioGuia("🎯", "Aún no tienes metas",
+                "Crea la primera abajo: un viaje, tu mini depa, lo que quieras lograr. Luego vas sumando aportes.");
 
         return;
 
@@ -1285,6 +1328,8 @@ async function guardarMeta(datos) {
 function renderTodo() {
 
     renderDashboard();
+
+    renderBienvenida();
 
     renderActividad();
 
@@ -1780,7 +1825,8 @@ function renderPresupuestos() {
             "Fija un límite mensual por categoría y sigue cuánto te queda.";
 
         $("presupuestos").innerHTML =
-            '<p class="vacio">Aún no tienes presupuestos. Elige una categoría abajo y fija su límite.</p>';
+            vacioGuia("💰", "Aún no tienes presupuestos",
+                "Elige una categoría abajo y fija un límite mensual. Te muestro cuánto te queda.");
 
         return;
 
@@ -2152,6 +2198,25 @@ async function pagarDeuda(boton) {
 window.addEventListener("DOMContentLoaded", () => {
 
     $("registrar").addEventListener("click", registrarMovimiento);
+
+    // Ejemplos tocables: llenan el cuadro de registro y llevan al usuario hasta él
+    document.addEventListener("click", (e) => {
+
+        const chip = e.target.closest("[data-ejemplo]");
+
+        if (!chip) return;
+
+        mostrarVista("dashboard");
+
+        const caja = $("mensaje");
+
+        caja.value = chip.dataset.ejemplo;
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        caja.focus();
+
+    });
 
     $("mensaje").addEventListener("keydown", (e) => {
 
