@@ -1,4 +1,4 @@
-// Finanzas IA - Script v3.2
+// Finanzas IA - Script v3.4
 // Backend: Google Apps Script protegido con PIN (el Sheet ya no se lee desde el navegador).
 "use strict";
 
@@ -209,6 +209,7 @@ function borrarPin() {
 
 // Última copia de los datos, para mostrarla al instante mientras Google responde
 function guardarCache(data) {
+    if (modoDemo) return; // los datos de la demo nunca se guardan
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (e) { /* sin almacenamiento */ }
 }
 
@@ -233,12 +234,25 @@ function pedirPin(mensaje = "") {
 
 class ErrorPin extends Error {}
 
+// Modo demo: la app funciona con un "Sheet" de mentira en memoria (demo.js). No toca tu hoja.
+let modoDemo = false;
+
 // =========================
 // API (Google Apps Script)
 // =========================
 
 // Se envía como text/plain para evitar preflight de CORS con Apps Script
 async function api(accion, extra = {}, pin = leerPin()) {
+
+    if (modoDemo) {
+
+        const falsa = await DemoBackend.llamar(accion, extra);
+
+        if (!falsa.ok) throw new Error(falsa.error || "Error desconocido");
+
+        return falsa;
+
+    }
 
     const r = await fetch(API_URL, {
         method: "POST",
@@ -878,7 +892,7 @@ function renderEstadisticas() {
 // PESTAÑAS (Dashboard / Estadísticas)
 // =========================
 
-const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente"];
+const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente", "configuracion"];
 
 function mostrarVista(nombre) {
 
@@ -1420,6 +1434,9 @@ const REGLAS_RAPIDAS = [
 function categoriasExistentes() {
 
     const mapa = new Map();
+
+    // En la demo todavía no hay datos: se usan categorías típicas para que el registro rápido funcione
+    if (modoDemo) DemoBackend.categorias.forEach((c) => mapa.set(sinTildes(c), c));
 
     estado.movimientos.forEach((m) => {
 
@@ -2195,7 +2212,81 @@ async function pagarDeuda(boton) {
 // EVENTOS
 // =========================
 
+// =========================
+// MODO DEMO
+// =========================
+
+async function entrarDemo() {
+
+    if (modoDemo) return;
+
+    DemoBackend.reset();
+
+    modoDemo = true;
+
+    estado.mes = null;
+
+    estado.editando = null;
+
+    estado.chat = [];
+
+    estado.mostrarTodasLasDeudas = false;
+
+    $("bannerDemo").hidden = false;
+
+    try {
+
+        await cargarDatos();
+
+    } catch (e) {
+
+        console.error(e);
+
+    }
+
+    renderTodo();
+
+    mostrarVista("dashboard");
+
+    mostrarToast("🎬 Estás en el modo demo");
+
+}
+
+async function salirDemo() {
+
+    if (!modoDemo) return;
+
+    modoDemo = false;
+
+    $("bannerDemo").hidden = true;
+
+    estado.mes = null;
+
+    estado.editando = null;
+
+    estado.chat = [];
+
+    // Vuelven tus datos reales (primero lo último guardado, luego se actualiza)
+    const cache = leerCache();
+
+    try { aplicarDatos(cache || {}); } catch (e) { console.error(e); }
+
+    renderTodo();
+
+    mostrarVista("dashboard");
+
+    mostrarToast("Saliste del modo demo");
+
+    actualizarTodo();
+
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+
+    $("demoEntrar").addEventListener("click", entrarDemo);
+
+    $("demoSalir").addEventListener("click", salirDemo);
+
 
     $("registrar").addEventListener("click", registrarMovimiento);
 
