@@ -95,7 +95,7 @@
                 <span class="nav-icon">🤖</span><span class="nav-text">Asistente IA</span>
             </a>
 
-            <a href="#" data-proximamente aria-disabled="true" title="Próximamente">
+            <a href="#configuracion" data-vista="configuracion">
                 <span class="nav-icon">⚙</span><span class="nav-text">Configuración</span>
             </a>
 
@@ -108,6 +108,16 @@
     ============================ -->
 
     <main class="contenido">
+
+        <!-- AVISO MODO DEMO -->
+
+        <div id="bannerDemo" class="banner-demo" role="status" hidden>
+
+            <span>🎬 <strong>Modo demo</strong> · Lo que hagas aquí no se guarda en tu hoja.</span>
+
+            <button id="demoSalir" type="button">Salir del demo</button>
+
+        </div>
 
         <!-- HEADER -->
 
@@ -621,6 +631,42 @@
 
         </div>
 
+        <!-- VISTA CONFIGURACIÓN -->
+
+        <div id="vista-configuracion" class="vista vista-stack" hidden>
+
+        <section class="card config-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>⚙ Configuración</h2>
+
+                    <p>Ajustes de la app.</p>
+
+                </div>
+
+            </div>
+
+            <div class="config-bloque">
+
+                <div>
+
+                    <h3>🎬 Modo demo</h3>
+
+                    <p>Mira la app como la vería alguien que entra por primera vez: sin datos y 100% funcional. Puedes registrar, editar, borrar, crear presupuestos y metas. Todo ocurre solo en esta pantalla y no toca tu hoja de Google.</p>
+
+                </div>
+
+                <button id="demoEntrar" type="button">▶ Entrar al modo demo</button>
+
+            </div>
+
+        </section>
+
+        </div>
+
     </main>
 
 </div>
@@ -638,6 +684,8 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
 <script src="graficos.js"></script>
+
+<script src="demo.js"></script>
 
 <script src="script.js"></script>
 
