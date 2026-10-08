@@ -3517,3 +3517,414 @@ html[data-tema="atardecer"] .sidebar nav a.active:hover{
         color:var(--primary);
     }
 }
+
+
+/*==================================================
+   INICIO REHECHO (estilos Iridiscente y Atardecer)
+   En Noche estas piezas no se ven.
+====================================================*/
+
+.hero-saldo,
+.cat-tiles{ display:none; }
+
+html[data-tema="iridiscente"] .hero-saldo,
+html[data-tema="atardecer"] .hero-saldo{ display:block; }
+
+html[data-tema="iridiscente"] .cat-tiles:not([hidden]),
+html[data-tema="atardecer"] .cat-tiles:not([hidden]){ display:flex; }
+
+/* El resumen de tres tarjetas se reemplaza por el resumen grande */
+html[data-tema="iridiscente"] .dashboard,
+html[data-tema="atardecer"] .dashboard{ display:none; }
+
+/* Cabecera: saludo corto, el resumen manda */
+html[data-tema="iridiscente"] .header,
+html[data-tema="atardecer"] .header{ gap:16px; }
+
+html[data-tema="iridiscente"] .header > div:first-child,
+html[data-tema="atardecer"] .header > div:first-child{ flex:1; min-width:0; }
+
+html[data-tema="iridiscente"] .header > div > p,
+html[data-tema="atardecer"] .header > div > p{ display:none; }
+
+html[data-tema="iridiscente"] .header h1,
+html[data-tema="atardecer"] .header h1{
+    font-size:clamp(26px,4vw,34px);
+    margin-bottom:18px;
+}
+
+/* Orden de la pantalla: categorías → escribir → movimientos → gráfico → deudas */
+html[data-tema="iridiscente"] #vista-dashboard,
+html[data-tema="atardecer"] #vista-dashboard{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    max-width:820px;
+    margin:0 auto;
+}
+
+html[data-tema="iridiscente"] #vista-dashboard[hidden],
+html[data-tema="atardecer"] #vista-dashboard[hidden]{ display:none; }
+
+html[data-tema="iridiscente"] .header,
+html[data-tema="atardecer"] .header{ max-width:820px; margin-left:auto; margin-right:auto; }
+
+html[data-tema="iridiscente"] .grid-principal,
+html[data-tema="atardecer"] .grid-principal{ display:contents; }
+
+html[data-tema="iridiscente"] #vista-dashboard > *,
+html[data-tema="atardecer"] #vista-dashboard > *,
+html[data-tema="iridiscente"] .grid-principal > *,
+html[data-tema="atardecer"] .grid-principal > *{ margin-bottom:0; }
+
+html[data-tema="iridiscente"] .cat-tiles,
+html[data-tema="atardecer"] .cat-tiles{ order:1; }
+html[data-tema="iridiscente"] .aviso-fijos,
+html[data-tema="atardecer"] .aviso-fijos{ order:2; margin:0; }
+html[data-tema="iridiscente"] .registro,
+html[data-tema="atardecer"] .registro{ order:3; }
+html[data-tema="iridiscente"] .respuesta,
+html[data-tema="atardecer"] .respuesta{ order:4; padding:14px 22px; font-size:14px; }
+html[data-tema="iridiscente"] .bienvenida,
+html[data-tema="atardecer"] .bienvenida{ order:5; }
+html[data-tema="iridiscente"] .actividad-card,
+html[data-tema="atardecer"] .actividad-card{ order:6; }
+html[data-tema="iridiscente"] .grafico,
+html[data-tema="atardecer"] .grafico{ order:7; }
+html[data-tema="iridiscente"] .deudas-card,
+html[data-tema="atardecer"] .deudas-card{ order:8; }
+
+/* Barra para escribir: píldora con botón redondo */
+html[data-tema="iridiscente"] .registro,
+html[data-tema="atardecer"] .registro{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    border-radius:999px;
+}
+
+html[data-tema="iridiscente"] .registro .card-title,
+html[data-tema="atardecer"] .registro .card-title{ display:none; }
+
+html[data-tema="iridiscente"] .registro textarea,
+html[data-tema="atardecer"] .registro textarea{
+    flex:1;
+    height:52px;
+    min-height:52px;
+    margin:0;
+    padding:15px 22px;
+    resize:none;
+    border-radius:999px;
+    border:none;
+    overflow:hidden;
+    line-height:1.3;
+}
+
+html[data-tema="iridiscente"] #registrar,
+html[data-tema="atardecer"] #registrar{
+    flex:0 0 52px;
+    width:52px;
+    height:52px;
+    margin:0;
+    padding:0;
+    border-radius:50%;
+    font-size:0;
+}
+
+html[data-tema="iridiscente"] #registrar #textoBoton::after,
+html[data-tema="atardecer"] #registrar #textoBoton::after{
+    content:"→";
+    font-size:22px;
+    line-height:1;
+}
+
+/* Movimientos recientes: lista limpia */
+html[data-tema="iridiscente"] .actividad-card .card-title p,
+html[data-tema="atardecer"] .actividad-card .card-title p{ display:none; }
+
+html[data-tema="iridiscente"] .movimiento,
+html[data-tema="atardecer"] .movimiento{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid var(--border);
+    border-radius:0;
+    padding:14px 2px;
+}
+
+html[data-tema="iridiscente"] .movimiento:last-child,
+html[data-tema="atardecer"] .movimiento:last-child{ border-bottom:none; }
+
+/* ---------- Categorías destacadas ---------- */
+
+.cat-tiles{
+    gap:14px;
+    overflow-x:auto;
+    padding:4px 2px 8px;
+    scrollbar-width:none;
+}
+
+.cat-tiles::-webkit-scrollbar{ display:none; }
+
+.cat-tile{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    text-align:center;
+}
+
+.cat-tile .ct-ico{ font-size:24px; line-height:1; }
+.cat-tile strong{ font-size:14px; font-weight:800; }
+.cat-tile small{ font-size:12px; color:var(--text-muted); font-weight:600; }
+
+/* ---------- IRIDISCENTE ---------- */
+
+html[data-tema="iridiscente"] .hero-saldo{
+    padding:22px 24px 20px;
+    border-radius:var(--radius-lg);
+    background:
+        linear-gradient(115deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,0) 42%),
+        linear-gradient(120deg,#FBD3E9 0%,#CFE3FF 36%,#C9F5E6 64%,#E5D4FF 100%);
+    border:1px solid rgba(255,255,255,.95);
+    box-shadow:var(--shadow-md);
+    color:var(--text);
+}
+
+html[data-tema="iridiscente"] .hs-label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:700;
+    color:#4A5068;
+}
+
+html[data-tema="iridiscente"] .hs-saldo{
+    display:block;
+    font-size:clamp(34px,7vw,48px);
+    font-weight:800;
+    letter-spacing:-.02em;
+    line-height:1.05;
+}
+
+html[data-tema="iridiscente"] .hs-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+}
+
+html[data-tema="iridiscente"] .hs-chip{
+    padding:7px 14px;
+    border-radius:999px;
+    background:rgba(255,255,255,.7);
+    font-size:12px;
+    font-weight:600;
+    color:#4A5068;
+}
+
+html[data-tema="iridiscente"] .hs-chip b{ color:var(--text); font-weight:800; }
+
+html[data-tema="iridiscente"] .cat-tile .ct-ico{
+    width:64px;
+    height:64px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--aro,#FF8FB1);
+    box-shadow:var(--shadow-sm);
+    font-size:26px;
+}
+
+html[data-tema="iridiscente"] .cat-tile.c0{ --aro:#FF8FB1; }
+html[data-tema="iridiscente"] .cat-tile.c1{ --aro:#8E7CFF; }
+html[data-tema="iridiscente"] .cat-tile.c2{ --aro:#FFA462; }
+html[data-tema="iridiscente"] .cat-tile.c3{ --aro:#3FD6A8; }
+html[data-tema="iridiscente"] .cat-tile.c4{ --aro:#5BB5FF; }
+
+html[data-tema="iridiscente"] .registro{ background:#fff; box-shadow:var(--shadow-sm); }
+html[data-tema="iridiscente"] .registro textarea{ background:var(--surface-light); }
+
+/* ---------- ATARDECER ---------- */
+
+html[data-tema="atardecer"] .header{
+    padding:26px 28px 78px;
+    min-height:0;
+}
+
+html[data-tema="atardecer"] .hero-saldo{ color:#fff; }
+
+html[data-tema="atardecer"] .hs-label{
+    display:block;
+    margin-bottom:4px;
+    font-size:13px;
+    font-weight:700;
+    color:rgba(255,255,255,.8);
+}
+
+html[data-tema="atardecer"] .hs-saldo{
+    display:block;
+    font-size:clamp(34px,7vw,50px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    line-height:1.05;
+    text-shadow:0 2px 18px rgba(20,16,58,.35);
+}
+
+html[data-tema="atardecer"] .hs-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+}
+
+html[data-tema="atardecer"] .hs-chip{
+    padding:6px 13px;
+    border-radius:999px;
+    background:rgba(20,16,58,.38);
+    border:1px solid rgba(255,255,255,.18);
+    font-size:12px;
+    font-weight:700;
+    color:rgba(255,255,255,.85);
+}
+
+html[data-tema="atardecer"] .hs-chip b{ color:#fff; font-weight:800; }
+
+html[data-tema="atardecer"] .cat-tiles{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    overflow:visible;
+    padding:0;
+}
+
+html[data-tema="atardecer"] .cat-tiles:not([hidden]){ display:grid; }
+
+html[data-tema="atardecer"] .cat-tile:nth-child(n+4){ display:none; }
+
+html[data-tema="atardecer"] .cat-tile{
+    padding:16px 10px 14px;
+    border-radius:22px;
+    background:var(--surface);
+    box-shadow:var(--shadow-sm);
+}
+
+html[data-tema="atardecer"] .cat-tile .ct-ico{
+    width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:14px;
+    background:var(--cat,#FFB16B);
+    margin-bottom:6px;
+}
+
+html[data-tema="atardecer"] .cat-tile.c0{ --cat:#FFB16B; }
+html[data-tema="atardecer"] .cat-tile.c1{ --cat:#7FB6FF; }
+html[data-tema="atardecer"] .cat-tile.c2{ --cat:#FF9DB8; }
+
+html[data-tema="atardecer"] .cat-tile strong{ color:var(--text); }
+
+html[data-tema="atardecer"] .registro{ background:var(--surface); }
+html[data-tema="atardecer"] .registro textarea{ background:var(--surface-light); }
+
+@media(max-width:640px){
+
+    html[data-tema="atardecer"] .header{ padding:22px 20px 70px; }
+
+    html[data-tema="atardecer"] .cat-tiles{ gap:10px; }
+
+    html[data-tema="iridiscente"] .hero-saldo{ padding:20px 20px 18px; }
+
+}
+
+/* Bloquear: botón chico arriba a la derecha */
+html[data-tema="iridiscente"] .header,
+html[data-tema="atardecer"] .header{ position:relative; }
+
+html[data-tema="iridiscente"] .btn-bloquear,
+html[data-tema="atardecer"] .btn-bloquear{
+    position:absolute;
+    top:14px;
+    right:14px;
+    padding:8px 14px;
+    font-size:12px;
+}
+
+html[data-tema="iridiscente"] .header h1,
+html[data-tema="atardecer"] .header h1{ padding-right:90px; }
+
+html[data-tema="iridiscente"] .header .saludo,
+html[data-tema="atardecer"] .header .saludo{ margin-bottom:4px; }
+
+@media(max-width:640px){
+
+    html[data-tema="iridiscente"] .hs-txt,
+    html[data-tema="atardecer"] .hs-txt{ display:none; }
+
+    html[data-tema="iridiscente"] .hs-chips,
+    html[data-tema="atardecer"] .hs-chips{ flex-wrap:nowrap; }
+
+    html[data-tema="iridiscente"] .btn-bloquear,
+    html[data-tema="atardecer"] .btn-bloquear{ top:10px; right:10px; }
+
+}
+
+/*==================================================
+   Pestañas que no son el inicio + arreglo de desborde
+====================================================*/
+
+/* Celular: la columna puede encogerse (antes empujaba las tarjetas fuera de pantalla) */
+.contenido{ min-width:0; }
+.vista-stack > *{ min-width:0; }
+
+@media(max-width:640px){
+    .layout{ grid-template-columns:minmax(0,1fr); }
+}
+
+.titulo-vista{ display:none; }
+
+html[data-tema="iridiscente"] body:not([data-vista="dashboard"]) .titulo-vista,
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .titulo-vista{
+    display:block;
+    margin:2px 0 0;
+    font-size:clamp(26px,4vw,34px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    padding-right:90px;
+}
+
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .titulo-vista{ color:#fff; }
+
+html[data-tema="iridiscente"] body:not([data-vista="dashboard"]) .header h1,
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .header h1,
+html[data-tema="iridiscente"] body:not([data-vista="dashboard"]) .hero-saldo,
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .hero-saldo{ display:none; }
+
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .header{
+    padding:22px 28px 66px;
+}
+
+html[data-tema="iridiscente"] body:not([data-vista="dashboard"]) .header{
+    margin-bottom:22px;
+}
+
+/* Las otras pestañas también centradas y con el mismo ancho que el inicio */
+html[data-tema="iridiscente"] .vista:not(#vista-dashboard),
+html[data-tema="atardecer"] .vista:not(#vista-dashboard){
+    max-width:820px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+html[data-tema="iridiscente"] body:not([data-vista="dashboard"]) .header .saludo,
+html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .header .saludo{ display:none; }
+
+@media(max-width:640px){
+    .card-title{ flex-wrap:wrap; gap:12px; }
+    .filtro-mes{ max-width:100%; }
+}
