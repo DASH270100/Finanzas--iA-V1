@@ -1,5 +1,5 @@
-// Finanzas IA - Script v3.4
-// Backend: Google Apps Script protegido con PIN (el Sheet ya no se lee desde el navegador).
+// Finanzas IA - Script v4.0 (multi-usuario)
+// Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
 // =========================
@@ -28,7 +28,10 @@ const estado = {
     chat: [],
     pensando: false,
     fijos: [],
-    metas: []
+    metas: [],
+    usuario: null,
+    personas: [],
+    adminEdicion: null
 };
 
 const ICONOS = {
@@ -234,6 +237,11 @@ function pedirPin(mensaje = "") {
 
 class ErrorPin extends Error {}
 
+// El administrador pausó el acceso de esta persona
+class ErrorPausa extends ErrorPin {}
+
+const MENSAJE_PAUSA = "Tu acceso está pausado. Escríbele a Diego para reactivarlo.";
+
 // Modo demo: la app funciona con un "Sheet" de mentira en memoria (demo.js). No toca tu hoja.
 let modoDemo = false;
 
@@ -265,6 +273,8 @@ async function api(accion, extra = {}, pin = leerPin()) {
     const data = await r.json();
 
     if (!data.ok) {
+
+        if (data.error === "ACCESO_PAUSADO") throw new ErrorPausa(data.error);
 
         if (data.error === "PIN incorrecto") throw new ErrorPin(data.error);
 
@@ -354,6 +364,8 @@ function normalizarDatos(data) {
 
 function aplicarDatos(data) {
 
+    estado.usuario = data.usuario || null;
+
     const n = normalizarDatos(data);
 
     estado.movimientos = n.movimientos;
@@ -381,6 +393,440 @@ async function cargarDatos() {
     guardarCache(data);
 
     ultimaCarga = Date.now();
+
+}
+
+// =========================
+// USUARIO Y ADMINISTRACIÓN
+// =========================
+
+const esAdmin = () => !modoDemo && !!estado.usuario && estado.usuario.rol === "admin";
+
+function renderUsuario() {
+
+    const u = estado.usuario;
+
+    const titulo = document.querySelector(".header h1");
+
+    // El administrador conserva su saludo de siempre; el resto ve su propio nombre
+    if (titulo && u && u.rol !== "admin" && u.nombre) titulo.textContent = "Hola " + u.nombre;
+
+    if (!$("vista-configuracion").hidden) renderConfig();
+
+}
+
+function renderConfig() {
+
+    const visible = esAdmin();
+
+    $("adminCard").hidden = !visible;
+
+    if (visible) cargarPersonas();
+
+}
+
+const PALABRAS_CODIGO = [
+    "gato", "luna", "mar", "rio", "cielo", "nube", "fuego", "tigre", "lima", "cafe",
+    "pizza", "azul", "verde", "rojo", "roble", "jazmin", "trueno", "coral", "pluma", "tango",
+    "cobre", "mango", "limon", "piedra", "viento", "nieve", "perla", "ambar", "roca", "sol"
+];
+
+const CODIGOS_COMUNES = ["12345678", "123456789", "1234567890", "password", "contrasena", "qwerty123", "abc12345", "11111111", "00000000"];
+
+function sugerirCodigo() {
+
+    const n = new Uint32Array(3);
+
+    crypto.getRandomValues(n);
+
+    return [...n].map((x) => PALABRAS_CODIGO[x % PALABRAS_CODIGO.length]).join("-");
+
+}
+
+// Solo avisa; nunca impide guardar
+function avisosCodigo(codigo, nombre) {
+
+    const c = String(codigo || "").trim();
+
+    if (!c) return [];
+
+    const avisos = [];
+
+    if (c.length < 8) avisos.push("tiene menos de 8 caracteres");
+
+    if (/^\d+$/.test(c)) avisos.push("son solo números");
+
+    if (/^(.)\1+$/.test(c)) avisos.push("repite el mismo carácter");
+
+    if (CODIGOS_COMUNES.includes(c.toLowerCase())) avisos.push("es muy común");
+
+    const nom = sinTildes(nombre).replace(/[^a-z0-9]/g, "");
+
+    if (nom.length >= 3 && sinTildes(c).replace(/[^a-z0-9]/g, "") === nom) avisos.push("es igual al nombre");
+
+    return avisos;
+
+}
+
+function diasPara(textoFecha) {
+
+    const f = parseFecha(textoFecha);
+
+    if (!f) return null;
+
+    const hoy = new Date();
+
+    const a = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+    return Math.round((f - a) / 86400000);
+
+}
+
+function textoVence(p) {
+
+    if (!p.pagado) return { texto: "Sin fecha de pago", clase: "" };
+
+    const n = diasPara(p.pagado);
+
+    if (n === null) return { texto: "Pagado hasta " + p.pagado, clase: "" };
+
+    if (n > 1) return { texto: `Pagado hasta ${p.pagado} · vence en ${n} días`, clase: n <= 5 ? "pronto" : "" };
+
+    if (n === 1) return { texto: `Pagado hasta ${p.pagado} · vence mañana`, clase: "pronto" };
+
+    if (n === 0) return { texto: `Pagado hasta ${p.pagado} · vence hoy`, clase: "pronto" };
+
+    return { texto: `Pagado hasta ${p.pagado} · venció hace ${-n} ${-n === 1 ? "día" : "días"}`, clase: "vencido" };
+
+}
+
+function urlApp() {
+
+    return location.origin + location.pathname;
+
+}
+
+function mensajeAcceso(nombre, codigo) {
+
+    return `Hola ${nombre} 👋\nAquí está tu acceso a Finanzas IA:\n${urlApp()}\nTu código: ${codigo}\n(Guárdalo, es solo tuyo)`;
+
+}
+
+async function copiarTexto(texto) {
+
+    try {
+
+        await navigator.clipboard.writeText(texto);
+
+        return true;
+
+    } catch (e) {
+
+        try {
+
+            const t = document.createElement("textarea");
+
+            t.value = texto;
+
+            t.style.position = "fixed";
+
+            t.style.opacity = "0";
+
+            document.body.appendChild(t);
+
+            t.select();
+
+            const ok = document.execCommand("copy");
+
+            t.remove();
+
+            return ok;
+
+        } catch (e2) { return false; }
+
+    }
+
+}
+
+function htmlPersona(p) {
+
+    const bloqueada = p.estado.toLowerCase() === "bloqueada";
+
+    const v = textoVence(p);
+
+    const ed = estado.adminEdicion && estado.adminEdicion.hoja === p.hoja ? estado.adminEdicion : null;
+
+    let editor = "";
+
+    if (ed && ed.campo === "codigo") {
+
+        editor = `
+            <div class="persona-edit">
+                <input type="text" data-campo="codigo" maxlength="60" value="${esc(p.codigo)}" aria-label="Código nuevo">
+                <button type="button" class="mov-btn" data-persona-accion="sugerir">Sugerir</button>
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-codigo">Guardar</button>
+                <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
+            </div>
+            <p class="admin-aviso" data-aviso-persona></p>`;
+
+    } else if (ed && ed.campo === "fecha") {
+
+        const f = parseFecha(p.pagado);
+
+        const iso = f ? f.getFullYear() + "-" + String(f.getMonth() + 1).padStart(2, "0") + "-" + String(f.getDate()).padStart(2, "0") : "";
+
+        editor = `
+            <div class="persona-edit">
+                <input type="date" data-campo="fecha" value="${iso}" aria-label="Pagado hasta">
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-fecha">Guardar</button>
+                <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
+            </div>`;
+
+    }
+
+    return `
+        <div class="persona ${bloqueada ? "persona-bloqueada" : ""}" data-hoja="${esc(p.hoja)}">
+
+            <div class="persona-cab">
+                <strong>${esc(p.nombre)}</strong>
+                <span class="persona-estado ${bloqueada ? "bloqueada" : "activa"}">${bloqueada ? "Bloqueada" : "Activa"}</span>
+            </div>
+
+            <div class="persona-datos">
+                <span>Código: <code>${esc(p.codigo)}</code></span>
+                <span class="${v.clase}">${esc(v.texto)}</span>
+            </div>
+
+            ${editor}
+
+            <div class="persona-acciones">
+                <button type="button" class="mov-btn" data-persona-accion="copiar">📋 Copiar mensaje</button>
+                <button type="button" class="mov-btn ${bloqueada ? "" : "mov-btn-borrar"}" data-persona-accion="estado">${bloqueada ? "Activar" : "Bloquear"}</button>
+                <button type="button" class="mov-btn" data-persona-accion="codigo">Cambiar código</button>
+                <button type="button" class="mov-btn" data-persona-accion="fecha">Pagado hasta</button>
+                <a class="mov-btn" href="${esc(p.enlace)}" target="_blank" rel="noopener">Abrir hoja</a>
+            </div>
+
+        </div>
+    `;
+
+}
+
+function renderPersonas() {
+
+    const lista = estado.personas;
+
+    $("adminResumen").textContent = lista.length
+        ? `${lista.length} ${lista.length === 1 ? "persona" : "personas"} con acceso · ${lista.filter((p) => p.estado.toLowerCase() !== "bloqueada").length} activas`
+        : "Las personas que tienen acceso a la app.";
+
+    $("adminLista").innerHTML = lista.length
+        ? lista.map(htmlPersona).join("")
+        : vacioGuia("👥", "Aún no le diste acceso a nadie",
+            "Crea el primer acceso abajo: escribe su nombre y un código, y mándaselo por WhatsApp.");
+
+}
+
+async function cargarPersonas() {
+
+    try {
+
+        const data = await api("admin_listar");
+
+        estado.personas = data.personas || [];
+
+        renderPersonas();
+
+    } catch (e) {
+
+        if (e instanceof ErrorPin) { manejarError(e); return; }
+
+        console.error(e);
+
+        $("adminLista").innerHTML = '<p class="vacio">No se pudo cargar la lista. Inténtalo otra vez.</p>';
+
+    }
+
+}
+
+function actualizarAvisoCodigo() {
+
+    const avisos = avisosCodigo($("adminCodigo").value, $("adminNombre").value);
+
+    $("adminAviso").textContent = avisos.length
+        ? "⚠️ Código débil: " + avisos.join(", ") + ". Se puede usar igual, pero es más fácil de adivinar."
+        : "";
+
+}
+
+async function crearPersona(e) {
+
+    e.preventDefault();
+
+    const nombre = $("adminNombre").value.trim();
+
+    const codigo = $("adminCodigo").value.trim();
+
+    if (!nombre || !codigo) return;
+
+    const boton = $("adminCrear");
+
+    boton.disabled = true;
+
+    boton.textContent = "Creando…";
+
+    try {
+
+        await api("admin_crear", { nombre, codigo, pagado: $("adminPagado").value });
+
+        $("adminListoTitulo").textContent = "✅ Acceso creado para " + nombre;
+
+        $("adminListoTexto").value = mensajeAcceso(nombre, codigo);
+
+        $("adminListo").hidden = false;
+
+        $("adminForm").reset();
+
+        $("adminAviso").textContent = "";
+
+        await cargarPersonas();
+
+    } catch (err) {
+
+        if (err instanceof ErrorPin) { manejarError(err); return; }
+
+        mostrarToast("❌ " + (err.message || "No se pudo crear el acceso"));
+
+    } finally {
+
+        boton.disabled = false;
+
+        boton.textContent = "Crear acceso";
+
+    }
+
+}
+
+async function accionPersona(boton) {
+
+    const tarjeta = boton.closest(".persona");
+
+    if (!tarjeta) return;
+
+    const hoja = tarjeta.dataset.hoja;
+
+    const persona = estado.personas.find((p) => p.hoja === hoja);
+
+    if (!persona) return;
+
+    const accion = boton.dataset.personaAccion;
+
+    try {
+
+        if (accion === "copiar") {
+
+            const ok = await copiarTexto(mensajeAcceso(persona.nombre, persona.codigo));
+
+            mostrarToast(ok ? "📋 Mensaje copiado" : "No se pudo copiar");
+
+            return;
+
+        }
+
+        if (accion === "estado") {
+
+            const bloquear = persona.estado.toLowerCase() !== "bloqueada";
+
+            // Bloquear pide un segundo toque para evitar errores
+            if (bloquear && boton.dataset.confirmar !== "1") {
+
+                boton.dataset.confirmar = "1";
+
+                boton.textContent = "¿Seguro? Toca otra vez";
+
+                setTimeout(() => { if (boton.isConnected) { boton.dataset.confirmar = ""; boton.textContent = "Bloquear"; } }, 3000);
+
+                return;
+
+            }
+
+            await api("admin_estado", { hoja, estado: bloquear ? "Bloqueada" : "Activa" });
+
+            mostrarToast(bloquear ? "🔒 " + persona.nombre + " bloqueada" : "✅ " + persona.nombre + " activada");
+
+            await cargarPersonas();
+
+            return;
+
+        }
+
+        if (accion === "codigo" || accion === "fecha") {
+
+            estado.adminEdicion = { hoja, campo: accion };
+
+            renderPersonas();
+
+            return;
+
+        }
+
+        if (accion === "cancelar") {
+
+            estado.adminEdicion = null;
+
+            renderPersonas();
+
+            return;
+
+        }
+
+        if (accion === "sugerir") {
+
+            const campo = tarjeta.querySelector("[data-campo=codigo]");
+
+            campo.value = sugerirCodigo();
+
+            campo.dispatchEvent(new Event("input", { bubbles: true }));
+
+            return;
+
+        }
+
+        if (accion === "guardar-codigo") {
+
+            const codigo = tarjeta.querySelector("[data-campo=codigo]").value.trim();
+
+            await api("admin_codigo", { hoja, codigo });
+
+            estado.adminEdicion = null;
+
+            mostrarToast("✅ Código cambiado");
+
+            await cargarPersonas();
+
+            return;
+
+        }
+
+        if (accion === "guardar-fecha") {
+
+            await api("admin_fecha", { hoja, pagado: tarjeta.querySelector("[data-campo=fecha]").value });
+
+            estado.adminEdicion = null;
+
+            mostrarToast("✅ Fecha guardada");
+
+            await cargarPersonas();
+
+        }
+
+    } catch (e) {
+
+        if (e instanceof ErrorPin) { manejarError(e); return; }
+
+        mostrarToast("❌ " + (e.message || "No se pudo completar"));
+
+    }
 
 }
 
@@ -919,6 +1365,8 @@ function mostrarVista(nombre) {
 
     else if (nombre === "asistente") renderChat();
 
+    else if (nombre === "configuracion") renderConfig();
+
     window.scrollTo({ top: 0 });
 
 }
@@ -1341,6 +1789,8 @@ async function guardarMeta(datos) {
 
 function renderTodo() {
 
+    renderUsuario();
+
     renderDashboard();
 
     renderBienvenida();
@@ -1371,11 +1821,20 @@ function mostrarErrorCarga(mostrar) {
 
 function manejarError(e) {
 
+    if (e instanceof ErrorPausa) {
+
+        // No se borra el código: cuando te reactiven, basta con recargar
+        pedirPin(MENSAJE_PAUSA);
+
+        return;
+
+    }
+
     if (e instanceof ErrorPin) {
 
         borrarPin();
 
-        pedirPin("PIN incorrecto. Inténtalo de nuevo.");
+        pedirPin("Código incorrecto. Inténtalo de nuevo.");
 
         return;
 
@@ -1783,7 +2242,11 @@ async function registrarMovimiento() {
 
             console.error(e);
 
-            $("respuesta").textContent = "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
+            const claro = e && e.message && !/fetch|network|red \(/i.test(e.message) ? e.message : "";
+
+            $("respuesta").textContent = claro
+                ? "⚠️ " + claro
+                : "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
 
             $("mensaje").value = texto;
 
@@ -2234,6 +2697,8 @@ async function entrarDemo() {
 
     $("bannerDemo").hidden = false;
 
+    estado.usuario = null;
+
     try {
 
         await cargarDatos();
@@ -2284,6 +2749,54 @@ async function salirDemo() {
 window.addEventListener("DOMContentLoaded", () => {
 
     $("demoEntrar").addEventListener("click", entrarDemo);
+
+    $("adminForm").addEventListener("submit", crearPersona);
+
+    $("adminCodigo").addEventListener("input", actualizarAvisoCodigo);
+
+    $("adminNombre").addEventListener("input", actualizarAvisoCodigo);
+
+    $("adminSugerir").addEventListener("click", () => {
+
+        $("adminCodigo").value = sugerirCodigo();
+
+        actualizarAvisoCodigo();
+
+    });
+
+    $("adminCopiar").addEventListener("click", async () => {
+
+        const ok = await copiarTexto($("adminListoTexto").value);
+
+        mostrarToast(ok ? "📋 Mensaje copiado" : "No se pudo copiar");
+
+    });
+
+    $("adminLista").addEventListener("click", (e) => {
+
+        const b = e.target.closest("[data-persona-accion]");
+
+        if (b) accionPersona(b);
+
+    });
+
+    $("adminLista").addEventListener("input", (e) => {
+
+        const campo = e.target.closest("[data-campo=codigo]");
+
+        if (!campo) return;
+
+        const tarjeta = campo.closest(".persona");
+
+        const persona = estado.personas.find((p) => p.hoja === tarjeta.dataset.hoja);
+
+        const avisos = avisosCodigo(campo.value, persona ? persona.nombre : "");
+
+        const aviso = tarjeta.querySelector("[data-aviso-persona]");
+
+        if (aviso) aviso.textContent = avisos.length ? "⚠️ Código débil: " + avisos.join(", ") + ". Se puede usar igual." : "";
+
+    });
 
     $("demoSalir").addEventListener("click", salirDemo);
 
@@ -2850,8 +3363,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
 
-            $("pinError").textContent = err instanceof ErrorPin
-                ? "PIN incorrecto."
+            $("pinError").textContent = err instanceof ErrorPausa
+                ? MENSAJE_PAUSA
+                : err instanceof ErrorPin
+                ? "Código incorrecto."
                 : "No se pudo conectar. Revisa tu internet.";
 
         } finally {
