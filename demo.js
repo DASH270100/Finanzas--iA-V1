@@ -766,6 +766,7 @@ const DemoBackend = (() => {
 
             case "leer":
                 return ok({
+                    usuario: { nombre: "Demo", rol: "usuario", pagado: "" },
                     movimientos: clonar(db.movimientos),
                     deudas: clonar(db.deudas),
                     dashboard: [],
