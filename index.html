@@ -30,7 +30,7 @@
 
 </head>
 
-<body>
+<body data-vista="dashboard">
 
 <!-- ===========================
         PIN
@@ -137,7 +137,27 @@
 
                 <h1>Hola DASH</h1>
 
+                <h2 id="tituloVista" class="titulo-vista"></h2>
+
                 <p>Gestiona tus finanzas con Inteligencia Artificial.</p>
+
+                <!-- Resumen grande (solo en los estilos Iridiscente y Atardecer) -->
+
+                <div id="heroSaldo" class="hero-saldo">
+
+                    <span class="hs-label">Saldo actual</span>
+
+                    <strong id="hsSaldo" class="hs-saldo">S/ 0.00</strong>
+
+                    <div class="hs-chips">
+
+                        <span class="hs-chip">↙ <span class="hs-txt">Ingresos</span> <b id="hsIngresos">S/ 0.00</b></span>
+
+                        <span class="hs-chip">↗ <span class="hs-txt">Gastos</span> <b id="hsGastos">S/ 0.00</b></span>
+
+                    </div>
+
+                </div>
 
             </div>
 
@@ -156,6 +176,10 @@
         </div>
 
         <div id="vista-dashboard" class="vista">
+
+        <!-- CATEGORÍAS DESTACADAS (solo en los estilos Iridiscente y Atardecer) -->
+
+        <section id="catTiles" class="cat-tiles" aria-label="Tus gastos por categoría" hidden></section>
 
         <!-- AVISO GASTOS FIJOS -->
 
