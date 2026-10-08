@@ -2662,3 +2662,114 @@ html{ scroll-behavior:smooth; }
 @media(max-width:700px){
     .meta-form{ grid-template-columns:1fr; }
 }
+
+
+/*==================================================
+        PANTALLAS VACÍAS CON GUÍA
+====================================================*/
+
+.bienvenida[hidden]{ display:none; }
+
+.bienvenida{
+    margin-bottom:20px;
+    border-color:rgba(124,92,252,.35);
+    background:linear-gradient(135deg, rgba(124,92,252,.14), var(--surface) 60%);
+}
+
+.pasos{
+    margin:6px 0 18px;
+    padding:0;
+    list-style:none;
+    counter-reset:paso;
+    display:grid;
+    gap:10px;
+}
+
+.pasos li{
+    counter-increment:paso;
+    position:relative;
+    min-height:28px;
+    padding:4px 0 0 40px;
+    font-size:14px;
+    color:var(--text-muted);
+    line-height:1.4;
+}
+
+.pasos li::before{
+    content:counter(paso);
+    position:absolute;
+    left:0;
+    top:0;
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:rgba(124,92,252,.2);
+    color:var(--primary-hover);
+    font-weight:800;
+    font-size:13px;
+}
+
+.pasos strong{ color:#fff; }
+
+.bienvenida-pista{
+    margin:0 0 10px;
+    font-size:13px;
+    color:var(--text-muted);
+}
+
+.chips-ejemplo{
+    display:flex;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.chip-ejemplo{
+    width:auto;
+    flex:0 0 auto;
+    align-self:center;
+    padding:9px 14px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:#fff;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-radius:999px;
+    box-shadow:none;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+}
+
+.chip-ejemplo:hover,
+.chip-ejemplo:focus-visible{
+    border-color:var(--primary);
+    background:rgba(124,92,252,.18);
+}
+
+.vacio-guia{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    padding:26px 18px;
+    text-align:center;
+    width:100%;
+}
+
+.vacio-guia .vacio-icono{ font-size:30px; line-height:1; margin-bottom:4px; }
+
+.vacio-guia strong{ font-size:15px; color:#fff; }
+
+.vacio-guia p{
+    margin:0;
+    max-width:340px;
+    font-size:13px;
+    line-height:1.45;
+    color:var(--text-muted);
+}
+
+.vacio-guia .chip-ejemplo{ margin-top:10px; }
