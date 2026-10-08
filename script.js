@@ -429,6 +429,13 @@ function aplicarTema(tema, guardar) {
         b.setAttribute("aria-checked", b.dataset.tema === tema ? "true" : "false");
     });
 
+    // En los estilos nuevos la barra de escribir es de una línea: el ejemplo tiene que ser corto
+    const caja = document.getElementById("mensaje");
+    if (caja) {
+        if (caja.dataset.phOriginal === undefined) caja.dataset.phOriginal = caja.placeholder;
+        caja.placeholder = tema === "noche" ? caja.dataset.phOriginal : "almorcé 18 y un Monster 8";
+    }
+
     if (guardar) {
         try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* sin almacenamiento */ }
     }
@@ -914,6 +921,11 @@ function renderDashboard() {
 
     $("saldo").textContent = money(saldo);
 
+    // Resumen grande de los estilos Iridiscente y Atardecer
+    $("hsSaldo").textContent = money(saldo);
+    $("hsIngresos").textContent = money(ingresos);
+    $("hsGastos").textContent = money(gastos);
+
 }
 
 // =========================
@@ -1112,6 +1124,27 @@ function actualizarSelectorMes() {
 
 }
 
+// Categorías destacadas (burbujas / tarjetas de los estilos nuevos)
+function renderCatTiles(grupos) {
+
+    const caja = $("catTiles");
+
+    if (!caja) return;
+
+    const top = grupos.slice(0, 5);
+
+    caja.hidden = top.length === 0;
+
+    caja.innerHTML = top.map((g, i) => `
+        <div class="cat-tile c${i % 5}">
+            <span class="ct-ico">${ICONOS[g.nombre.toLowerCase()] || "📦"}</span>
+            <strong>S/ ${Math.round(g.total)}</strong>
+            <small>${esc(g.nombre)}</small>
+        </div>
+    `).join("");
+
+}
+
 function renderResumenPeriodo() {
 
     const gastos = gastosDelPeriodo(estado.mes);
@@ -1119,6 +1152,8 @@ function renderResumenPeriodo() {
     const total = sumar(gastos);
 
     const grupos = renderGrafico(gastos);
+
+    renderCatTiles(grupos);
 
     $("totalGastado").textContent = money(total);
 
@@ -1389,6 +1424,13 @@ function mostrarVista(nombre) {
     if (!VISTAS.includes(nombre)) nombre = "dashboard";
 
     VISTAS.forEach((v) => { $("vista-" + v).hidden = v !== nombre; });
+
+    // Los estilos nuevos cambian la cabecera según la pestaña
+    document.body.dataset.vista = nombre;
+
+    const TITULOS = { estadisticas: "Estadísticas", fijos: "Planificar", asistente: "Asistente", configuracion: "Configuración" };
+
+    $("tituloVista").textContent = TITULOS[nombre] || "";
 
     document.querySelectorAll("nav a[data-vista]").forEach((a) => {
 
