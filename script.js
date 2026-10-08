@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.0 (multi-usuario)
+// Finanzas IA - Script v4.1 (multi-usuario + estilos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -393,6 +393,50 @@ async function cargarDatos() {
     guardarCache(data);
 
     ultimaCarga = Date.now();
+
+}
+
+// =========================
+// ESTILOS (APARIENCIA)
+// =========================
+
+const TEMA_KEY = "finanzas_tema";
+
+const TEMAS = {
+    noche: "#09111F",
+    iridiscente: "#E9ECF3",
+    atardecer: "#14103A"
+};
+
+function temaGuardado() {
+    try {
+        const t = localStorage.getItem(TEMA_KEY);
+        return TEMAS[t] ? t : "noche";
+    } catch (e) { return "noche"; }
+}
+
+function aplicarTema(tema, guardar) {
+
+    if (!TEMAS[tema]) tema = "noche";
+
+    if (tema === "noche") document.documentElement.removeAttribute("data-tema");
+    else document.documentElement.setAttribute("data-tema", tema);
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", TEMAS[tema]);
+
+    document.querySelectorAll(".tema-opcion").forEach((b) => {
+        b.setAttribute("aria-checked", b.dataset.tema === tema ? "true" : "false");
+    });
+
+    if (guardar) {
+        try { localStorage.setItem(TEMA_KEY, tema); } catch (e) { /* sin almacenamiento */ }
+    }
+
+    // Los gráficos toman sus colores del estilo: se dibujan otra vez
+    if (guardar && typeof renderTodo === "function" && estado && estado.movimientos) {
+        try { renderTodo(); } catch (e) { console.error(e); }
+    }
 
 }
 
@@ -2750,6 +2794,16 @@ async function salirDemo() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+
+    aplicarTema(temaGuardado(), false);
+
+    document.addEventListener("click", (e) => {
+
+        const op = e.target.closest(".tema-opcion");
+
+        if (op) aplicarTema(op.dataset.tema, true);
+
+    });
 
     $("demoEntrar").addEventListener("click", entrarDemo);
 
