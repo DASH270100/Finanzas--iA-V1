@@ -1,4 +1,4 @@
-// Finanzas IA - Gráficos v3.0
+// Finanzas IA - Gráficos v3.1 (colores según el estilo)
 // Depende de script.js: usa money() y recibe los gastos ya filtrados por periodo.
 
 let grafico = null;
@@ -8,6 +8,17 @@ const COLORES_GRAFICO = [
     "#8B5CF6", "#3B82F6", "#F59E0B", "#10B981", "#EF4444",
     "#06B6D4", "#EC4899", "#84CC16", "#F97316", "#6366F1"
 ];
+
+
+// Colores del estilo activo (así los gráficos se ven bien en oscuro y en claro)
+function colorEstilo(nombre, defecto) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+    return v || defecto;
+}
+
+function esEstiloOscuro() {
+    return document.documentElement.getAttribute("data-tema") === null;
+}
 
 // "comida", "Comida " y "COMIDA" cuentan como la misma categoría
 function nombreCategoria(categoria) {
@@ -97,7 +108,7 @@ function renderGrafico(gastos) {
 
             fontSize: "13px",
 
-            labels: { colors: "#CBD5E1" },
+            labels: { colors: colorEstilo("--text-soft", "#CBD5E1") },
 
             markers: { width: 10, height: 10, radius: 10 },
 
@@ -109,7 +120,7 @@ function renderGrafico(gastos) {
 
             width: 6,
 
-            colors: ["#121B2C"]
+            colors: [colorEstilo("--surface", "#121B2C")]
 
         },
 
@@ -127,10 +138,10 @@ function renderGrafico(gastos) {
 
                         show: true,
 
-                        name: { color: "#94A3B8", fontSize: "14px" },
+                        name: { color: colorEstilo("--text-muted", "#94A3B8"), fontSize: "14px" },
 
                         value: {
-                            color: "#F8FAFC",
+                            color: colorEstilo("--text", "#F8FAFC"),
                             fontSize: "24px",
                             fontWeight: 800,
                             formatter: (val) => money(val)
@@ -139,7 +150,7 @@ function renderGrafico(gastos) {
                         total: {
                             show: true,
                             label: "Total",
-                            color: "#94A3B8",
+                            color: colorEstilo("--text-muted", "#94A3B8"),
                             formatter: (w) =>
                                 money(w.globals.seriesTotals.reduce((a, b) => a + b, 0))
                         }
@@ -156,7 +167,7 @@ function renderGrafico(gastos) {
 
         tooltip: {
 
-            theme: "dark",
+            theme: esEstiloOscuro() ? "dark" : "light",
 
             y: { formatter: (val) => money(val) }
 
@@ -166,7 +177,7 @@ function renderGrafico(gastos) {
 
             text: "Sin gastos en este periodo",
 
-            style: { color: "#94A3B8", fontSize: "15px" }
+            style: { color: colorEstilo("--text-muted", "#94A3B8"), fontSize: "15px" }
 
         }
 
@@ -220,14 +231,14 @@ function renderBarrasMeses(meses) {
 
         xaxis: {
             categories: meses.map((m) => m.etiqueta),
-            labels: { style: { colors: "#94A3B8" } },
+            labels: { style: { colors: colorEstilo("--text-muted", "#94A3B8") } },
             axisBorder: { show: false },
             axisTicks: { show: false }
         },
 
         yaxis: {
             labels: {
-                style: { colors: "#94A3B8" },
+                style: { colors: colorEstilo("--text-muted", "#94A3B8") },
                 formatter: (v) => "S/ " + Math.round(v)
             }
         },
@@ -238,17 +249,17 @@ function renderBarrasMeses(meses) {
 
         dataLabels: { enabled: false },
 
-        grid: { borderColor: "#26354B", strokeDashArray: 4 },
+        grid: { borderColor: colorEstilo("--border", "#26354B"), strokeDashArray: 4 },
 
         legend: {
             position: "top",
             horizontalAlign: "right",
-            labels: { colors: "#CBD5E1" },
+            labels: { colors: colorEstilo("--text-soft", "#CBD5E1") },
             markers: { radius: 10 }
         },
 
         tooltip: {
-            theme: "dark",
+            theme: esEstiloOscuro() ? "dark" : "light",
             y: { formatter: (val) => money(val) }
         }
 
