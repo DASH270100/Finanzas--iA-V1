@@ -2773,3 +2773,77 @@ html{ scroll-behavior:smooth; }
 }
 
 .vacio-guia .chip-ejemplo{ margin-top:10px; }
+
+
+/*==================================================
+        MODO DEMO Y CONFIGURACIÓN
+====================================================*/
+
+.banner-demo[hidden]{ display:none; }
+
+.banner-demo{
+    position:sticky;
+    top:0;
+    z-index:60;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:0 0 18px;
+    padding:10px 14px;
+    font-size:13px;
+    color:#FDE68A;
+    background:#2A2210;
+    border:1px solid rgba(245,158,11,.45);
+    border-radius:var(--radius-sm);
+}
+
+.banner-demo strong{ color:#FCD34D; }
+
+.banner-demo button{
+    flex:0 0 auto;
+    width:auto;
+    padding:7px 14px;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+    color:#1B1405;
+    background:#FCD34D;
+    border:0;
+    border-radius:999px;
+    box-shadow:none;
+    cursor:pointer;
+}
+
+.config-bloque{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:18px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+}
+
+.config-bloque h3{ margin:0 0 6px; font-size:15px; color:#fff; }
+
+.config-bloque p{
+    margin:0;
+    max-width:560px;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--text-muted);
+}
+
+.config-bloque button{ flex:0 0 auto; width:auto; white-space:nowrap; }
+
+@media(max-width:700px){
+
+    .config-bloque{ flex-direction:column; align-items:stretch; }
+
+    .config-bloque button{ width:100%; }
+
+    .banner-demo{ flex-direction:column; align-items:stretch; text-align:center; }
+
+}
