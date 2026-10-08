@@ -1994,6 +1994,9 @@ function parsearRapido(texto) {
 
         }
 
+        // Ninguna de esas categorías existe todavía (cuenta nueva): se usa la principal
+        return { tipo: regla.tipo, categoria: regla.candidatas[0], descripcion: desc, monto };
+
     }
 
     return null;
