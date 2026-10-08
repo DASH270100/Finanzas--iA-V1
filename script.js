@@ -1,4 +1,4 @@
-// Finanzas - Script v4.1
+// Finanzas IA - Script v3.1
 // Backend: Google Apps Script protegido con PIN (el Sheet ya no se lee desde el navegador).
 "use strict";
 
@@ -28,10 +28,22 @@ const estado = {
     chat: [],
     pensando: false,
     fijos: [],
-    metas: [],
-    filtros: { texto: "", tipo: "todos", categoria: "todas", mes: "todos", orden: "recientes", limite: 40 }
+    metas: []
 };
 
+const ICONOS = {
+    comida: "🍔",
+    bebidas: "🥤",
+    transporte: "🚕",
+    sueldo: "💼",
+    salud: "🏥",
+    entretenimiento: "🎮",
+    gaming: "🎮",
+    compras: "🛍️",
+    hogar: "🏠",
+    ropa: "👕",
+    otros: "📦"
+};
 
 // =========================
 // UTILIDADES
@@ -404,58 +416,11 @@ function renderDashboard() {
 // ACTIVIDAD RECIENTE
 // =========================
 
-const etiquetaMov = (m) =>
-    esPrestamo(m) ? "préstamo" : esReembolso(m) ? "reembolso" : "";
+function iconoDe(m) {
 
-// Una fila de movimiento (la usan "Últimos movimientos" y la pestaña Movimientos).
-// Se toca la fila para ver Editar / Borrar.
-function htmlMovimiento(m) {
+    if (esPrestamo(m) || esReembolso(m)) return "🤝";
 
-    if (estado.editando === m.fila) return formularioEdicion(m);
-
-    const etiqueta = etiquetaMov(m);
-
-    return `
-        <details class="movimiento" data-fila="${m.fila}">
-
-            <summary class="movimiento-resumen">
-
-                <div class="movimiento-nombre">${esc(m.descripcion || m.categoria)}${etiqueta ? `<span class="mov-etiqueta">${etiqueta}</span>` : ""}</div>
-
-                <div class="movimiento-monto ${esIngreso(m) ? "ingreso" : "gasto"}">${esIngreso(m) ? "+" : "−"} ${money(m.monto)}</div>
-
-                <div class="movimiento-inferior">
-                    <span>${esc(m.categoria)}</span>
-                    <span>${esc(formatearFecha(m.fecha, m.fechaTexto))}</span>
-                </div>
-
-            </summary>
-
-            <div class="movimiento-acciones">
-
-                <button class="mov-btn" type="button" data-accion="editar"
-                    aria-label="Editar movimiento">Editar</button>
-
-                <button class="mov-btn mov-btn-borrar" type="button" data-accion="borrar"
-                    aria-label="Borrar movimiento">Borrar</button>
-
-            </div>
-
-        </details>
-    `;
-
-}
-
-// Categorías que ya usas, para sugerir al editar
-function actualizarListaCategorias() {
-
-    const categorias = [...new Set(
-        estado.movimientos.map((m) => m.categoria).filter(Boolean)
-    )].sort();
-
-    $("listaCategorias").innerHTML = categorias
-        .map((c) => `<option value="${esc(c)}"></option>`)
-        .join("");
+    return ICONOS[m.categoria.toLowerCase()] || (esIngreso(m) ? "💵" : "📦");
 
 }
 
@@ -476,144 +441,50 @@ function renderActividad() {
 
     }
 
-    $("actividad").innerHTML = recientes.map(htmlMovimiento).join("");
+    const categorias = [...new Set(
+        estado.movimientos.map((m) => m.categoria).filter(Boolean)
+    )].sort();
 
-}
+    const opcionesCategorias = categorias
+        .map((c) => `<option value="${esc(c)}"></option>`)
+        .join("");
 
-// =========================
-// PESTAÑA MOVIMIENTOS (todos, con filtros)
-// =========================
+    $("actividad").innerHTML = recientes.map((m) =>
+        estado.editando === m.fila ? formularioEdicion(m) : `
+        <div class="movimiento" data-fila="${m.fila}">
 
-const textoPlano = (t) =>
-    String(t ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            <div class="movimiento-superior">
 
-function movimientosFiltrados() {
+                <div class="movimiento-nombre">
+                    ${iconoDe(m)} ${esc(m.descripcion || m.categoria)}
+                </div>
 
-    const f = estado.filtros;
+                <div class="movimiento-monto ${esIngreso(m) ? "ingreso" : "gasto"}">
+                    ${esIngreso(m) ? "+" : "-"} ${money(m.monto)}
+                </div>
 
-    const q = textoPlano(f.texto.trim());
+            </div>
 
-    const lista = estado.movimientos.filter((m) => {
+            <div class="movimiento-inferior">
 
-        if (f.tipo === "gasto" && !esGasto(m)) return false;
+                <span>${esc(m.categoria)}</span>
 
-        if (f.tipo === "ingreso" && !esIngreso(m)) return false;
+                <span>${esc(formatearFecha(m.fecha, m.fechaTexto))}</span>
 
-        if (f.categoria !== "todas" && nombreCategoria(m.categoria) !== f.categoria) return false;
+            </div>
 
-        if (f.mes !== "todos" && !(m.fecha && claveMes(m.fecha) === f.mes)) return false;
+            <div class="movimiento-acciones">
 
-        if (q && !textoPlano(m.descripcion + " " + m.categoria).includes(q)) return false;
+                <button class="mov-btn" type="button" data-accion="editar"
+                    aria-label="Editar movimiento">✏️ Editar</button>
 
-        return true;
+                <button class="mov-btn mov-btn-borrar" type="button" data-accion="borrar"
+                    aria-label="Borrar movimiento">🗑️ Borrar</button>
 
-    });
+            </div>
 
-    const t = (m) => (m.fecha ? m.fecha.getTime() : 0);
-
-    const orden = {
-        recientes: (a, b) => (t(b) - t(a)) || (b.idx - a.idx),
-        antiguos: (a, b) => (t(a) - t(b)) || (a.idx - b.idx),
-        mayor: (a, b) => b.monto - a.monto,
-        menor: (a, b) => a.monto - b.monto
-    }[f.orden];
-
-    return lista.sort(orden);
-
-}
-
-// Rellena los selectores con lo que hay en tus datos (se llama al cargar datos)
-function actualizarFiltrosMovimientos() {
-
-    const f = estado.filtros;
-
-    const cats = [...new Set(estado.movimientos.map((m) => nombreCategoria(m.categoria)))]
-        .sort((a, b) => a.localeCompare(b, "es"));
-
-    if (f.categoria !== "todas" && !cats.includes(f.categoria)) f.categoria = "todas";
-
-    $("movCategoria").innerHTML = '<option value="todas">Todas</option>' +
-        cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
-
-    $("movCategoria").value = f.categoria;
-
-    const meses = [...new Set(
-        estado.movimientos.filter((m) => m.fecha).map((m) => claveMes(m.fecha))
-    )].sort().reverse();
-
-    if (f.mes !== "todos" && !meses.includes(f.mes)) f.mes = "todos";
-
-    $("movMes").innerHTML = '<option value="todos">Todo el historial</option>' +
-        meses.map((c) => `<option value="${c}">${esc(nombreMes(c))}</option>`).join("");
-
-    $("movMes").value = f.mes;
-
-    $("movOrden").value = f.orden;
-
-    if ($("movBuscar").value !== f.texto) $("movBuscar").value = f.texto;
-
-    document.querySelectorAll("#movFiltros [data-tipo]").forEach((b) => {
-        b.classList.toggle("activo", b.dataset.tipo === f.tipo);
-    });
-
-}
-
-function renderMovimientos() {
-
-    const f = estado.filtros;
-
-    const hayFiltros = f.texto.trim() !== "" || f.tipo !== "todos" ||
-        f.categoria !== "todas" || f.mes !== "todos";
-
-    $("movLimpiar").hidden = !hayFiltros;
-
-    if (!estado.movimientos.length) {
-
-        $("movResumen").textContent = "Sin movimientos todavía";
-
-        $("movLista").innerHTML = '<p class="vacio">Aún no hay movimientos registrados.</p>';
-
-        $("movMas").hidden = true;
-
-        return;
-
-    }
-
-    const lista = movimientosFiltrados();
-
-    if (!lista.length) {
-
-        $("movResumen").textContent = "Ningún movimiento coincide";
-
-        $("movLista").innerHTML = '<p class="vacio">No hay movimientos con esos filtros.</p>';
-
-        $("movMas").hidden = true;
-
-        return;
-
-    }
-
-    $("movResumen").textContent =
-        `${lista.length} ${lista.length === 1 ? "movimiento" : "movimientos"}` +
-        ` · entró ${money(sumar(lista.filter(esIngreso)))}` +
-        ` · salió ${money(sumar(lista.filter(esGasto)))}`;
-
-    const visibles = lista.slice(0, f.limite);
-
-    $("movLista").innerHTML = visibles.map(htmlMovimiento).join("");
-
-    $("movMas").hidden = lista.length <= visibles.length;
-
-    $("movMas").textContent = `Mostrar más (${lista.length - visibles.length} restantes)`;
-
-}
-
-// Al editar o cancelar hay que repintar las dos listas
-function renderListas() {
-
-    renderActividad();
-
-    renderMovimientos();
+        </div>
+    `).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>`;
 
 }
 
@@ -798,13 +669,13 @@ function renderDeudas() {
         ? visibles.map((d) => `
             <div class="deuda-card">
 
-                <div class="deuda-persona">${esc(d.persona)}</div>
+                <div class="deuda-persona">👤 ${esc(d.persona)}</div>
 
                 <div class="deuda-monto">${money(d.monto)}</div>
 
-                <div class="deuda-label">Préstamo pendiente</div>
+                <div class="deuda-label">💸 Préstamo pendiente</div>
 
-                <div class="deuda-fecha">${esc(formatearFecha(d.fecha, d.fechaTexto))}</div>
+                <div class="deuda-fecha">📅 ${esc(formatearFecha(d.fecha, d.fechaTexto))}</div>
 
                 <button
                     class="btn-deuda"
@@ -815,7 +686,7 @@ function renderDeudas() {
 
             </div>
         `).join("")
-        : '<p class="vacio">No tienes deudas pendientes.</p>';
+        : '<p class="vacio">🎉 No tienes deudas pendientes.</p>';
 
     const toggle = $("toggleDeudas");
 
@@ -824,8 +695,8 @@ function renderDeudas() {
         toggle.style.display = "inline-flex";
 
         toggle.textContent = estado.mostrarTodasLasDeudas
-            ? "Mostrar menos"
-            : "Ver todas las deudas";
+            ? "▲ Mostrar menos"
+            : "▼ Ver todas las deudas";
 
     } else {
 
@@ -920,31 +791,31 @@ function renderEstadisticas() {
 
     const tiles = [
         {
-            icono: "",
+            icono: "📅",
             etiqueta: "Promedio diario",
             valor: money(promedio),
             nota: `En ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}`
         },
         {
-            icono: "",
+            icono: "🔮",
             etiqueta: esActual ? "Proyección a fin de mes" : "Total del mes",
             valor: money(esActual ? proyeccion : totalGastos),
             nota: esActual ? "Si sigues a este ritmo" : "Gastos reales del mes"
         },
         {
-            icono: "",
+            icono: "💥",
             etiqueta: "Mayor gasto",
             valor: mayor ? money(mayor.monto) : "—",
             nota: mayor ? esc(mayor.descripcion || mayor.categoria) : "Sin gastos"
         },
         {
-            icono: "",
+            icono: "🗓️",
             etiqueta: "Día que más gastas",
             valor: diaCaro ? diaCaro.charAt(0).toUpperCase() + diaCaro.slice(1) : "—",
             nota: diaCaro ? money(maxDia) + " en total" : "Sin gastos"
         },
         {
-            icono: ahorro >= 0 ? "" : "",
+            icono: ahorro >= 0 ? "🐷" : "⚠️",
             etiqueta: ahorro >= 0 ? "Te sobró" : "Gastaste de más",
             valor: money(Math.abs(ahorro)),
             nota: `${money(totalIngresos)} de ingresos`
@@ -966,7 +837,7 @@ function renderEstadisticas() {
 // PESTAÑAS (Dashboard / Estadísticas)
 // =========================
 
-const VISTAS = ["dashboard", "movimientos", "estadisticas", "fijos", "asistente"];
+const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente"];
 
 function mostrarVista(nombre) {
 
@@ -992,8 +863,6 @@ function mostrarVista(nombre) {
     else if (nombre === "dashboard") renderResumenPeriodo();
 
     else if (nombre === "asistente") renderChat();
-
-    else if (nombre === "movimientos") renderMovimientos();
 
     window.scrollTo({ top: 0 });
 
@@ -1032,7 +901,7 @@ function renderChat() {
 
     if (!estado.chat.length && !estado.pensando) {
 
-        caja.innerHTML = '<p class="vacio">Hazme una pregunta sobre tus finanzas </p>';
+        caja.innerHTML = '<p class="vacio">Hazme una pregunta sobre tus finanzas 👇</p>';
 
         $("sugerencias").hidden = false;
 
@@ -1097,7 +966,7 @@ async function enviarPregunta(texto) {
 
         estado.chat.push({
             rol: "asistente",
-            texto: (e.message || "No pude responder ahora. Inténtalo otra vez."),
+            texto: "⚠️ " + (e.message || "No pude responder ahora. Inténtalo otra vez."),
             error: true
         });
 
@@ -1200,7 +1069,7 @@ function renderFijos() {
 
                 <div class="fijo-top">
 
-                    <span class="fijo-nombre">${esc(f.nombre)}</span>
+                    <span class="fijo-nombre">🔁 ${esc(f.nombre)}</span>
 
                     <span class="fijo-monto">${money(f.monto)}</span>
 
@@ -1260,7 +1129,7 @@ function renderAvisoFijos(items) {
     }).join(", ");
 
     aviso.textContent =
-        `${pendientes.length} ${pendientes.length === 1 ? "gasto fijo" : "gastos fijos"} por registrar: ${nombres}${pendientes.length > 3 ? "…" : ""} · Ver`;
+        `🔔 ${pendientes.length} ${pendientes.length === 1 ? "gasto fijo" : "gastos fijos"} por registrar: ${nombres}${pendientes.length > 3 ? "…" : ""} · Ver`;
 
     aviso.hidden = false;
 
@@ -1290,7 +1159,7 @@ function infoMeta(m) {
 
     const pct = m.ahorrado / m.objetivo;
 
-    if (falta === 0) return { nivel: "ok", texto: "¡Meta lograda! ", pct };
+    if (falta === 0) return { nivel: "ok", texto: "¡Meta lograda! 🎉", pct };
 
     let texto = `Te faltan ${money(falta)}`;
 
@@ -1354,7 +1223,7 @@ function renderMetas() {
 
                 <div class="presupuesto-top">
 
-                    <span class="presupuesto-nombre">${esc(m.nombre)}</span>
+                    <span class="presupuesto-nombre">🏁 ${esc(m.nombre)}</span>
 
                     <span class="presupuesto-monto">${money(m.ahorrado)} de ${money(m.objetivo)}</span>
 
@@ -1417,13 +1286,7 @@ function renderTodo() {
 
     renderDashboard();
 
-    actualizarListaCategorias();
-
-    actualizarFiltrosMovimientos();
-
     renderActividad();
-
-    renderMovimientos();
 
     actualizarSelectorMes();
 
@@ -1650,7 +1513,7 @@ function registrarRapido(r) {
 
     mostrarRegistrados([temporal]);
 
-    mostrarToast("Movimiento registrado");
+    mostrarToast("✅ Movimiento registrado");
 
     pendientesGuardar++;
 
@@ -1691,9 +1554,9 @@ function registrarRapido(r) {
 
                 console.error(fallo);
 
-                $("respuesta").textContent = "No se pudo guardar: " + r.descripcion + ". Inténtalo otra vez.";
+                $("respuesta").textContent = "⚠️ No se pudo guardar: " + r.descripcion + ". Inténtalo otra vez.";
 
-                mostrarToast("No se pudo guardar el movimiento");
+                mostrarToast("❌ No se pudo guardar el movimiento");
 
             }
 
@@ -1751,7 +1614,7 @@ function mostrarRegistrados(nuevos) {
 
     if (nuevos === null) {
 
-        caja.textContent = "Enviado, pero todavía no aparece en la hoja. Recarga en unos segundos.";
+        caja.textContent = "⏳ Enviado, pero todavía no aparece en la hoja. Recarga en unos segundos.";
 
         return;
 
@@ -1760,19 +1623,19 @@ function mostrarRegistrados(nuevos) {
     // Un solo mensaje no genera decenas de filas: si pasa, no listamos todo
     if (nuevos.length > 5) {
 
-        caja.textContent = "Registrado. Revisa tu actividad reciente aquí abajo.";
+        caja.textContent = "✅ Registrado. Revisa tu actividad reciente aquí abajo.";
 
         return;
 
     }
 
     const lineas = nuevos.map((m) =>
-        `${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)} · ` +
-        `<strong>${esIngreso(m) ? "+" : "−"} ${money(m.monto)}</strong>`
+        `${esIngreso(m) ? "📈" : "📉"} ${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)} · ` +
+        `<strong>${esIngreso(m) ? "+" : "-"} ${money(m.monto)}</strong>`
     );
 
     caja.innerHTML =
-        `Registrado${nuevos.length > 1 ? ` (${nuevos.length} movimientos)` : ""}:<br>` +
+        `✅ Registrado${nuevos.length > 1 ? ` (${nuevos.length} movimientos)` : ""}:<br>` +
         lineas.join("<br>");
 
 }
@@ -1783,7 +1646,7 @@ async function registrarMovimiento() {
 
     if (!texto) {
 
-        mostrarToast("Escribe un movimiento primero");
+        mostrarToast("✍️ Escribe un movimiento primero");
 
         return;
 
@@ -1816,9 +1679,9 @@ async function registrarMovimiento() {
 
     boton.disabled = true;
 
-    textoBoton.textContent = "Registrando...";
+    textoBoton.textContent = "⏳ Registrando...";
 
-    $("respuesta").textContent = "Analizando movimiento...";
+    $("respuesta").textContent = "🤖 Analizando movimiento...";
 
     try {
 
@@ -1834,7 +1697,7 @@ async function registrarMovimiento() {
 
         $("mensaje").value = "";
 
-        $("respuesta").textContent = "Guardando en la hoja...";
+        $("respuesta").textContent = "📊 Guardando en la hoja...";
 
         const nuevos = await esperarNuevos(cantidadAntes);
 
@@ -1846,7 +1709,7 @@ async function registrarMovimiento() {
 
         mostrarRegistrados(nuevos);
 
-        mostrarToast(nuevos === null ? "Enviado, aún procesando" : "Movimiento registrado");
+        mostrarToast(nuevos === null ? "⏳ Enviado, aún procesando" : "✅ Movimiento registrado");
 
     } catch (e) {
 
@@ -1858,11 +1721,11 @@ async function registrarMovimiento() {
 
             console.error(e);
 
-            $("respuesta").textContent = "No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
+            $("respuesta").textContent = "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
 
             $("mensaje").value = texto;
 
-            mostrarToast("No se pudo registrar el movimiento");
+            mostrarToast("❌ No se pudo registrar el movimiento");
 
         }
 
@@ -1870,7 +1733,7 @@ async function registrarMovimiento() {
 
         boton.disabled = false;
 
-        textoBoton.textContent = "Registrar";
+        textoBoton.textContent = "➕ Registrar movimiento";
 
     }
 
@@ -1944,13 +1807,14 @@ function renderPresupuestos() {
 
         const ancho = Math.min(100, Math.round(pct * 100));
 
+        const icono = ICONOS[p.categoria.toLowerCase()] || "📦";
 
         return `
             <div class="presupuesto-item" data-categoria="${esc(p.categoria)}" data-limite="${p.limite}">
 
                 <div class="presupuesto-top">
 
-                    <span class="presupuesto-nombre">${esc(p.categoria)}</span>
+                    <span class="presupuesto-nombre">${icono} ${esc(p.categoria)}</span>
 
                     <span class="presupuesto-monto">${money(p.gastado)} de ${money(p.limite)}</span>
 
@@ -2062,7 +1926,7 @@ function errorDeAccion(e) {
 
     console.error(e);
 
-    mostrarToast((e.message || "No se pudo completar la acción"));
+    mostrarToast("❌ " + (e.message || "No se pudo completar la acción"));
 
     actualizarTodo();
 
@@ -2080,13 +1944,11 @@ async function accionActividad(boton) {
 
     if (accion === "editar") {
 
-        const lista = tarjeta.parentElement;
-
         estado.editando = fila;
 
-        renderListas();
+        renderActividad();
 
-        const primero = lista.querySelector('[data-campo="descripcion"]');
+        const primero = $("actividad").querySelector('[data-campo="descripcion"]');
 
         if (primero) primero.focus();
 
@@ -2098,7 +1960,7 @@ async function accionActividad(boton) {
 
         estado.editando = null;
 
-        renderListas();
+        renderActividad();
 
         return;
 
@@ -2119,7 +1981,7 @@ async function accionActividad(boton) {
 
         if (!valores.descripcion) {
 
-            mostrarToast("Escribe una descripción");
+            mostrarToast("✍️ Escribe una descripción");
 
             return;
 
@@ -2127,7 +1989,7 @@ async function accionActividad(boton) {
 
         if (!(valores.monto > 0)) {
 
-            mostrarToast("El monto debe ser mayor que 0");
+            mostrarToast("💲 El monto debe ser mayor que 0");
 
             return;
 
@@ -2135,13 +1997,13 @@ async function accionActividad(boton) {
 
         boton.disabled = true;
 
-        boton.textContent = "Guardando...";
+        boton.textContent = "⏳ Guardando...";
 
         try {
 
             await guardarMovimiento(fila, valores);
 
-            mostrarToast("Movimiento actualizado");
+            mostrarToast("✅ Movimiento actualizado");
 
         } catch (e) {
 
@@ -2172,7 +2034,7 @@ async function accionActividad(boton) {
 
                     delete boton.dataset.confirmando;
 
-                    boton.textContent = "Borrar";
+                    boton.textContent = "🗑️ Borrar";
 
                 }
 
@@ -2184,16 +2046,16 @@ async function accionActividad(boton) {
 
         boton.disabled = true;
 
-        boton.textContent = "Borrando...";
+        boton.textContent = "⏳ Borrando...";
 
         try {
 
             const deuda = await eliminarMovimiento(fila);
 
             mostrarToast(
-                deuda === "eliminada" ? "Movimiento y deuda borrados"
-                : deuda === "reabierta" ? "Reembolso borrado · la deuda volvió a pendiente"
-                : "Movimiento borrado"
+                deuda === "eliminada" ? "🗑️ Movimiento y deuda borrados"
+                : deuda === "reabierta" ? "🗑️ Reembolso borrado · la deuda volvió a pendiente"
+                : "🗑️ Movimiento borrado"
             );
 
         } catch (e) {
@@ -2243,7 +2105,7 @@ async function pagarDeuda(boton) {
 
     boton.disabled = true;
 
-    boton.textContent = "Registrando...";
+    boton.textContent = "⏳ Registrando...";
 
     try {
 
@@ -2260,7 +2122,7 @@ async function pagarDeuda(boton) {
 
         animar(".tarjeta");
 
-        mostrarToast(`${persona} pagó ${money(monto)} · reembolso registrado`);
+        mostrarToast(`✅ ${persona} pagó ${money(monto)} · reembolso registrado`);
 
     } catch (e) {
 
@@ -2274,7 +2136,7 @@ async function pagarDeuda(boton) {
 
         console.error(e);
 
-        mostrarToast((e.message || "No se pudo marcar como pagado"));
+        mostrarToast("❌ " + (e.message || "No se pudo marcar como pagado"));
 
         // Si la deuda ya no estaba pendiente, refrescamos para que desaparezca
         actualizarTodo();
@@ -2323,7 +2185,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (!datos.nombre || !(datos.monto > 0) || !Number.isInteger(datos.dia) || datos.dia < 1 || datos.dia > 31) {
 
-            mostrarToast("Revisa el nombre, el monto y el día (1 al 31)");
+            mostrarToast("💲 Revisa el nombre, el monto y el día (1 al 31)");
 
             return;
 
@@ -2333,7 +2195,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "Guardando...";
+        boton.textContent = "⏳ Guardando...";
 
         try {
 
@@ -2341,7 +2203,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("fijoForm").reset();
 
-            mostrarToast(`Gasto fijo "${datos.nombre}" guardado`);
+            mostrarToast(`✅ Gasto fijo "${datos.nombre}" guardado`);
 
         } catch (err) {
 
@@ -2414,7 +2276,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "…";
+        boton.textContent = "⏳";
 
         try {
 
@@ -2428,13 +2290,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
                 animar(".tarjeta");
 
-                mostrarToast(`${nombre} registrado como gasto`);
+                mostrarToast(`✅ ${nombre} registrado como gasto`);
 
             } else {
 
                 await guardarFijo({ nombre, quitar: true });
 
-                mostrarToast(`"${nombre}" quitado de tus fijos`);
+                mostrarToast(`🗑️ "${nombre}" quitado de tus fijos`);
 
             }
 
@@ -2459,7 +2321,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (!datos.nombre || !(datos.objetivo > 0)) {
 
-            mostrarToast("Revisa el nombre y el objetivo");
+            mostrarToast("💲 Revisa el nombre y el objetivo");
 
             return;
 
@@ -2469,7 +2331,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "Guardando...";
+        boton.textContent = "⏳ Guardando...";
 
         try {
 
@@ -2477,7 +2339,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("metaForm").reset();
 
-            mostrarToast(`Meta "${datos.nombre}" guardada`);
+            mostrarToast(`✅ Meta "${datos.nombre}" guardada`);
 
         } catch (err) {
 
@@ -2527,7 +2389,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             if (!(monto > 0)) {
 
-                mostrarToast("Escribe un monto mayor que 0");
+                mostrarToast("💲 Escribe un monto mayor que 0");
 
                 campo.focus();
 
@@ -2546,8 +2408,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 renderTodo();
 
                 mostrarToast(accion === "aportar"
-                    ? `Aportaste ${money(monto)} a ${nombre}`
-                    : `Retiraste ${money(monto)} de ${nombre}`);
+                    ? `✅ Aportaste ${money(monto)} a ${nombre}`
+                    : `↩️ Retiraste ${money(monto)} de ${nombre}`);
 
             } catch (err) {
 
@@ -2586,13 +2448,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "…";
+        boton.textContent = "⏳";
 
         try {
 
             await guardarMeta({ nombre, quitar: true });
 
-            mostrarToast(`Meta "${nombre}" quitada`);
+            mostrarToast(`🗑️ Meta "${nombre}" quitada`);
 
         } catch (err) {
 
@@ -2668,7 +2530,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (!$("presCategoria").value.trim() || !(limite > 0)) {
 
-            mostrarToast("Elige una categoría y un límite mayor que 0");
+            mostrarToast("💲 Elige una categoría y un límite mayor que 0");
 
             return;
 
@@ -2678,7 +2540,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "Guardando...";
+        boton.textContent = "⏳ Guardando...";
 
         try {
 
@@ -2688,7 +2550,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("presLimite").value = "";
 
-            mostrarToast(`Presupuesto de ${categoria} guardado`);
+            mostrarToast(`✅ Presupuesto de ${categoria} guardado`);
 
         } catch (err) {
 
@@ -2753,13 +2615,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.disabled = true;
 
-        boton.textContent = "…";
+        boton.textContent = "⏳";
 
         try {
 
             await guardarPresupuesto(categoria, 0);
 
-            mostrarToast(`Presupuesto de ${categoria} quitado`);
+            mostrarToast(`🗑️ Presupuesto de ${categoria} quitado`);
 
         } catch (err) {
 
@@ -2778,82 +2640,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    // Pestaña Movimientos: acciones sobre la lista y filtros
-    $("movLista").addEventListener("click", (e) => {
+    document.querySelectorAll("[data-proximamente]").forEach((a) => {
 
-        const boton = e.target.closest("[data-accion]");
+        a.addEventListener("click", (e) => {
 
-        if (boton) accionActividad(boton);
+            e.preventDefault();
 
-    });
-
-    $("irMovimientos").addEventListener("click", () => mostrarVista("movimientos"));
-
-    document.querySelector(".marca").addEventListener("click", (e) => {
-
-        e.preventDefault();
-
-        mostrarVista("dashboard");
-
-    });
-
-    const refiltrar = () => {
-
-        estado.filtros.limite = 40;
-
-        renderMovimientos();
-
-    };
-
-    $("movBuscar").addEventListener("input", (e) => {
-
-        estado.filtros.texto = e.target.value;
-
-        refiltrar();
-
-    });
-
-    document.querySelectorAll("#movFiltros [data-tipo]").forEach((b) => {
-
-        b.addEventListener("click", () => {
-
-            estado.filtros.tipo = b.dataset.tipo;
-
-            actualizarFiltrosMovimientos();
-
-            refiltrar();
+            mostrarToast("🚧 Próximamente");
 
         });
-
-    });
-
-    [["movCategoria", "categoria"], ["movMes", "mes"], ["movOrden", "orden"]].forEach(([id, clave]) => {
-
-        $(id).addEventListener("change", (e) => {
-
-            estado.filtros[clave] = e.target.value;
-
-            refiltrar();
-
-        });
-
-    });
-
-    $("movLimpiar").addEventListener("click", () => {
-
-        Object.assign(estado.filtros, { texto: "", tipo: "todos", categoria: "todas", mes: "todos", limite: 40 });
-
-        actualizarFiltrosMovimientos();
-
-        renderMovimientos();
-
-    });
-
-    $("movMas").addEventListener("click", () => {
-
-        estado.filtros.limite += 40;
-
-        renderMovimientos();
 
     });
 
