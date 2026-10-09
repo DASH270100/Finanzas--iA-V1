@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.1 (multi-usuario + estilos)
+// Finanzas IA - Script v4.2 (multi-usuario + estilos + tarjetas)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -29,6 +29,7 @@ const estado = {
     pensando: false,
     fijos: [],
     metas: [],
+    tarjetas: [],
     usuario: null,
     personas: [],
     adminEdicion: null
@@ -87,7 +88,11 @@ const esPrestamo = (m) =>
 const esReembolso = (m) =>
     esIngreso(m) && /reembolso|devoluci[oó]n/i.test(m.categoria + " " + m.descripcion);
 
-const esGastoReal = (m) => esGasto(m) && !esPrestamo(m);
+// Pagar la tarjeta no es un gasto nuevo: las compras ya se contaron cuando las hiciste
+const esPagoTarjeta = (m) =>
+    esGasto(m) && String(m.categoria).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "pago de tarjeta";
+
+const esGastoReal = (m) => esGasto(m) && !esPrestamo(m) && !esPagoTarjeta(m);
 
 const esIngresoReal = (m) => esIngreso(m) && !esReembolso(m);
 
@@ -310,7 +315,8 @@ function normalizarDatos(data) {
             tipo: String(f[1] ?? "").trim(),
             categoria: String(f[2] ?? "").trim(),
             descripcion: String(f[3] ?? "").trim(),
-            monto: numero(f[4])
+            monto: numero(f[4]),
+            medio: String(f[7] ?? "").trim()
         }))
         .filter((m) =>
             (m.fechaTexto !== "" || m.descripcion !== "") &&
@@ -358,7 +364,12 @@ function normalizarDatos(data) {
         }))
         .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.objetivo > 0);
 
-    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas };
+    // Tarjetas de crédito: [Tarjeta, Presupuesto mensual]
+    const tarjetas = (data.tarjetas || [])
+        .map((f) => ({ nombre: String(f[0] ?? "").trim(), presupuesto: numero(f[1]) }))
+        .filter((t) => t.nombre !== "" && t.nombre.toLowerCase() !== "tarjeta");
+
+    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas, tarjetas };
 
 }
 
@@ -379,6 +390,8 @@ function aplicarDatos(data) {
     estado.fijos = n.fijos;
 
     estado.metas = n.metas;
+
+    estado.tarjetas = n.tarjetas;
 
 }
 
@@ -916,7 +929,7 @@ function renderDashboard() {
     $("gastos").textContent = money(gastos);
 
     const saldo = hayMovimientos
-        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter(esGasto))
+        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter((m) => esGasto(m) && !esPagoTarjeta(m)))
         : valorDashboard("saldo");
 
     $("saldo").textContent = money(saldo);
@@ -935,6 +948,8 @@ function renderDashboard() {
 function iconoDe(m) {
 
     if (esPrestamo(m) || esReembolso(m)) return "🤝";
+
+    if (esPagoTarjeta(m)) return "💳";
 
     return ICONOS[m.categoria.toLowerCase()] || (esIngreso(m) ? "💵" : "📦");
 
@@ -1008,7 +1023,7 @@ function renderActividad() {
 
             <div class="movimiento-inferior">
 
-                <span>${esc(m.categoria)}</span>
+                <span>${esc(m.categoria)}${m.medio ? ` · 💳 ${esc(m.medio)}` : ""}</span>
 
                 <span>${esc(formatearFecha(m.fecha, m.fechaTexto))}</span>
 
@@ -1619,15 +1634,17 @@ function infoFijo(f) {
 
         return {
             estado: "vencido",
+            dias: dias,
             texto: `Se cobró el ${fechaCorta(cobro)} · hace ${n} ${n === 1 ? "día" : "días"}, sin registrar`
         };
 
     }
 
-    if (dias === 0) return { estado: "hoy", texto: `Se cobra hoy (${fechaCorta(cobro)})` };
+    if (dias === 0) return { estado: "hoy", dias: 0, texto: `Se cobra hoy (${fechaCorta(cobro)})` };
 
     return {
         estado: dias <= 3 ? "pronto" : "futuro",
+        dias: dias,
         texto: `Próximo cobro: ${fechaCorta(cobro)} · ${dias === 1 ? "mañana" : `en ${dias} días`}`
     };
 
@@ -1693,6 +1710,8 @@ function renderFijos() {
 
 }
 
+let avisoHoyMostrado = false;
+
 // Aviso en el Dashboard: fijos que vencen pronto o ya vencieron sin registrar
 function renderAvisoFijos(items) {
 
@@ -1708,18 +1727,43 @@ function renderAvisoFijos(items) {
 
     }
 
-    const nombres = pendientes.slice(0, 3).map((f) => {
+    const cuando = (f) => f.info.estado === "hoy" ? 0 : f.info.estado === "vencido" ? -1 : f.info.dias;
 
-        const cuando = f.info.estado === "vencido" ? "vencido"
-            : f.info.estado === "hoy" ? "hoy"
-            : "pronto";
+    const ordenados = [...pendientes].sort((a, b) => cuando(a) - cuando(b));
 
-        return `${f.nombre} (${cuando})`;
+    const hoy = ordenados.filter((f) => f.info.estado === "hoy");
 
-    }).join(", ");
+    const vencidos = ordenados.filter((f) => f.info.estado === "vencido");
 
-    aviso.textContent =
-        `🔔 ${pendientes.length} ${pendientes.length === 1 ? "gasto fijo" : "gastos fijos"} por registrar: ${nombres}${pendientes.length > 3 ? "…" : ""} · Ver`;
+    const pronto = ordenados.filter((f) => f.info.estado === "pronto");
+
+    const lista = (arr) => arr.slice(0, 3).map((f) => `${esc(f.nombre)} (${money(f.monto)})`).join(", ") +
+        (arr.length > 3 ? ` y ${arr.length - 3} más` : "");
+
+    const lineas = [];
+
+    if (hoy.length) lineas.push(`📅 <strong>Hoy pagas:</strong> ${lista(hoy)}`);
+
+    if (vencidos.length) lineas.push(`⚠️ <strong>Sin registrar:</strong> ${vencidos.slice(0, 3).map((f) => `${esc(f.nombre)} (hace ${-f.info.dias} ${-f.info.dias === 1 ? "día" : "días"})`).join(", ")}`);
+
+    pronto.slice(0, 2).forEach((f) => {
+
+        lineas.push(`🔔 ${f.info.dias === 1 ? "<strong>Mañana</strong>" : `En <strong>${f.info.dias} días</strong>`} pagas ${esc(f.nombre)} (${money(f.monto)})`);
+
+    });
+
+    aviso.className = "aviso-fijos" + (hoy.length || vencidos.length ? " urgente" : "");
+
+    aviso.innerHTML = lineas.join("<br>") + ` <span class="aviso-ver">· Ver</span>`;
+
+    // Una vez por visita: avisa también con un mensaje flotante
+    if (hoy.length && !avisoHoyMostrado) {
+
+        avisoHoyMostrado = true;
+
+        setTimeout(() => mostrarToast(`📅 Hoy pagas: ${hoy.slice(0, 2).map((f) => f.nombre).join(", ")}${hoy.length > 2 ? "…" : ""}`), 1200);
+
+    }
 
     aviso.hidden = false;
 
@@ -1728,6 +1772,250 @@ function renderAvisoFijos(items) {
 async function guardarFijo(datos) {
 
     await api("fijo", datos);
+
+    await cargarDatos();
+
+    renderTodo();
+
+}
+
+// =========================
+// TARJETAS DE CRÉDITO
+// Cada compra se cuenta cuando la haces; pagar la tarjeta no se vuelve a contar.
+// El presupuesto de cada tarjeta es mensual y lo puedes cambiar cuando quieras.
+// =========================
+
+const ORDEN_NIVEL_TARJETA = { sin: 0, ok: 1, alerta: 2, limite: 3, exceso: 4 };
+
+const claveTarjeta = (n) => String(n ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+
+function infoTarjetas() {
+
+    const hoy = new Date();
+
+    const actual = claveMes(hoy);
+
+    const previo = claveMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+
+    const mapa = new Map();
+
+    const tomar = (nombre) => {
+
+        const k = claveTarjeta(nombre);
+
+        if (!k) return null;
+
+        if (!mapa.has(k)) mapa.set(k, { nombre: String(nombre).trim(), presupuesto: 0, gastado: 0, previo: 0, pagado: 0 });
+
+        return mapa.get(k);
+
+    };
+
+    estado.tarjetas.forEach((t) => { tomar(t.nombre).presupuesto = t.presupuesto; });
+
+    estado.movimientos.forEach((m) => {
+
+        if (!m.medio || !esGasto(m)) return;
+
+        if (!m.fecha) return;
+
+        const c = claveMes(m.fecha);
+
+        // Una tarjeta solo aparece por sus compras de este mes (o si la guardaste tú)
+        const t = c === actual || mapa.has(claveTarjeta(m.medio)) ? tomar(m.medio) : null;
+
+        if (!t) return;
+
+        if (esPagoTarjeta(m)) {
+
+            if (c === actual) t.pagado += m.monto;
+
+            return;
+
+        }
+
+        if (c === actual) t.gastado += m.monto;
+
+        else if (c === previo) t.previo += m.monto;
+
+    });
+
+    return [...mapa.values()].map((t) => {
+
+        const pct = t.presupuesto > 0 ? t.gastado / t.presupuesto : 0;
+
+        const nivel = t.presupuesto <= 0 ? "sin"
+            : t.gastado > t.presupuesto + 0.005 ? "exceso"
+            : t.gastado >= t.presupuesto - 0.005 ? "limite"
+            : pct >= 0.8 ? "alerta"
+            : "ok";
+
+        const resto = t.presupuesto - t.gastado;
+
+        const mensaje = nivel === "sin" ? "Fija un presupuesto para recibir avisos"
+            : nivel === "exceso" ? `Te pasaste por ${money(-resto)}`
+            : nivel === "limite" ? "Llegaste al límite de tu presupuesto"
+            : nivel === "alerta" ? `Cuidado: te quedan solo ${money(resto)}`
+            : `Te quedan ${money(resto)}`;
+
+        return { ...t, pct, nivel, resto, mensaje };
+
+    }).sort((a, b) => (ORDEN_NIVEL_TARJETA[b.nivel] - ORDEN_NIVEL_TARJETA[a.nivel]) || (b.gastado - a.gastado));
+
+}
+
+// Foto de cómo está cada tarjeta, para avisar solo cuando empeora
+function nivelesTarjetas() {
+
+    return new Map(infoTarjetas().map((t) => [claveTarjeta(t.nombre), t.nivel]));
+
+}
+
+// Texto del aviso si alguna tarjeta acaba de subir de nivel (80%, límite o exceso). null si no hay.
+function avisoCambioTarjetas(antes) {
+
+    let peor = null;
+
+    infoTarjetas().forEach((t) => {
+
+        const orden = ORDEN_NIVEL_TARJETA[t.nivel];
+
+        const previo = ORDEN_NIVEL_TARJETA[antes.get(claveTarjeta(t.nombre)) || "sin"];
+
+        if (orden >= 2 && orden > previo && (!peor || orden > ORDEN_NIVEL_TARJETA[peor.nivel])) peor = t;
+
+    });
+
+    if (!peor) return null;
+
+    return peor.nivel === "alerta" ? `⚠️ ${peor.nombre}: ya usaste el ${Math.round(peor.pct * 100)}% de tu presupuesto`
+        : peor.nivel === "limite" ? `🚨 ${peor.nombre}: llegaste al límite de tu presupuesto`
+        : `🚨 ${peor.nombre}: te pasaste por ${money(-peor.resto)}`;
+
+}
+
+function avisarCambioTarjetas(antes) {
+
+    const texto = avisoCambioTarjetas(antes);
+
+    if (!texto) return;
+
+    const caja = $("respuesta");
+
+    caja.innerHTML += "<br>" + esc(texto);
+
+    setTimeout(() => mostrarToast(texto), 1600);
+
+}
+
+function renderTarjetas() {
+
+    const items = infoTarjetas();
+
+    $("subtituloTarjetas").textContent = items.length
+        ? `${nombreMes(claveMes(new Date()))} · ${money(items.reduce((t, x) => t + x.gastado, 0))} gastados con tarjeta`
+        : "Controla cuánto gastas con cada tarjeta y recibe avisos.";
+
+    if (!items.length) {
+
+        $("tarjetas").innerHTML = vacioGuia("💳", "Aún no tienes tarjetas",
+            "Escribe en la barra, por ejemplo: «compré zapatos 200 con la BCP». La tarjeta se crea sola y aquí le pones su presupuesto.",
+            "almuerzo 25 con la BCP");
+
+    } else {
+
+        $("tarjetas").innerHTML = items.map((t) => {
+
+            const ancho = Math.min(100, Math.round(t.pct * 100));
+
+            const detalle = [
+                t.previo > 0 ? `Mes pasado: ${money(t.previo)}` : "",
+                t.pagado > 0 ? `Pagado este mes: ${money(t.pagado)}` : ""
+            ].filter(Boolean).join(" · ");
+
+            return `
+            <div class="presupuesto-item tarjeta-item" data-nombre="${esc(t.nombre)}"
+                data-presupuesto="${t.presupuesto}" data-previo="${Math.round(t.previo)}">
+
+                <div class="presupuesto-top">
+
+                    <span class="presupuesto-nombre">💳 ${esc(t.nombre)}</span>
+
+                    <span class="presupuesto-monto">${money(t.gastado)}${t.presupuesto > 0 ? ` de ${money(t.presupuesto)}` : ""}</span>
+
+                </div>
+
+                <div class="presupuesto-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                    aria-valuenow="${ancho}" aria-label="Gastado con ${esc(t.nombre)}">
+
+                    <div class="presupuesto-progreso nivel-${t.nivel === "sin" ? "ok" : t.nivel === "limite" ? "exceso" : t.nivel}" style="width:${ancho}%"></div>
+
+                </div>
+
+                <div class="presupuesto-pie">
+
+                    <span class="presupuesto-mensaje nivel-${t.nivel === "sin" ? "ok" : t.nivel === "limite" ? "exceso" : t.nivel}">${esc(t.mensaje)}${t.presupuesto > 0 ? ` · ${Math.round(t.pct * 100)}%` : ""}</span>
+
+                </div>
+
+                ${detalle ? `<div class="tarjeta-detalle">${esc(detalle)}</div>` : ""}
+
+                <div class="presupuesto-acciones tarjeta-acciones">
+
+                    ${t.previo > 0 && Math.round(t.previo) !== Math.round(t.presupuesto)
+                        ? `<button class="mov-btn mov-btn-primario" type="button" data-tarj="igual">Usar ${money(Math.round(t.previo))} (mes pasado)</button>` : ""}
+
+                    <button class="mov-btn" type="button" data-tarj="editar">Cambiar presupuesto</button>
+
+                    ${t.presupuesto > 0
+                        ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar presupuesto</button>`
+                        : (t.gastado === 0 && t.pagado === 0
+                            ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar tarjeta</button>` : "")}
+
+                </div>
+
+            </div>`;
+
+        }).join("");
+
+    }
+
+    renderAvisoTarjetas(items);
+
+}
+
+// Aviso en el Dashboard: tarjetas cerca del límite o pasadas
+function renderAvisoTarjetas(items) {
+
+    const aviso = $("avisoTarjetas");
+
+    const malas = items.filter((t) => ORDEN_NIVEL_TARJETA[t.nivel] >= 2);
+
+    if (!malas.length) {
+
+        aviso.hidden = true;
+
+        return;
+
+    }
+
+    const t = malas[0];
+
+    const txt = t.nivel === "alerta" ? `va en ${Math.round(t.pct * 100)}% de su presupuesto`
+        : t.nivel === "limite" ? "llegó al límite"
+        : `se pasó por ${money(-t.resto)}`;
+
+    aviso.className = "aviso-fijos aviso-tarjetas " + (t.nivel === "alerta" ? "alerta" : "exceso");
+
+    aviso.textContent = `💳 ${t.nombre} ${txt}${malas.length > 1 ? ` · y ${malas.length - 1} más` : ""} · Ver`;
+
+    aviso.hidden = false;
+
+}
+
+async function guardarTarjeta(nombre, presupuesto) {
+
+    await api("tarjeta", { nombre, presupuesto });
 
     await cargarDatos();
 
@@ -1891,6 +2179,8 @@ function renderTodo() {
 
     renderPresupuestos();
 
+    renderTarjetas();
+
     renderFijos();
 
     renderMetas();
@@ -1970,7 +2260,7 @@ const REGLAS_RAPIDAS = [
     { tipo: "Gasto", claves: ["mercado", "supermercado", "plaza", "tottus", "wong", "metro"], candidatas: ["Supermercado", "Mercado", "Compras"] },
     { tipo: "Gasto", claves: ["cine", "netflix", "spotify", "juego", "salida", "entrada", "concierto", "disco", "bar"], candidatas: ["Entretenimiento", "Ocio", "Salidas"] },
     { tipo: "Gasto", claves: ["farmacia", "medicina", "doctor", "pastillas", "consulta"], candidatas: ["Salud"] },
-    { tipo: "Gasto", claves: ["ropa", "zapatillas", "polo", "pantalon", "casaca"], candidatas: ["Ropa", "Compras"] },
+    { tipo: "Gasto", claves: ["ropa", "zapatillas", "zapatos", "polo", "pantalon", "casaca", "camisa", "vestido", "jean", "short"], candidatas: ["Ropa", "Compras"] },
     { tipo: "Gasto", claves: ["luz", "internet", "celular", "recarga", "alquiler", "cable"], candidatas: ["Servicios", "Recibos", "Hogar"] },
     { tipo: "Ingreso", claves: ["sueldo", "salario", "quincena"], candidatas: ["Sueldo", "Salario", "Ingresos"] }
 ];
@@ -1995,7 +2285,117 @@ function categoriasExistentes() {
 
 }
 
+const MARCAS_TARJETA = "bcp|bbva|interbank|ibk|scotiabank|scotia|visa|mastercard|amex|diners|falabella|cmr|ripley";
+
+function nombreBonito(n) {
+
+    const t = String(n).replace(/\s+/g, " ").trim();
+
+    const conocida = infoTarjetas().find((x) => claveTarjeta(x.nombre) === claveTarjeta(t));
+
+    if (conocida) return conocida.nombre;
+
+    return t.length <= 4 ? t.toUpperCase() : t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+
+}
+
+// "pagué la tarjeta BCP 450" / "pagué 450 de la tarjeta BCP"
+function parsearPagoTarjeta(original) {
+
+    const num = "(?:S\\/\\.?\\s*)?(\\d+(?:[.,]\\d{1,2})?)\\s*(?:soles?)?";
+
+    let m = original.match(new RegExp("^\\s*(?:pagu[eé]|pago|pagar|abon[eé])\\s+(?:la\\s+|mi\\s+)?(tarjeta\\s+(?:de\\s+cr[eé]dito\\s+)?)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]{2,30}?)\\s+" + num + "\\s*$", "i"));
+
+    let nombre, monto;
+
+    if (m) {
+
+        nombre = m[2];
+
+        monto = m[3];
+
+        const conocida = infoTarjetas().some((x) => claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+        if (!m[1] && !conocida && !new RegExp("^(" + MARCAS_TARJETA + ")$", "i").test(nombre.trim())) return null;
+
+    } else {
+
+        m = original.match(new RegExp("^\\s*(?:pagu[eé]|pago|pagar|abon[eé])\\s+" + num + "\\s+(?:de|a|en)\\s+(?:la\\s+|mi\\s+)?tarjeta\\s+(?:de\\s+cr[eé]dito\\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]{2,30}?)\\s*$", "i"));
+
+        if (!m) return null;
+
+        monto = m[1];
+
+        nombre = m[2];
+
+    }
+
+    nombre = nombre.replace(/^(?:la|mi|de|tarjeta)\s+/i, "").trim();
+
+    const valor = parseFloat(monto.replace(",", "."));
+
+    if (!nombre || !(valor > 0) || valor > 1000000) return null;
+
+    const medio = nombreBonito(nombre);
+
+    return { tipo: "Gasto", categoria: "Pago de tarjeta", descripcion: "Pago tarjeta " + medio, monto: valor, medio };
+
+}
+
+// Saca "con la BCP" / "con mi tarjeta Interbank" del texto y devuelve la tarjeta
+function extraerTarjeta(original) {
+
+    const escapar = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const conocidas = infoTarjetas().map((t) => t.nombre).sort((a, b) => b.length - a.length);
+
+    const prefijo = "(?:\\s+(?:con|en|usando|de))?\\s+(?:(?:la|mi|el)\\s+)?(?:tarjeta\\s+)?(?:de\\s+cr[eé]dito\\s+)?";
+
+    for (const nombre of conocidas) {
+
+        const re = new RegExp(prefijo + "(" + escapar(nombre) + ")(?![A-Za-z0-9ÁÉÍÓÚáéíóúÑñ])", "i");
+
+        const m = original.match(re);
+
+        if (m && /\b(con|en|usando|tarjeta)\b/i.test(m[0])) return { limpio: original.replace(m[0], " ").trim(), tarjeta: nombre };
+
+    }
+
+    let m = original.match(/\s+con\s+(?:la\s+|mi\s+)?tarjeta\s+(?:de\s+cr[eé]dito\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9]{2,20})(?![A-Za-z0-9])/i);
+
+    if (!m) m = original.match(new RegExp("\\s+con\\s+(?:la\\s+|mi\\s+)?(?:tarjeta\\s+)?(" + MARCAS_TARJETA + ")(?![A-Za-z0-9])", "i"));
+
+    if (m) return { limpio: original.replace(m[0], " ").trim(), tarjeta: nombreBonito(m[1]) };
+
+    return { limpio: original, tarjeta: "" };
+
+}
+
 function parsearRapido(texto) {
+
+    const original = String(texto || "").trim();
+
+    const pago = parsearPagoTarjeta(original);
+
+    if (pago) return pago;
+
+    const { limpio, tarjeta } = extraerTarjeta(original);
+
+    const r = parsearRapidoBase(limpio);
+
+    if (r && tarjeta) {
+
+        if (r.tipo !== "Gasto") return null;
+
+        r.medio = tarjeta;
+
+    }
+
+    return r;
+
+}
+
+function parsearRapidoBase(texto) {
 
     const original = String(texto || "").trim();
 
@@ -2110,8 +2510,11 @@ function registrarRapido(r) {
         tipo: r.tipo,
         categoria: r.categoria,
         descripcion: r.descripcion,
-        monto: r.monto
+        monto: r.monto,
+        medio: r.medio || ""
     };
+
+    const nivelesAntes = nivelesTarjetas();
 
     estado.movimientos.push(temporal);
 
@@ -2123,7 +2526,9 @@ function registrarRapido(r) {
 
     mostrarRegistrados([temporal]);
 
-    mostrarToast("✅ Movimiento registrado");
+    mostrarToast(esPagoTarjeta(temporal) ? "✅ Pago de tarjeta registrado (no cuenta como gasto)" : "✅ Movimiento registrado");
+
+    avisarCambioTarjetas(nivelesAntes);
 
     pendientesGuardar++;
 
@@ -2137,7 +2542,8 @@ function registrarRapido(r) {
                 tipo: r.tipo,
                 categoria: r.categoria,
                 descripcion: r.descripcion,
-                monto: r.monto
+                monto: r.monto,
+                medio: r.medio || ""
             });
 
         } catch (e) {
@@ -2240,7 +2646,7 @@ function mostrarRegistrados(nuevos) {
     }
 
     const lineas = nuevos.map((m) =>
-        `${esIngreso(m) ? "📈" : "📉"} ${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)} · ` +
+        `${esIngreso(m) ? "📈" : "📉"} ${esc(m.descripcion || m.categoria)} · ${esc(m.categoria)}${m.medio ? ` · 💳 ${esc(m.medio)}` : ""} · ` +
         `<strong>${esIngreso(m) ? "+" : "-"} ${money(m.monto)}</strong>`
     );
 
@@ -2303,6 +2709,8 @@ async function registrarMovimiento() {
 
         const cantidadAntes = estado.movimientos.length;
 
+        const nivelesAntes = nivelesTarjetas();
+
         await api("registrar", { mensaje: texto });
 
         $("mensaje").value = "";
@@ -2320,6 +2728,8 @@ async function registrarMovimiento() {
         mostrarRegistrados(nuevos);
 
         mostrarToast(nuevos === null ? "⏳ Enviado, aún procesando" : "✅ Movimiento registrado");
+
+        if (nuevos) avisarCambioTarjetas(nivelesAntes);
 
     } catch (e) {
 
@@ -3233,6 +3643,159 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     $("avisoFijos").addEventListener("click", () => mostrarVista("fijos"));
+
+    $("avisoTarjetas").addEventListener("click", () => mostrarVista("fijos"));
+
+    // Tarjetas: guardar presupuesto, usar el del mes pasado, cambiar y quitar
+    $("tarjForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const nombre = $("tarjNombre").value.trim();
+
+        const presupuesto = Number($("tarjPresupuesto").value);
+
+        if (!nombre || !(presupuesto >= 0)) {
+
+            mostrarToast("💳 Revisa el nombre y el presupuesto");
+
+            return;
+
+        }
+
+        const boton = $("tarjBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        const antes = nivelesTarjetas();
+
+        try {
+
+            await guardarTarjeta(nombre, presupuesto);
+
+            $("tarjForm").reset();
+
+            mostrarToast(`✅ Tarjeta "${nombre}" guardada`);
+
+            const aviso = avisoCambioTarjetas(antes);
+
+            if (aviso) setTimeout(() => mostrarToast(aviso), 1600);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar tarjeta";
+
+        }
+
+    });
+
+    $("tarjetas").addEventListener("click", async (e) => {
+
+        const ejemplo = e.target.closest("[data-ejemplo]");
+
+        if (ejemplo) {
+
+            $("mensaje").value = ejemplo.dataset.ejemplo;
+
+            mostrarVista("dashboard");
+
+            $("mensaje").focus();
+
+            return;
+
+        }
+
+        const boton = e.target.closest("[data-tarj]");
+
+        if (!boton || boton.disabled) return;
+
+        const item = boton.closest("[data-nombre]");
+
+        const nombre = item.dataset.nombre;
+
+        const accion = boton.dataset.tarj;
+
+        if (accion === "editar") {
+
+            $("tarjNombre").value = nombre;
+
+            $("tarjPresupuesto").value = Number(item.dataset.presupuesto) || "";
+
+            $("tarjPresupuesto").focus();
+
+            return;
+
+        }
+
+        try {
+
+            if (accion === "igual") {
+
+                const antes = nivelesTarjetas();
+
+                await guardarTarjeta(nombre, Number(item.dataset.previo));
+
+                mostrarToast(`✅ Presupuesto de ${nombre}: ${money(item.dataset.previo)}`);
+
+                const aviso = avisoCambioTarjetas(antes);
+
+                if (aviso) setTimeout(() => mostrarToast(aviso), 1600);
+
+                return;
+
+            }
+
+            // Quitar pide un segundo toque
+            if (!boton.dataset.confirmando) {
+
+                const original = boton.textContent.trim();
+
+                boton.dataset.confirmando = "1";
+
+                boton.textContent = "¿Seguro?";
+
+                setTimeout(() => {
+
+                    if (boton.isConnected && boton.dataset.confirmando) {
+
+                        delete boton.dataset.confirmando;
+
+                        boton.textContent = original;
+
+                    }
+
+                }, 4000);
+
+                return;
+
+            }
+
+            // Con presupuesto: solo se quita el límite (la tarjeta sigue mientras tenga compras este mes)
+            if (Number(item.dataset.presupuesto) > 0) await api("tarjeta", { nombre, presupuesto: 0 });
+
+            else await api("tarjeta", { nombre, quitar: true });
+
+            await cargarDatos();
+
+            renderTodo();
+
+            mostrarToast(`🗑️ Listo, quité "${nombre}" (tus compras se conservan)`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        }
+
+    });
 
     $("chatForm").addEventListener("submit", (e) => {
 
