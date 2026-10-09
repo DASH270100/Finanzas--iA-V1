@@ -3928,3 +3928,57 @@ html[data-tema="atardecer"] body:not([data-vista="dashboard"]) .header .saludo{ 
     .card-title{ flex-wrap:wrap; gap:12px; }
     .filtro-mes{ max-width:100%; }
 }
+
+
+/*==================================================
+        v4.2 - TARJETAS DE CRÉDITO
+==================================================*/
+
+.tarjetas-card{ margin-bottom:24px; }
+
+.tarjeta-item + .tarjeta-item{ margin-top:14px; }
+
+.tarjeta-detalle{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--text-muted);
+}
+
+.tarjeta-acciones{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+}
+
+/* Aviso en el Dashboard */
+.aviso-tarjetas.alerta{
+    color:#FDE68A;
+    background:rgba(245,158,11,.10);
+    border-color:rgba(245,158,11,.35);
+}
+
+.aviso-tarjetas.exceso{
+    color:#FECACA;
+    background:rgba(239,68,68,.12);
+    border-color:rgba(239,68,68,.45);
+}
+
+.aviso-tarjetas.exceso:hover{ background:rgba(239,68,68,.18); }
+
+html[data-tema="iridiscente"] .aviso-tarjetas.alerta{ color:#8A5A00; background:#FFF3D6; border-color:#F2C879; }
+html[data-tema="iridiscente"] .aviso-tarjetas.exceso{ color:#9B1C1C; background:#FDE2E2; border-color:#F2A5A5; }
+
+html[data-tema="atardecer"] .aviso-tarjetas.exceso{ color:#FFD6D6; }
+
+html[data-tema="iridiscente"] .aviso-tarjetas,
+html[data-tema="atardecer"] .aviso-tarjetas{ order:2; margin:0; }
+
+html[data-tema="iridiscente"] .presupuesto-mensaje.nivel-exceso{ color:#B42318; }
+html[data-tema="iridiscente"] .presupuesto-mensaje.nivel-alerta{ color:#8A5A00; }
+
+/* v4.2 - aviso de gastos fijos más claro */
+.aviso-fijos{ line-height:1.6; }
+.aviso-fijos.urgente{ background:rgba(245,158,11,.18); border-color:rgba(245,158,11,.6); }
+.aviso-fijos .aviso-ver{ opacity:.75; white-space:nowrap; }
+html[data-tema="iridiscente"] .aviso-fijos.urgente{ background:#FFE9B8; border-color:#E9B04A; }
