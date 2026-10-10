@@ -4016,3 +4016,52 @@ html[data-tema="iridiscente"] .tarjeta-pago.pronto{ color:#8A5A00; }
 
 html[data-tema="iridiscente"] .tarjetas-resumen,
 html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
+
+/*==================================================
+        v4.4 - ESPACIADO TARJETAS + INGRESOS POR FUENTE
+==================================================*/
+
+/* Más aire en "Uso de tus tarjetas" (en el estilo Noche quedaba pegado a lo de abajo) */
+.tarjetas-resumen{ margin-bottom:24px; padding:26px 28px; }
+.tarjetas-resumen .card-title{ margin-bottom:6px; }
+.uso-tarjeta .presupuesto-barra{ margin:10px 0 8px; }
+.uso-tarjeta .presupuesto-pie{ margin-top:0; }
+.tarjetas-resumen .uso-tarjeta + .uso-tarjeta,
+.tarjetas-resumen .tarjeta-pago + .uso-tarjeta{ margin-top:22px; }
+.tarjetas-resumen .tarjeta-pago{ margin-top:10px; }
+
+.ingresos-fuente{ margin-bottom:26px; }
+
+.fuente-item + .fuente-item{ margin-top:16px; }
+.fuente-item .presupuesto-barra{ margin:10px 0 0; }
+
+.fuente-tag{
+    margin-left:6px;
+    padding:2px 8px;
+    font-size:11px;
+    font-weight:700;
+    border-radius:999px;
+    background:var(--surface-light);
+    color:var(--text-muted);
+}
+
+.fuente-resumen{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+    margin-top:18px;
+}
+
+.fuente-nota{
+    margin:14px 0 0;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--text-soft, #CBD5E1);
+}
+
+@media(max-width:700px){
+    .tarjetas-resumen{ padding:22px 20px; }
+}
+
+.ingresos-fuente{ margin-top:14px; }
+#statTiles + .stat-subtitulo{ margin-top:30px; }
