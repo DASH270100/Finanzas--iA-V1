@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.3 (multi-usuario + estilos + tarjetas)
+// Finanzas IA - Script v4.4 (multi-usuario + estilos + tarjetas + ingresos por fuente)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -1301,6 +1301,122 @@ function renderDeudas() {
 
 const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
+// Ingresos por fuente: sueldo (fijo) vs freelance, ventas, etc. (variables) y cuánto puedes contar como base segura
+const FUENTE_FIJA = /^(sueldo|salario|quincena|pension|pensión)$/i;
+
+function renderIngresosFuente(periodo) {
+
+    const caja = $("ingresosFuente");
+
+    if (!caja) return;
+
+    const [y, mm] = periodo.split("-").map(Number);
+
+    const ingresosDe = (clave) => estado.movimientos.filter((m) =>
+        esIngresoReal(m) && m.fecha && claveMes(m.fecha) === clave);
+
+    const delMes = ingresosDe(periodo);
+
+    // Últimos 3 meses (terminando en el periodo) con ingresos
+    const totales = [];
+
+    for (let i = 2; i >= 0; i--) {
+
+        const d = new Date(y, mm - 1 - i, 1);
+
+        totales.push({ clave: claveMes(d), total: sumar(ingresosDe(claveMes(d))) });
+
+    }
+
+    const conIngreso = totales.filter((t) => t.total > 0);
+
+    if (!conIngreso.length) {
+
+        caja.innerHTML = vacioGuia("💼", "Aún no hay ingresos que repartir",
+            "Escribe cada ingreso con su origen y la app los separa sola: «sueldo 2500», «me pagaron 800 por un logo».",
+            "me pagaron 800 por un logo");
+
+        return;
+
+    }
+
+    const mapa = new Map();
+
+    delMes.forEach((m) => {
+
+        const c = nombreCategoria(m.categoria);
+
+        mapa.set(c, (mapa.get(c) || 0) + m.monto);
+
+    });
+
+    const fuentes = [...mapa.entries()].map(([nombre, total]) => ({ nombre, total })).sort((a, b) => b.total - a.total);
+
+    const total = fuentes.reduce((t, f) => t + f.total, 0);
+
+    const filas = fuentes.map((f) => {
+
+        const pct = total > 0 ? Math.round(f.total / total * 100) : 0;
+
+        const fija = FUENTE_FIJA.test(f.nombre);
+
+        return `
+            <div class="fuente-item">
+
+                <div class="presupuesto-top">
+
+                    <span class="presupuesto-nombre">${fija ? "🔒" : "🔀"} ${esc(f.nombre)}
+                        <small class="fuente-tag">${fija ? "fijo" : "variable"}</small></span>
+
+                    <span class="presupuesto-monto">${money(f.total)} · ${pct}%</span>
+
+                </div>
+
+                <div class="presupuesto-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+
+                    <div class="presupuesto-progreso nivel-ok" style="width:${pct}%"></div>
+
+                </div>
+
+            </div>`;
+
+    }).join("");
+
+    const valores = conIngreso.map((t) => t.total);
+
+    const promedio = valores.reduce((a, b) => a + b, 0) / valores.length;
+
+    const minimo = Math.min(...valores);
+
+    const maximo = Math.max(...valores);
+
+    const varia = valores.length >= 2 && (maximo - minimo) / Math.max(1, maximo) > 0.15;
+
+    const nota = varia
+        ? `Tus ingresos cambian de mes a mes (de ${money(minimo)} a ${money(maximo)}). Para planificar, cuenta con <strong>${money(minimo)}</strong>: es tu mes más bajo.`
+        : valores.length >= 2 ? "Tus ingresos están bastante parejos estos meses." : "Con 2 o 3 meses de datos te digo cuánto puedes contar como ingreso seguro.";
+
+    caja.innerHTML = `
+        <div class="fuentes">${filas}</div>
+
+        <div class="fuente-resumen">
+
+            <div class="stat-tile">
+                <div class="stat-etiqueta">Promedio ${valores.length > 1 ? `de ${valores.length} meses` : "del mes"}</div>
+                <div class="stat-valor">${money(promedio)}</div>
+            </div>
+
+            <div class="stat-tile">
+                <div class="stat-etiqueta">Mes más bajo</div>
+                <div class="stat-valor">${money(minimo)}</div>
+            </div>
+
+        </div>
+
+        <p class="fuente-nota">${nota}</p>`;
+
+}
+
 function renderEstadisticas() {
 
     const hoy = new Date();
@@ -1328,6 +1444,8 @@ function renderEstadisticas() {
     const totalGastos = sumar(gastos);
 
     const totalIngresos = sumar(ingresos);
+
+    renderIngresosFuente(periodo);
 
     $("subtituloEstadisticas").textContent = "Resumen de " + nombreMes(periodo) +
         ((!estado.mes || estado.mes === "all") ? " (mes actual)" : "");
@@ -2356,6 +2474,9 @@ const sinTildes = (t) =>
     String(t ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const REGLAS_RAPIDAS = [
+    // Ingresos por fuente primero: "vendí ropa" es una venta, no un gasto en ropa
+    { tipo: "Ingreso", claves: ["venta", "ventas", "vendi", "vendimos"], candidatas: ["Ventas"] },
+    { tipo: "Ingreso", claves: ["freelance", "freelancer", "proyecto", "logo", "diseno", "cliente", "trabajito", "chamba", "comision"], candidatas: ["Freelance"] },
     { tipo: "Gasto", claves: ["almuerzo", "cena", "desayuno", "menu", "comida", "pollo", "pizza", "cafe", "snack", "galletas", "bebida", "jugo", "helado", "hamburguesa", "chifa", "sushi", "ceviche", "agua", "gaseosa", "pan"], candidatas: ["Comida", "Alimentación", "Alimentacion", "Restaurantes"] },
     { tipo: "Gasto", claves: ["taxi", "uber", "cabify", "bus", "pasaje", "combi", "metro", "gasolina", "combustible", "peaje", "estacionamiento", "scooter"], candidatas: ["Transporte", "Movilidad"] },
     { tipo: "Gasto", claves: ["mercado", "supermercado", "plaza", "tottus", "wong", "metro"], candidatas: ["Supermercado", "Mercado", "Compras"] },
@@ -2363,7 +2484,8 @@ const REGLAS_RAPIDAS = [
     { tipo: "Gasto", claves: ["farmacia", "medicina", "doctor", "pastillas", "consulta"], candidatas: ["Salud"] },
     { tipo: "Gasto", claves: ["ropa", "zapatillas", "zapatos", "polo", "pantalon", "casaca", "camisa", "vestido", "jean", "short"], candidatas: ["Ropa", "Compras"] },
     { tipo: "Gasto", claves: ["luz", "internet", "celular", "recarga", "alquiler", "cable"], candidatas: ["Servicios", "Recibos", "Hogar"] },
-    { tipo: "Ingreso", claves: ["sueldo", "salario", "quincena"], candidatas: ["Sueldo", "Salario", "Ingresos"] }
+    { tipo: "Ingreso", claves: ["sueldo", "salario", "quincena"], candidatas: ["Sueldo", "Salario", "Ingresos"] },
+    { tipo: "Ingreso", claves: ["propina", "bono", "gratificacion", "cts", "utilidades"], candidatas: ["Otros ingresos", "Ingresos"] }
 ];
 
 // Categorías que ya existen en tus movimientos (así no se inventan categorías nuevas)
@@ -2528,7 +2650,7 @@ function parsearRapidoBase(texto) {
         .replace(/\s+/g, " ")
         .trim();
 
-    desc = desc.replace(/^(gast[eé]|compr[eé]|pagu[eé]|pago|gasto|compra|recib[ií]|cobr[eé])\s+/i, "");
+    desc = desc.replace(/^(me\s+(?:pagaron|depositaron|yapearon|dieron|transfirieron)|gan[eé]|gast[eé]|compr[eé]|pagu[eé]|pago|gasto|compra|recib[ií]|cobr[eé])\s+/i, "");
 
     desc = desc.replace(/^(?:(?:en|de|por|con|un|una|el|la|los|las)\s+)+/i, "");
 
