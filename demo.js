@@ -85,7 +85,17 @@ const DemoBackend = (() => {
 
     function categoriaDe(norm, esIngreso) {
 
-        if (esIngreso) return /\b(sueldo|salario|quincena)\b/.test(norm) ? "Sueldo" : "Otros ingresos";
+        if (esIngreso) {
+
+            if (/\b(sueldo|salario|quincena)\b/.test(norm)) return "Sueldo";
+
+            if (/\b(freelance|freelancer|proyecto|logo|diseno|cliente|chamba|comision)\b/.test(norm)) return "Freelance";
+
+            if (/\b(venta|ventas|vendi)\b/.test(norm)) return "Ventas";
+
+            return "Otros ingresos";
+
+        }
 
         const palabras = new Set(norm.split(/[^a-z0-9ñ]+/).filter(Boolean));
 
