@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.4 (multi-usuario + estilos + tarjetas + ingresos por fuente)
+// Finanzas IA - Script v4.5 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -350,7 +350,8 @@ function normalizarDatos(data) {
             categoria: String(f[1] ?? "").trim() || "Otros",
             monto: numero(f[2]),
             dia: Math.min(31, Math.max(1, Math.round(numero(f[3])) || 1)),
-            ultimo: parseFecha(f[4])
+            ultimo: parseFecha(f[4]),
+            tipo: String(f[5] ?? "").trim().toLowerCase() === "ingreso" ? "Ingreso" : "Gasto"
         }))
         .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.monto > 0);
 
@@ -1392,9 +1393,13 @@ function renderIngresosFuente(periodo) {
 
     const varia = valores.length >= 2 && (maximo - minimo) / Math.max(1, maximo) > 0.15;
 
-    const nota = varia
+    const fijosTotal = estado.fijos.filter((f) => f.tipo === "Ingreso").reduce((t, f) => t + f.monto, 0);
+
+    const notaFijos = fijosTotal > 0 ? `Tus ingresos fijos suman <strong>${money(fijosTotal)}</strong> al mes. ` : "";
+
+    const nota = notaFijos + (varia
         ? `Tus ingresos cambian de mes a mes (de ${money(minimo)} a ${money(maximo)}). Para planificar, cuenta con <strong>${money(minimo)}</strong>: es tu mes más bajo.`
-        : valores.length >= 2 ? "Tus ingresos están bastante parejos estos meses." : "Con 2 o 3 meses de datos te digo cuánto puedes contar como ingreso seguro.";
+        : valores.length >= 2 ? "Tus ingresos están bastante parejos estos meses." : "Con 2 o 3 meses de datos te digo cuánto puedes contar como ingreso seguro.");
 
     caja.innerHTML = `
         <div class="fuentes">${filas}</div>
@@ -1768,11 +1773,55 @@ function infoFijo(f) {
 
 }
 
+function fijoHTML(f) {
+
+    const ing = f.tipo === "Ingreso";
+
+    return `
+        <div class="fijo-item estado-${f.info.estado}" data-nombre="${esc(f.nombre)}" data-tipo="${f.tipo}"
+            data-categoria="${esc(f.categoria)}" data-monto="${f.monto}" data-dia="${f.dia}">
+
+            <div class="fijo-top">
+
+                <span class="fijo-nombre">${ing ? "💼" : "🔁"} ${esc(f.nombre)}</span>
+
+                <span class="fijo-monto">${ing ? "+ " : ""}${money(f.monto)}</span>
+
+            </div>
+
+            <div class="fijo-detalle">
+                ${esc(f.categoria)} · ${ing ? "te pagan" : "se cobra"} el día ${f.dia} de cada mes
+            </div>
+
+            <div class="fijo-estado">${esc(f.info.texto)}</div>
+
+            <div class="fijo-acciones">
+
+                <button class="mov-btn mov-btn-primario" type="button" data-fijo="registrar"
+                    ${f.info.estado === "hecho" ? "disabled" : ""}>
+                    ${f.info.estado === "hecho" ? "✓ Registrado" : (ing ? "Ya me pagaron" : "Registrar ahora")}
+                </button>
+
+                <button class="mov-btn" type="button" data-fijo="editar">Cambiar</button>
+
+                <button class="mov-btn mov-btn-borrar" type="button" data-fijo="quitar">Quitar</button>
+
+            </div>
+
+        </div>
+    `;
+
+}
+
 function renderFijos() {
 
-    const items = estado.fijos
+    const todos = estado.fijos
         .map((f) => ({ ...f, info: infoFijo(f) }))
         .sort((a, b) => a.dia - b.dia);
+
+    const items = todos.filter((f) => f.tipo !== "Ingreso");
+
+    const ingresos = todos.filter((f) => f.tipo === "Ingreso");
 
     const total = items.reduce((t, f) => t + f.monto, 0);
 
@@ -1788,56 +1837,40 @@ function renderFijos() {
 
     } else {
 
-        $("fijos").innerHTML = items.map((f) => `
-            <div class="fijo-item estado-${f.info.estado}" data-nombre="${esc(f.nombre)}"
-                data-categoria="${esc(f.categoria)}" data-monto="${f.monto}" data-dia="${f.dia}">
-
-                <div class="fijo-top">
-
-                    <span class="fijo-nombre">🔁 ${esc(f.nombre)}</span>
-
-                    <span class="fijo-monto">${money(f.monto)}</span>
-
-                </div>
-
-                <div class="fijo-detalle">
-                    ${esc(f.categoria)} · se cobra el día ${f.dia} de cada mes
-                </div>
-
-                <div class="fijo-estado">${esc(f.info.texto)}</div>
-
-                <div class="fijo-acciones">
-
-                    <button class="mov-btn mov-btn-primario" type="button" data-fijo="registrar"
-                        ${f.info.estado === "hecho" ? "disabled" : ""}>
-                        ${f.info.estado === "hecho" ? "✓ Registrado" : "Registrar ahora"}
-                    </button>
-
-                    <button class="mov-btn" type="button" data-fijo="editar">Cambiar</button>
-
-                    <button class="mov-btn mov-btn-borrar" type="button" data-fijo="quitar">Quitar</button>
-
-                </div>
-
-            </div>
-        `).join("");
+        $("fijos").innerHTML = items.map(fijoHTML).join("");
 
     }
 
-    renderAvisoFijos(items);
+    // Ingresos fijos (se ven en Estadísticas)
+    const totalIng = ingresos.reduce((t, f) => t + f.monto, 0);
+
+    $("subtituloIngFijos").textContent = ingresos.length
+        ? `${ingresos.length} ${ingresos.length === 1 ? "ingreso fijo" : "ingresos fijos"} · ${money(totalIng)} al mes`
+        : "Lo que te pagan cada mes, con su fecha.";
+
+    $("ingresosFijos").innerHTML = ingresos.length
+        ? ingresos.map(fijoHTML).join("")
+        : vacioGuia("💼", "Aún no tienes ingresos fijos",
+            "Agrega tu sueldo u otro ingreso que llegue cada mes, con su fecha, y te aviso cuando toque cobrar.");
+
+    renderAvisoFijos(items, ingresos);
 
 }
 
 let avisoHoyMostrado = false;
 
-// Aviso en el Dashboard: fijos que vencen pronto o ya vencieron sin registrar
-function renderAvisoFijos(items) {
+// Aviso en el Dashboard: lo que pagas y lo que te pagan (hoy, vencido o pronto)
+function renderAvisoFijos(gastos, ingresos) {
 
-    const pendientes = items.filter((f) => ["vencido", "hoy", "pronto"].includes(f.info.estado));
+    const activos = (arr) => arr.filter((f) => ["vencido", "hoy", "pronto"].includes(f.info.estado));
+
+    const pg = activos(gastos);
+
+    const pi = activos(ingresos || []);
 
     const aviso = $("avisoFijos");
 
-    if (!pendientes.length) {
+    if (!pg.length && !pi.length) {
 
         aviso.hidden = true;
 
@@ -1845,41 +1878,56 @@ function renderAvisoFijos(items) {
 
     }
 
-    const cuando = (f) => f.info.estado === "hoy" ? 0 : f.info.estado === "vencido" ? -1 : f.info.dias;
-
-    const ordenados = [...pendientes].sort((a, b) => cuando(a) - cuando(b));
-
-    const hoy = ordenados.filter((f) => f.info.estado === "hoy");
-
-    const vencidos = ordenados.filter((f) => f.info.estado === "vencido");
-
-    const pronto = ordenados.filter((f) => f.info.estado === "pronto");
+    const por = (arr, estado) => arr.filter((f) => f.info.estado === estado).sort((a, b) => a.dia - b.dia);
 
     const lista = (arr) => arr.slice(0, 3).map((f) => `${esc(f.nombre)} (${money(f.monto)})`).join(", ") +
         (arr.length > 3 ? ` y ${arr.length - 3} más` : "");
 
     const lineas = [];
 
-    if (hoy.length) lineas.push(`📅 <strong>Hoy pagas:</strong> ${lista(hoy)}`);
+    const gHoy = por(pg, "hoy");
 
-    if (vencidos.length) lineas.push(`⚠️ <strong>Sin registrar:</strong> ${vencidos.slice(0, 3).map((f) => `${esc(f.nombre)} (hace ${-f.info.dias} ${-f.info.dias === 1 ? "día" : "días"})`).join(", ")}`);
+    const iHoy = por(pi, "hoy");
 
-    pronto.slice(0, 2).forEach((f) => {
+    const gVenc = por(pg, "vencido");
 
-        lineas.push(`🔔 ${f.info.dias === 1 ? "<strong>Mañana</strong>" : `En <strong>${f.info.dias} días</strong>`} pagas ${esc(f.nombre)} (${money(f.monto)})`);
+    const iVenc = por(pi, "vencido");
+
+    if (gHoy.length) lineas.push(`📅 <strong>Hoy pagas:</strong> ${lista(gHoy)}`);
+
+    if (iHoy.length) lineas.push(`💼 <strong>Hoy te pagan:</strong> ${lista(iHoy)}`);
+
+    if (gVenc.length) lineas.push(`⚠️ <strong>Sin registrar:</strong> ${gVenc.slice(0, 3).map((f) => `${esc(f.nombre)} (hace ${-f.info.dias} ${-f.info.dias === 1 ? "día" : "días"})`).join(", ")}`);
+
+    if (iVenc.length) lineas.push(`💼 <strong>¿Ya te pagaron?</strong> ${iVenc.slice(0, 3).map((f) => `${esc(f.nombre)} (hace ${-f.info.dias} ${-f.info.dias === 1 ? "día" : "días"})`).join(", ")}`);
+
+    const proximos = [...por(pg, "pronto").map((f) => ({ f, ing: false })), ...por(pi, "pronto").map((f) => ({ f, ing: true }))]
+        .sort((a, b) => a.f.info.dias - b.f.info.dias)
+        .slice(0, 2);
+
+    proximos.forEach(({ f, ing }) => {
+
+        const cuando = f.info.dias === 1 ? "<strong>Mañana</strong>" : `En <strong>${f.info.dias} días</strong>`;
+
+        lineas.push(`${ing ? "💼" : "🔔"} ${cuando} ${ing ? "te pagan" : "pagas"} ${esc(f.nombre)} (${money(f.monto)})`);
 
     });
 
-    aviso.className = "aviso-fijos" + (hoy.length || vencidos.length ? " urgente" : "");
+    aviso.className = "aviso-fijos" + (gHoy.length || iHoy.length || gVenc.length || iVenc.length ? " urgente" : "");
 
     aviso.innerHTML = lineas.join("<br>") + ` <span class="aviso-ver">· Ver</span>`;
 
     // Una vez por visita: avisa también con un mensaje flotante
-    if (hoy.length && !avisoHoyMostrado) {
+    if ((gHoy.length || iHoy.length) && !avisoHoyMostrado) {
 
         avisoHoyMostrado = true;
 
-        setTimeout(() => mostrarToast(`📅 Hoy pagas: ${hoy.slice(0, 2).map((f) => f.nombre).join(", ")}${hoy.length > 2 ? "…" : ""}`), 1200);
+        const txt = [
+            gHoy.length ? `Hoy pagas: ${gHoy.slice(0, 2).map((f) => f.nombre).join(", ")}${gHoy.length > 2 ? "…" : ""}` : "",
+            iHoy.length ? `Hoy te pagan: ${iHoy.slice(0, 2).map((f) => f.nombre).join(", ")}${iHoy.length > 2 ? "…" : ""}` : ""
+        ].filter(Boolean).join(" · ");
+
+        setTimeout(() => mostrarToast("📅 " + txt), 1200);
 
     }
 
@@ -3620,7 +3668,58 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    $("fijos").addEventListener("click", async (e) => {
+    // Ingresos fijos: guardar
+    $("ingFijoForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const fuente = nombreCategoria($("ingFijoCategoria").value);
+
+        const datos = {
+            tipo: "Ingreso",
+            nombre: $("ingFijoNombre").value.trim(),
+            categoria: fuente === "Sin categoría" ? "Sueldo" : fuente,
+            monto: Number($("ingFijoMonto").value),
+            dia: Number($("ingFijoDia").value)
+        };
+
+        if (!datos.nombre || !(datos.monto > 0) || !Number.isInteger(datos.dia) || datos.dia < 1 || datos.dia > 31) {
+
+            mostrarToast("💼 Revisa el nombre, el monto y el día (1 al 31)");
+
+            return;
+
+        }
+
+        const boton = $("ingFijoBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarFijo(datos);
+
+            $("ingFijoForm").reset();
+
+            mostrarToast(`✅ Ingreso fijo "${datos.nombre}" guardado`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar ingreso fijo";
+
+        }
+
+    });
+
+    const clickFijo = async (e) => {
 
         const boton = e.target.closest("[data-fijo]");
 
@@ -3631,6 +3730,24 @@ window.addEventListener("DOMContentLoaded", () => {
         const nombre = item.dataset.nombre;
 
         const accion = boton.dataset.fijo;
+
+        const tipo = item.dataset.tipo === "Ingreso" ? "Ingreso" : "Gasto";
+
+        if (accion === "editar" && tipo === "Ingreso") {
+
+            $("ingFijoNombre").value = nombre;
+
+            $("ingFijoCategoria").value = item.dataset.categoria;
+
+            $("ingFijoMonto").value = item.dataset.monto;
+
+            $("ingFijoDia").value = item.dataset.dia;
+
+            $("ingFijoMonto").focus();
+
+            return;
+
+        }
 
         if (accion === "editar") {
 
@@ -3683,7 +3800,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             if (accion === "registrar") {
 
-                await api("pagarFijo", { nombre });
+                await api("pagarFijo", { nombre, tipo });
 
                 await cargarDatos();
 
@@ -3691,11 +3808,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
                 animar(".tarjeta");
 
-                mostrarToast(`✅ ${nombre} registrado como gasto`);
+                mostrarToast(tipo === "Ingreso" ? `✅ ${nombre} registrado como ingreso` : `✅ ${nombre} registrado como gasto`);
 
             } else {
 
-                await guardarFijo({ nombre, quitar: true });
+                await guardarFijo({ nombre, quitar: true, tipo });
 
                 mostrarToast(`🗑️ "${nombre}" quitado de tus fijos`);
 
@@ -3707,7 +3824,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
         }
 
-    });
+    };
+
+    $("fijos").addEventListener("click", clickFijo);
+
+    $("ingresosFijos").addEventListener("click", clickFijo);
 
     // Metas de ahorro: guardar, aportar, retirar, cambiar y quitar
     $("metaForm").addEventListener("submit", async (e) => {
