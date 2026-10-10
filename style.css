@@ -3982,3 +3982,37 @@ html[data-tema="iridiscente"] .presupuesto-mensaje.nivel-alerta{ color:#8A5A00; 
 .aviso-fijos.urgente{ background:rgba(245,158,11,.18); border-color:rgba(245,158,11,.6); }
 .aviso-fijos .aviso-ver{ opacity:.75; white-space:nowrap; }
 html[data-tema="iridiscente"] .aviso-fijos.urgente{ background:#FFE9B8; border-color:#E9B04A; }
+
+/*==================================================
+        v4.3 - USO DE TARJETAS (barra + día de pago)
+==================================================*/
+
+.uso-tarjeta + .tarjeta-pago,
+.uso-tarjeta + .uso-tarjeta{ margin-top:6px; }
+
+.tarjetas-resumen .uso-tarjeta{ margin-top:14px; }
+.tarjetas-resumen .tarjeta-pago + .uso-tarjeta{ margin-top:18px; }
+
+.uso-mini{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--border, rgba(255,255,255,.1));
+}
+
+.uso-mini + .uso-mini{ margin-top:8px; }
+
+.tarjeta-pago{
+    margin-top:8px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-soft, #CBD5E1);
+}
+
+.tarjeta-pago.pronto{ color:#FBBF24; }
+
+html[data-tema="iridiscente"] .tarjeta-pago.pronto{ color:#8A5A00; }
+
+.tarjetas-resumen{ cursor:pointer; }
+
+html[data-tema="iridiscente"] .tarjetas-resumen,
+html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
