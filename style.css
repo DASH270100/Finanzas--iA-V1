@@ -4121,3 +4121,18 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 .btn-deshacer:hover{background:rgba(127,127,160,.15)}
 .btn-deshacer:disabled{opacity:.6;cursor:default}
 @media (prefers-reduced-motion:reduce){.presupuesto-form:not([hidden]){animation:none}}
+
+/* v4.8 - Estadísticas más simple */
+.mas-detalles{margin-top:22px;border-top:1px solid var(--border);padding-top:6px}
+.mas-detalles[hidden]{display:none}
+.mas-detalles > summary{
+    list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    padding:12px 0;font-size:14px;font-weight:600;color:var(--text-muted);
+}
+.mas-detalles > summary::-webkit-details-marker{display:none}
+.mas-detalles > summary::before{content:"▸";transition:transform .2s}
+.mas-detalles[open] > summary::before{transform:rotate(90deg)}
+.mas-detalles[open] > summary{color:var(--text)}
+.mas-detalles .stat-tiles{margin-top:6px}
+.mas-detalles .ingresos-fuente{margin-top:20px;margin-bottom:0}
+.ingresos-card #ingresosFijos{margin-top:16px}
