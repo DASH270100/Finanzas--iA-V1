@@ -26,7 +26,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=52">
+    <link rel="stylesheet" href="style.css?v=53">
 
 </head>
 
@@ -631,6 +631,61 @@
 
         </section>
 
+        <section class="card cuotas-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2>🏦 Lo que debo</h2>
+
+                    <p id="subtituloCuotas">Préstamos con cuotas fijas: ve cuánto te falta y paga con un toque.</p>
+
+                </div>
+
+            </div>
+
+            <div id="cuotas">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="cuotaForm" class="presupuesto-form cuota-form">
+
+                <label>Nombre del préstamo
+                    <input id="cuotaNombre" type="text" maxlength="60"
+                        placeholder="Ej: Moto, Préstamo BCP" autocomplete="off" required>
+                </label>
+
+                <label>Cuota mensual (S/)
+                    <input id="cuotaMonto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="350" required>
+                </label>
+
+                <label>Total de cuotas
+                    <input id="cuotaTotal" type="number" step="1" min="1" max="600"
+                        inputmode="numeric" placeholder="12" required>
+                </label>
+
+                <label>Cuotas que ya pagaste (opcional)
+                    <input id="cuotaPagadas" type="number" step="1" min="0"
+                        inputmode="numeric" placeholder="0">
+                </label>
+
+                <label>Día de pago
+                    <input id="cuotaDia" type="number" step="1" min="1" max="31"
+                        inputmode="numeric" placeholder="15" required>
+                </label>
+
+                <button id="cuotaBoton" type="submit">Guardar préstamo</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Cada mes te aviso el día de la cuota. Con «Pagar cuota» (o escribiendo «pagué la cuota de la moto») se registra como gasto y avanza la barra. Si te pasas de la fecha, el interés lo anotas como siempre: «interés moto 20».</p>
+
+        </section>
+
         <section class="card fijos-card">
 
             <div class="card-title">
@@ -922,11 +977,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=52"></script>
+<script src="graficos.js?v=53"></script>
 
-<script src="demo.js?v=52"></script>
+<script src="demo.js?v=53"></script>
 
-<script src="script.js?v=52"></script>
+<script src="script.js?v=53"></script>
 
 </body>
 
