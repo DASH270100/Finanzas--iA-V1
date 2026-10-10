@@ -4199,3 +4199,12 @@ html[data-tema="iridiscente"] .tarjeta-vencida,html[data-tema="atardecer"] .tarj
 .pi-cancelar{display:block;margin:12px auto 0;background:none;border:0;color:inherit;opacity:.65;font:inherit;cursor:pointer;min-height:36px}
 @keyframes piSube{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.pi-caja{animation:none}}
+
+
+/* ===== v5.3 · Préstamos con cuotas ===== */
+.cuota-item .fijo-monto small{font-weight:500;opacity:.7;font-size:.72em}
+.cuota-item .presupuesto-barra{margin:10px 0 8px}
+.cuota-progreso{background:linear-gradient(90deg,#7C5CFC,#9478FF)}
+.estado-terminado{border-left-color:#10B981}
+.estado-terminado .fijo-estado{color:#34D399}
+#cuotas .fijo-item + .fijo-item{margin-top:12px}
