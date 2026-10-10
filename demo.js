@@ -53,7 +53,8 @@ const DemoBackend = (() => {
             deudas: [["Persona", "Fecha", "Monto", "Estado"]],
             presupuestos: [["Categoría", "Límite"]],
             fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro"]],
-            metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]]
+            metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
+            tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]]
         };
 
     }
@@ -125,9 +126,33 @@ const DemoBackend = (() => {
 
     }
 
-    function nuevaFilaMov(tipo, categoria, descripcion, monto) {
+    function nuevaFilaMov(tipo, categoria, descripcion, monto, medio) {
 
-        db.movimientos.push(['"' + textoFecha() + '"', tipo, categoria, descripcion, monto]);
+        db.movimientos.push(['"' + textoFecha() + '"', tipo, categoria, descripcion, monto, "", "Completado", medio || ""]);
+
+        if (medio) asegurarTarjeta(medio);
+
+    }
+
+    function asegurarTarjeta(nombre) {
+
+        if (!db.tarjetas.slice(1).some((t) => clave(t[0]) === clave(nombre))) db.tarjetas.push([String(nombre).trim(), 0, ""]);
+
+    }
+
+    // "con la BCP" / "con tarjeta Visa" / "pagué la tarjeta BCP 450"
+    function tarjetaDe(parte) {
+
+        const conocida = db.tarjetas.slice(1).map((t) => String(t[0])).find((n) => new RegExp("\\b" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i").test(parte));
+
+        if (conocida) return conocida;
+
+        const m = parte.match(/\bcon\s+(?:la\s+|mi\s+)?(?:tarjeta\s+)?(bcp|bbva|interbank|scotiabank|visa|mastercard|amex|diners|falabella|cmr|ripley)\b/i) ||
+            parte.match(/\btarjeta\s+(?:de\s+cr[eé]dito\s+)?([A-Za-z0-9]{2,20})/i);
+
+        if (!m) return "";
+
+        return m[1].length <= 4 ? m[1].toUpperCase() : capitalizar(m[1].toLowerCase());
 
     }
 
@@ -199,15 +224,34 @@ const DemoBackend = (() => {
 
             }
 
+            // Pago de la tarjeta: no es un gasto nuevo
+            if (/\b(pague|pago|abone)\b/.test(norm) && /tarjeta/.test(norm)) {
+
+                const t = tarjetaDe(parte);
+
+                if (t) {
+
+                    nuevaFilaMov("Gasto", "Pago de tarjeta", "Pago tarjeta " + t, monto, t);
+
+                    creados++;
+
+                    return;
+
+                }
+
+            }
+
+            const medio = tarjetaDe(parte);
+
             const esIngreso = PALABRAS_INGRESO.test(norm);
 
-            let desc = limpiarDescripcion(parte, num[0]);
+            let desc = limpiarDescripcion(medio ? parte.replace(/\s*(?:con|en)?\s*(?:la\s+|mi\s+)?(?:tarjeta\s+(?:de\s+cr[eé]dito\s+)?)?(?:BCP|BBVA|Interbank|Scotiabank|Visa|Mastercard|Amex|Diners|Falabella|CMR|Ripley)\b/i, " ").replace(medio, " ") : parte, num[0]);
 
             if (!desc) desc = /yape/.test(norm) ? "Yape" : (esIngreso ? "Ingreso" : "Gasto");
 
             desc = capitalizar(desc.slice(0, 100));
 
-            nuevaFilaMov(esIngreso ? "Ingreso" : "Gasto", categoriaDe(sinTildes(desc) + " " + norm, esIngreso), desc, monto);
+            nuevaFilaMov(esIngreso ? "Ingreso" : "Gasto", categoriaDe(sinTildes(desc) + " " + norm, esIngreso), desc, monto, esIngreso ? "" : medio);
 
             creados++;
 
@@ -261,7 +305,55 @@ const DemoBackend = (() => {
 
         if (!descripcion.trim()) return fallo("Falta la descripción");
 
-        nuevaFilaMov(tipo, categoria, descripcion, monto);
+        nuevaFilaMov(tipo, categoria, descripcion, monto, tipo === "Gasto" ? seguro(p.medio, 40) : "");
+
+        return ok();
+
+    }
+
+    function tarjeta(p) {
+
+        const nombre = seguro(p.nombre, 40);
+
+        if (!nombre.trim()) return fallo("Falta el nombre de la tarjeta");
+
+        let fila = 0;
+
+        for (let i = 1; i < db.tarjetas.length; i++) {
+
+            if (clave(db.tarjetas[i][0]) === clave(nombre)) { fila = i + 1; break; }
+
+        }
+
+        if (p.quitar) {
+
+            if (fila) db.tarjetas.splice(fila - 1, 1);
+
+            return ok();
+
+        }
+
+        const presupuesto = Number(p.presupuesto);
+
+        if (!isFinite(presupuesto) || presupuesto < 0 || presupuesto > 10000000) return fallo("Presupuesto no válido");
+
+        const trae = p.dia !== undefined && p.dia !== null && p.dia !== "";
+
+        let dia = fila ? (db.tarjetas[fila - 1][2] || "") : "";
+
+        if (trae) {
+
+            const d = Number(p.dia);
+
+            if (!Number.isInteger(d) || d < 0 || d > 31) return fallo("El día de pago debe ser del 1 al 31");
+
+            dia = d === 0 ? "" : d;
+
+        }
+
+        if (fila) db.tarjetas[fila - 1] = [nombre, presupuesto, dia];
+
+        else db.tarjetas.push([nombre, presupuesto, dia]);
 
         return ok();
 
@@ -772,7 +864,8 @@ const DemoBackend = (() => {
                     dashboard: [],
                     presupuestos: clonar(db.presupuestos),
                     fijos: clonar(db.fijos),
-                    metas: clonar(db.metas)
+                    metas: clonar(db.metas),
+                    tarjetas: clonar(db.tarjetas)
                 });
 
             case "registrar": return registrar(p);
@@ -783,6 +876,7 @@ const DemoBackend = (() => {
             case "presupuesto": return presupuesto(p);
             case "fijo": return fijo(p);
             case "pagarFijo": return pagarFijo(p);
+            case "tarjeta": return tarjeta(p);
             case "meta": return meta(p);
             case "aporte": return aporte(p);
             case "preguntar": return preguntar(p);
