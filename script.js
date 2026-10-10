@@ -1,4 +1,4 @@
-// Finanzas IA - Script v5.2 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v5.3 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -83,7 +83,11 @@ const esGasto = (m) => m.tipo.toLowerCase() === "gasto";
 
 // Un préstamo se registra como "Gasto", pero no es un gasto real: es plata que te deben
 const esPrestamo = (m) =>
-    esGasto(m) && /pr[eé]stamo/i.test(m.categoria + " " + m.descripcion);
+    esGasto(m) && !esCuota(m) && /pr[eé]stamo/i.test(m.categoria + " " + m.descripcion);
+
+// Pagar la cuota de un préstamo que tú debes: es un gasto real (sale plata de tu bolsillo)
+const esCuota = (m) =>
+    esGasto(m) && String(m.categoria).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "cuotas";
 
 // Un reembolso se registra como "Ingreso", pero no es un ingreso real: es plata que te devuelven
 const esReembolso = (m) =>
@@ -356,7 +360,10 @@ function normalizarDatos(data) {
             monto: numero(f[2]),
             dia: Math.min(31, Math.max(1, Math.round(numero(f[3])) || 1)),
             ultimo: parseFecha(f[4]),
-            tipo: String(f[5] ?? "").trim().toLowerCase() === "ingreso" ? "Ingreso" : "Gasto"
+            tipo: String(f[5] ?? "").trim().toLowerCase() === "ingreso" ? "Ingreso"
+                : String(f[5] ?? "").trim().toLowerCase() === "cuota" ? "Cuota" : "Gasto",
+            cuotas: Math.round(numero(f[6])) || 0,
+            pagadas: Math.round(numero(f[7])) || 0
         }))
         .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.monto > 0);
 
@@ -1774,6 +1781,12 @@ const fechaCorta = (d) =>
 // Calcula cuándo se cobra y en qué estado está este mes
 function infoFijo(f) {
 
+    if (f.tipo === "Cuota" && f.cuotas > 0 && f.pagadas >= f.cuotas) {
+
+        return { estado: "terminado", texto: "¡Terminaste de pagar este préstamo! 🎉" };
+
+    }
+
     const hoy = new Date();
 
     const h0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
@@ -1864,13 +1877,84 @@ function fijoHTML(f) {
 
 }
 
+// Préstamo en cuotas: cuánto llevas pagado, cuánto falta y un botón para pagar la cuota del mes
+function cuotaHTML(f) {
+
+    const total = f.cuotas || 0;
+
+    const faltan = Math.max(0, total - f.pagadas);
+
+    const pct = total > 0 ? Math.min(100, Math.round((f.pagadas / total) * 100)) : 0;
+
+    const termino = f.info.estado === "terminado";
+
+    const hecho = f.info.estado === "hecho";
+
+    return `
+        <div class="fijo-item cuota-item estado-${f.info.estado}" data-nombre="${esc(f.nombre)}" data-tipo="Cuota"
+            data-monto="${f.monto}" data-dia="${f.dia}" data-cuotas="${total}" data-pagadas="${f.pagadas}">
+
+            <div class="fijo-top">
+
+                <span class="fijo-nombre">🏦 ${esc(f.nombre)}</span>
+
+                <span class="fijo-monto">${money(f.monto)} <small>al mes</small></span>
+
+            </div>
+
+            <div class="fijo-detalle">
+                ${termino ? `Pagaste las ${total} cuotas` : `Llevas <strong>${f.pagadas} de ${total}</strong> cuotas · te faltan ${faltan} (${money(faltan * f.monto)})`}
+            </div>
+
+            <div class="presupuesto-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Cuotas pagadas de ${esc(f.nombre)}">
+
+                <div class="presupuesto-progreso nivel-${termino ? "ok" : "ok"} cuota-progreso" style="width:${pct}%"></div>
+
+            </div>
+
+            <div class="fijo-estado">${esc(f.info.texto)}</div>
+
+            <div class="fijo-acciones">
+
+                <button class="mov-btn mov-btn-primario" type="button" data-fijo="registrar"
+                    ${hecho || termino ? "disabled" : ""}>
+                    ${termino ? "✓ Terminado" : hecho ? "✓ Cuota pagada" : `Pagar cuota (${money(f.monto)})`}
+                </button>
+
+                <button class="mov-btn" type="button" data-fijo="editar">Cambiar</button>
+
+                <button class="mov-btn mov-btn-borrar" type="button" data-fijo="quitar">Quitar</button>
+
+            </div>
+
+        </div>
+    `;
+
+}
+
 function renderFijos() {
 
     const todos = estado.fijos
         .map((f) => ({ ...f, info: infoFijo(f) }))
         .sort((a, b) => a.dia - b.dia);
 
-    const items = todos.filter((f) => f.tipo !== "Ingreso");
+    const cuotas = todos.filter((f) => f.tipo === "Cuota");
+
+    const items = todos.filter((f) => f.tipo === "Gasto");
+
+    // Préstamos en cuotas ("Lo que debo")
+    const pendiente = cuotas.reduce((t, f) => t + Math.max(0, f.cuotas - f.pagadas) * f.monto, 0);
+
+    const activos = cuotas.filter((f) => f.info.estado !== "terminado").length;
+
+    $("subtituloCuotas").textContent = cuotas.length
+        ? `${activos} ${activos === 1 ? "préstamo activo" : "préstamos activos"} · te faltan ${money(pendiente)} en total`
+        : "Préstamos con cuotas fijas: ve cuánto te falta y paga con un toque.";
+
+    $("cuotas").innerHTML = cuotas.length
+        ? cuotas.map(cuotaHTML).join("")
+        : vacioGuia("🏦", "Aún no tienes préstamos",
+            "Si pagas un préstamo en cuotas (moto, celular, banco), agrégalo abajo. Te aviso cada mes y ves cuánto te falta.");
 
     const ingresos = todos.filter((f) => f.tipo === "Ingreso");
 
@@ -1905,7 +1989,7 @@ function renderFijos() {
             "Agrega tu sueldo u otro ingreso fijo abajo, con su fecha. Los variables (freelance, ventas) solo escríbelos: «me pagaron 800 por un logo».",
             "me pagaron 800 por un logo");
 
-    renderAvisoFijos(items, ingresos);
+    renderAvisoFijos([...items, ...cuotas], ingresos);
 
 }
 
@@ -3225,6 +3309,61 @@ function mostrarRegistrados(nuevos) {
 
 }
 
+// «pagué la cuota de la moto» / «pagué cuota préstamo BCP 350» / «pagué la cuota» (si solo tienes un préstamo)
+function parsearPagoCuota(texto) {
+
+    const m = String(texto || "").match(/^\s*(?:pagu[eé]|pago|pagar|abon[eé])\s+(?:la\s+|mi\s+|una\s+)?cuota(?:\s+(?:del?|para)\s+|\s+)?(?:(?:el|la|mi|del?)\s+)?(?:pr[eé]stamo\s+)?(?:(?:de|del|la|el)\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]*?)\s*(?:S\/\.?\s*)?(?:\d+(?:[.,]\d{1,2})?)?\s*(?:soles?)?\s*$/i);
+
+    if (!m) return null;
+
+    const lista = estado.fijos.filter((f) => f.tipo === "Cuota" && !(f.cuotas > 0 && f.pagadas >= f.cuotas));
+
+    if (!lista.length) return null;
+
+    const nombre = claveTarjeta(m[1]);
+
+    if (!nombre) return lista.length === 1 ? lista[0] : null;
+
+    const exacto = lista.filter((f) => claveTarjeta(f.nombre) === nombre);
+
+    if (exacto.length === 1) return exacto[0];
+
+    const parecido = lista.filter((f) => claveTarjeta(f.nombre).includes(nombre) || nombre.includes(claveTarjeta(f.nombre)));
+
+    return parecido.length === 1 ? parecido[0] : null;
+
+}
+
+async function pagarCuotaDesdeBarra(c) {
+
+    try {
+
+        await api("pagarFijo", { nombre: c.nombre, tipo: "Cuota" });
+
+        estado.mes = null;
+
+        await cargarDatos();
+
+        renderTodo();
+
+        animar(".tarjeta");
+
+        const n = estado.fijos.find((x) => x.tipo === "Cuota" && claveTarjeta(x.nombre) === claveTarjeta(c.nombre));
+
+        $("respuesta").innerHTML = `✅ Pagaste la cuota de <strong>${esc(c.nombre)}</strong> · ${money(c.monto)}`;
+
+        mostrarToast(n && n.pagadas >= n.cuotas
+            ? `🎉 ¡Terminaste de pagar ${c.nombre}!`
+            : `✅ Cuota ${n ? n.pagadas : ""} de ${n ? n.cuotas : ""} pagada${n ? ` · te faltan ${n.cuotas - n.pagadas}` : ""}`);
+
+    } catch (err) {
+
+        errorDeAccion(err);
+
+    }
+
+}
+
 async function registrarMovimiento() {
 
     const texto = $("mensaje").value.trim();
@@ -3240,6 +3379,19 @@ async function registrarMovimiento() {
     if (texto.length > MAX_CARACTERES) {
 
         mostrarToast(`Máximo ${MAX_CARACTERES} caracteres`);
+
+        return;
+
+    }
+
+    // «pagué la cuota del préstamo Moto» → marca la cuota del mes (sin IA)
+    const cuotaBarra = parsearPagoCuota(texto);
+
+    if (cuotaBarra) {
+
+        $("mensaje").value = "";
+
+        pagarCuotaDesdeBarra(cuotaBarra);
 
         return;
 
@@ -3818,6 +3970,7 @@ async function salirDemo() {
 const PLEGABLES = {
     presForm: "Nuevo presupuesto",
     tarjForm: "Agregar tarjeta",
+    cuotaForm: "Agregar préstamo",
     fijoForm: "Agregar gasto fijo",
     ingFijoForm: "Agregar ingreso fijo",
     metaForm: "Nueva meta"
@@ -4154,7 +4307,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const accion = boton.dataset.fijo;
 
-        const tipo = item.dataset.tipo === "Ingreso" ? "Ingreso" : "Gasto";
+        const tipo = item.dataset.tipo === "Ingreso" ? "Ingreso" : item.dataset.tipo === "Cuota" ? "Cuota" : "Gasto";
+
+        if (accion === "editar" && tipo === "Cuota") {
+
+            $("cuotaNombre").value = nombre;
+
+            $("cuotaMonto").value = item.dataset.monto;
+
+            $("cuotaTotal").value = item.dataset.cuotas;
+
+            $("cuotaPagadas").value = item.dataset.pagadas;
+
+            $("cuotaDia").value = item.dataset.dia;
+
+            abrirForm("cuotaForm");
+
+            $("cuotaMonto").focus();
+
+            return;
+
+        }
 
         if (accion === "editar" && tipo === "Ingreso") {
 
@@ -4200,7 +4373,7 @@ window.addEventListener("DOMContentLoaded", () => {
             boton.dataset.confirmando = "1";
 
             boton.textContent = accion === "registrar"
-                ? `¿Registrar ${money(item.dataset.monto)}?`
+                ? (tipo === "Cuota" ? `¿Pagar ${money(item.dataset.monto)}?` : `¿Registrar ${money(item.dataset.monto)}?`)
                 : "¿Seguro?";
 
             setTimeout(() => {
@@ -4235,7 +4408,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
                 animar(".tarjeta");
 
-                mostrarToast(tipo === "Ingreso" ? `✅ ${nombre} registrado como ingreso` : `✅ ${nombre} registrado como gasto`);
+                if (tipo === "Cuota") {
+
+                    const c = estado.fijos.find((x) => x.tipo === "Cuota" && claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+                    mostrarToast(c && c.pagadas >= c.cuotas
+                        ? `🎉 ¡Terminaste de pagar ${nombre}!`
+                        : `✅ Cuota ${c ? c.pagadas : ""} de ${c ? c.cuotas : ""} pagada${c ? ` · te faltan ${c.cuotas - c.pagadas}` : ""}`);
+
+                } else {
+
+                    mostrarToast(tipo === "Ingreso" ? `✅ ${nombre} registrado como ingreso` : `✅ ${nombre} registrado como gasto`);
+
+                }
 
             } else {
 
@@ -4256,6 +4441,67 @@ window.addEventListener("DOMContentLoaded", () => {
     $("fijos").addEventListener("click", clickFijo);
 
     $("ingresosFijos").addEventListener("click", clickFijo);
+
+    $("cuotas").addEventListener("click", clickFijo);
+
+    // Préstamos en cuotas: guardar
+    $("cuotaForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const datos = {
+            tipo: "Cuota",
+            nombre: $("cuotaNombre").value.trim(),
+            monto: Number($("cuotaMonto").value),
+            cuotas: Number($("cuotaTotal").value),
+            pagadas: Number($("cuotaPagadas").value || 0),
+            dia: Number($("cuotaDia").value)
+        };
+
+        if (!datos.nombre || !(datos.monto > 0) || !Number.isInteger(datos.cuotas) || datos.cuotas < 1 ||
+            !Number.isInteger(datos.pagadas) || datos.pagadas < 0 || !Number.isInteger(datos.dia) || datos.dia < 1 || datos.dia > 31) {
+
+            mostrarToast("💲 Revisa el nombre, la cuota, el total de cuotas y el día (1 al 31)");
+
+            return;
+
+        }
+
+        if (datos.pagadas > datos.cuotas) {
+
+            mostrarToast("Las cuotas que ya pagaste no pueden ser más que el total");
+
+            return;
+
+        }
+
+        const boton = $("cuotaBoton");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Guardando...";
+
+        try {
+
+            await guardarFijo(datos);
+
+            $("cuotaForm").reset(); cerrarForm("cuotaForm");
+
+            mostrarToast(`✅ Préstamo "${datos.nombre}" guardado`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Guardar préstamo";
+
+        }
+
+    });
 
     // Metas de ahorro: guardar, aportar, retirar, cambiar y quitar
     $("metaForm").addEventListener("submit", async (e) => {
