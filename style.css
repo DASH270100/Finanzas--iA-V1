@@ -4208,3 +4208,15 @@ html[data-tema="iridiscente"] .tarjeta-vencida,html[data-tema="atardecer"] .tarj
 .estado-terminado{border-left-color:#10B981}
 .estado-terminado .fijo-estado{color:#34D399}
 #cuotas .fijo-item + .fijo-item{margin-top:12px}
+
+
+/* ===== v5.4 · Intereses y adelanto de préstamos ===== */
+.cuota-tea{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:.68em;font-weight:700;background:rgba(124,92,252,.18);color:#B7A4FF;vertical-align:middle}
+html[data-tema="iridiscente"] .cuota-tea,html[data-tema="atardecer"] .cuota-tea{color:#5B3FD6}
+.cuota-resta{margin-top:2px}
+.cuota-adelanto{align-items:center}
+.cuota-adelanto input{flex:1 1 180px}
+.adelanto-vista{flex-basis:100%;font-size:.84rem;opacity:.85;min-height:1.2em}
+.check-interes{display:flex !important;flex-direction:row !important;align-items:center;gap:10px;padding:10px 0;font-weight:600;cursor:pointer}
+.check-interes input{width:20px;height:20px;min-height:0;accent-color:#7C5CFC;flex:0 0 auto}
+#cuotaTeaCampo[hidden]{display:none}
