@@ -52,7 +52,7 @@ const DemoBackend = (() => {
             movimientos: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
             deudas: [["Persona", "Fecha", "Monto", "Estado"]],
             presupuestos: [["Categoría", "Límite"]],
-            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo"]],
+            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo", "Cuotas", "Pagadas"]],
             metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
             tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]]
         };
@@ -555,7 +555,7 @@ const DemoBackend = (() => {
 
     }
 
-    const tipoFijo = (v) => String(v || "").trim() === "Ingreso" ? "Ingreso" : "Gasto";
+    const tipoFijo = (v) => { const t = String(v || "").trim(); return t === "Ingreso" ? "Ingreso" : (t === "Cuota" ? "Cuota" : "Gasto"); };
 
     const tipoDeFila = (r) => tipoFijo(r[5]);
 
@@ -589,7 +589,7 @@ const DemoBackend = (() => {
 
         }
 
-        const categoria = seguro(p.categoria, 40) || (tipo === "Ingreso" ? "Sueldo" : "Otros");
+        const categoria = tipo === "Cuota" ? "Cuotas" : (seguro(p.categoria, 40) || (tipo === "Ingreso" ? "Sueldo" : "Otros"));
 
         const monto = Number(p.monto);
 
@@ -599,15 +599,31 @@ const DemoBackend = (() => {
 
         if (!Number.isInteger(dia) || dia < 1 || dia > 31) return fallo("El día de cobro debe ser del 1 al 31");
 
+        let cuotas = 0, pagadas = 0;
+
+        if (tipo === "Cuota") {
+
+            cuotas = Number(p.cuotas);
+
+            pagadas = Number(p.pagadas || 0);
+
+            if (!Number.isInteger(cuotas) || cuotas < 1 || cuotas > 600) return fallo("El total de cuotas debe ser de 1 a 600");
+
+            if (!Number.isInteger(pagadas) || pagadas < 0 || pagadas > cuotas) return fallo("Las cuotas pagadas no pueden pasar del total");
+
+        }
+
         if (fila) {
 
             const r = db.fijos[fila - 1];
 
             r[0] = nombre; r[1] = categoria; r[2] = monto; r[3] = dia;
 
+            if (tipo === "Cuota") { r[6] = cuotas; r[7] = pagadas; }
+
         } else {
 
-            db.fijos.push([nombre, categoria, monto, dia, "", tipo === "Ingreso" ? "Ingreso" : ""]);
+            db.fijos.push([nombre, categoria, monto, dia, "", tipo === "Gasto" ? "" : tipo, tipo === "Cuota" ? cuotas : "", tipo === "Cuota" ? pagadas : ""]);
 
         }
 
@@ -631,11 +647,25 @@ const DemoBackend = (() => {
 
         if (ultimo && ultimo.getFullYear() === hoy.getFullYear() && ultimo.getMonth() === hoy.getMonth()) {
 
-            return fallo("Ya lo registraste este mes");
+            return fallo(tipo === "Cuota" ? "Ya pagaste la cuota de este mes" : "Ya lo registraste este mes");
 
         }
 
-        nuevaFilaMov(tipo, String(r[1] || (tipo === "Ingreso" ? "Sueldo" : "Otros")), String(r[0]), Number(r[2]));
+        if (tipo === "Cuota") {
+
+            const total = Number(r[6]) || 0, antes = Number(r[7]) || 0;
+
+            if (total > 0 && antes >= total) return fallo("Ya terminaste de pagar este préstamo");
+
+            nuevaFilaMov("Gasto", "Cuotas", "Cuota " + String(r[0]), Number(r[2]));
+
+            r[7] = antes + 1;
+
+        } else {
+
+            nuevaFilaMov(tipo, String(r[1] || (tipo === "Ingreso" ? "Sueldo" : "Otros")), String(r[0]), Number(r[2]));
+
+        }
 
         r[4] = textoFecha(hoy);
 
