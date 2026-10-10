@@ -4065,3 +4065,31 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 
 .ingresos-fuente{ margin-top:14px; }
 #statTiles + .stat-subtitulo{ margin-top:30px; }
+
+/*==================================================
+        v4.5 - FORMULARIO DE TARJETA E INGRESOS FIJOS
+==================================================*/
+
+/* El botón "Guardar tarjeta" quedaba solo en una segunda fila */
+.tarj-form{ grid-template-columns:1.4fr 1fr 150px auto; }
+.ing-fijo-form{ grid-template-columns:1.4fr 1fr 130px 130px auto; }
+
+@media(max-width:900px){
+    .tarj-form{ grid-template-columns:1fr 1fr; }
+    .tarj-form button{ grid-column:1 / -1; }
+    .ing-fijo-form{ grid-template-columns:1fr 1fr; }
+    .ing-fijo-form button{ grid-column:1 / -1; }
+}
+
+@media(max-width:700px){
+    .tarj-form,
+    .ing-fijo-form{ grid-template-columns:1fr; }
+}
+
+.ing-fijos-sub{
+    margin:-6px 0 14px;
+    font-size:13px;
+    color:var(--text-muted);
+}
+
+#ingresosFijos .fijo-item + .fijo-item{ margin-top:12px; }
