@@ -4097,3 +4097,27 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 /* v4.6 - ingresos en un solo bloque */
 .fuente-titulo{margin:26px 0 12px;font-size:.95rem;font-weight:700;opacity:.85}
 .ingresos-fuente:empty{display:none}
+
+/* v4.7 - formularios plegables + deshacer */
+.btn-agregar{
+    display:inline-flex;align-items:center;gap:6px;
+    margin-top:14px;padding:10px 16px;
+    border-radius:12px;border:1px dashed var(--border);
+    background:transparent;color:var(--text);
+    font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+    transition:background .2s,transform .15s;
+}
+.btn-agregar:hover{background:rgba(127,127,160,.12)}
+.btn-agregar:active{transform:scale(.97)}
+.btn-agregar[aria-expanded="true"]{border-style:solid;opacity:.85}
+.presupuesto-form[hidden],.presupuesto-nota[hidden]{display:none}
+.presupuesto-form:not([hidden]){margin-top:14px;animation:aparecer .22s ease}
+@keyframes aparecer{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.deshacer-fila{margin-top:10px}
+.btn-deshacer{
+    padding:8px 14px;border-radius:999px;border:1px solid var(--border);
+    background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+}
+.btn-deshacer:hover{background:rgba(127,127,160,.15)}
+.btn-deshacer:disabled{opacity:.6;cursor:default}
+@media (prefers-reduced-motion:reduce){.presupuesto-form:not([hidden]){animation:none}}
