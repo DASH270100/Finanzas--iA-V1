@@ -1,4 +1,4 @@
-// Finanzas IA - Script v5.3 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v5.4 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -363,7 +363,10 @@ function normalizarDatos(data) {
             tipo: String(f[5] ?? "").trim().toLowerCase() === "ingreso" ? "Ingreso"
                 : String(f[5] ?? "").trim().toLowerCase() === "cuota" ? "Cuota" : "Gasto",
             cuotas: Math.round(numero(f[6])) || 0,
-            pagadas: Math.round(numero(f[7])) || 0
+            pagadas: Math.round(numero(f[7])) || 0,
+            tea: numero(f[8]) || 0,
+            saldo: (f[9] === "" || f[9] == null) ? null : numero(f[9]),
+            capital: numero(f[10]) || 0
         }))
         .filter((f) => f.nombre !== "" && f.nombre.toLowerCase() !== "nombre" && f.monto > 0);
 
@@ -1877,38 +1880,94 @@ function fijoHTML(f) {
 
 }
 
-// Préstamo en cuotas: cuánto llevas pagado, cuánto falta y un botón para pagar la cuota del mes
+// ---- Matemática de préstamos (cuota fija; TEA = tasa efectiva anual en %) ----
+const tasaMensual = (tea) => tea > 0 ? Math.pow(1 + tea / 100, 1 / 12) - 1 : 0;
+
+const principalCuotas = (c, n, i) => i > 0 ? c * (1 - Math.pow(1 + i, -n)) / i : c * n;
+
+function cuotasQueFaltan(B, c, i) {
+
+    if (B <= 0.005) return 0;
+
+    if (i <= 0) return Math.ceil(B / c - 1e-9);
+
+    if (B * i >= c) return 600;
+
+    return Math.min(600, Math.ceil(-Math.log(1 - B * i / c) / Math.log(1 + i) - 1e-9));
+
+}
+
+// Cuántas cuotas faltan, de cuánto es la última y cuánto del total son intereses
+function planPrestamo(B, c, i) {
+
+    const n = cuotasQueFaltan(B, c, i);
+
+    if (n === 0) return { n: 0, ultima: 0, total: 0, intereses: 0 };
+
+    let b = B;
+
+    for (let k = 0; k < n - 1; k++) b = b * (1 + i) - c;
+
+    const ultima = Math.max(0, i > 0 ? b * (1 + i) : b);
+
+    const total = c * (n - 1) + ultima;
+
+    return { n, ultima, total, intereses: Math.max(0, total - B) };
+
+}
+
+// Estado de un préstamo: capital que falta (saldo) y capital total, aunque venga de la versión sin intereses
+function datosPrestamo(f) {
+
+    const i = tasaMensual(f.tea);
+
+    const saldo = f.saldo != null ? f.saldo : Math.max(0, f.cuotas - f.pagadas) * f.monto;
+
+    const capital = f.capital > 0 ? f.capital : f.cuotas * f.monto;
+
+    return { i, saldo, capital };
+
+}
+
+// Préstamo en cuotas: cuánto llevas pagado, cuánto falta y botones para pagar la cuota o adelantar
 function cuotaHTML(f) {
 
-    const total = f.cuotas || 0;
+    const { i, saldo, capital } = datosPrestamo(f);
 
-    const faltan = Math.max(0, total - f.pagadas);
+    const plan = planPrestamo(saldo, f.monto, i);
 
-    const pct = total > 0 ? Math.min(100, Math.round((f.pagadas / total) * 100)) : 0;
+    const pct = capital > 0 ? Math.max(0, Math.min(100, Math.round(((capital - saldo) / capital) * 100))) : 0;
 
     const termino = f.info.estado === "terminado";
 
     const hecho = f.info.estado === "hecho";
 
+    const total = f.cuotas || 0;
+
+    const ultimaTxt = plan.n > 1 && Math.abs(plan.ultima - f.monto) > 0.5 ? ` (la última de ${money(plan.ultima)})` : "";
+
     return `
         <div class="fijo-item cuota-item estado-${f.info.estado}" data-nombre="${esc(f.nombre)}" data-tipo="Cuota"
-            data-monto="${f.monto}" data-dia="${f.dia}" data-cuotas="${total}" data-pagadas="${f.pagadas}">
+            data-monto="${f.monto}" data-dia="${f.dia}" data-cuotas="${total}" data-pagadas="${f.pagadas}"
+            data-tea="${f.tea}" data-saldo="${saldo}">
 
             <div class="fijo-top">
 
-                <span class="fijo-nombre">🏦 ${esc(f.nombre)}</span>
+                <span class="fijo-nombre">🏦 ${esc(f.nombre)}${f.tea > 0 ? ` <small class="cuota-tea">TEA ${f.tea}%</small>` : ""}</span>
 
                 <span class="fijo-monto">${money(f.monto)} <small>al mes</small></span>
 
             </div>
 
             <div class="fijo-detalle">
-                ${termino ? `Pagaste las ${total} cuotas` : `Llevas <strong>${f.pagadas} de ${total}</strong> cuotas · te faltan ${faltan} (${money(faltan * f.monto)})`}
+                ${termino ? `Pagaste todo el préstamo` : `Llevas <strong>${f.pagadas} de ${total}</strong> cuotas · te faltan ${plan.n}${ultimaTxt}`}
             </div>
 
-            <div class="presupuesto-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Cuotas pagadas de ${esc(f.nombre)}">
+            ${termino ? "" : `<div class="fijo-detalle cuota-resta">Por pagar: <strong>${money(plan.total)}</strong>${i > 0 ? ` · de eso, unos ${money(plan.intereses)} son intereses` : ""}</div>`}
 
-                <div class="presupuesto-progreso nivel-${termino ? "ok" : "ok"} cuota-progreso" style="width:${pct}%"></div>
+            <div class="presupuesto-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Avance de ${esc(f.nombre)}">
+
+                <div class="presupuesto-progreso nivel-ok cuota-progreso" style="width:${pct}%"></div>
 
             </div>
 
@@ -1921,14 +1980,49 @@ function cuotaHTML(f) {
                     ${termino ? "✓ Terminado" : hecho ? "✓ Cuota pagada" : `Pagar cuota (${money(f.monto)})`}
                 </button>
 
+                ${termino ? "" : `<button class="mov-btn" type="button" data-fijo="adelantar">Adelantar pago</button>`}
+
                 <button class="mov-btn" type="button" data-fijo="editar">Cambiar</button>
 
                 <button class="mov-btn mov-btn-borrar" type="button" data-fijo="quitar">Quitar</button>
 
             </div>
 
+            ${termino ? "" : `
+            <form class="tarj-pago-form cuota-adelanto" data-adelanto hidden>
+                <input type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="¿Cuánto adelantas? Ej: 1000" aria-label="Monto a adelantar" required>
+                <button type="submit" class="mov-btn mov-btn-primario">Adelantar</button>
+                <small class="adelanto-vista" aria-live="polite"></small>
+            </form>`}
+
         </div>
     `;
+
+}
+
+// Vista previa del adelanto: cuántas cuotas quedarían y cuánto ahorras en intereses
+function vistaAdelanto(item, monto) {
+
+    const c = Number(item.dataset.monto);
+
+    const i = tasaMensual(Number(item.dataset.tea) || 0);
+
+    const B = Number(item.dataset.saldo);
+
+    if (!(monto > 0)) return "";
+
+    if (monto > B + 0.005) return `Solo te faltan ${money(B)} de capital`;
+
+    const antes = planPrestamo(B, c, i);
+
+    const despues = planPrestamo(Math.max(0, B - monto), c, i);
+
+    const txt = despues.n === 0 ? "¡Con eso terminarías de pagar el préstamo! 🎉"
+        : `Te quedarían ${despues.n} ${despues.n === 1 ? "cuota" : "cuotas"} (antes ${antes.n})`;
+
+    const ahorro = antes.intereses - despues.intereses;
+
+    return txt + (i > 0 && ahorro > 0.5 ? ` · ahorras unos ${money(ahorro)} en intereses` : "");
 
 }
 
@@ -1943,7 +2037,7 @@ function renderFijos() {
     const items = todos.filter((f) => f.tipo === "Gasto");
 
     // Préstamos en cuotas ("Lo que debo")
-    const pendiente = cuotas.reduce((t, f) => t + Math.max(0, f.cuotas - f.pagadas) * f.monto, 0);
+    const pendiente = cuotas.reduce((t, f) => { const d = datosPrestamo(f); return t + planPrestamo(d.saldo, f.monto, d.i).total; }, 0);
 
     const activos = cuotas.filter((f) => f.info.estado !== "terminado").length;
 
@@ -3334,6 +3428,88 @@ function parsearPagoCuota(texto) {
 
 }
 
+// «adelanté 1000 a la moto» / «adelanto moto 1000» / «adelanté 500 al préstamo»
+function parsearAdelanto(texto) {
+
+    const m = String(texto || "").match(/^\s*(?:adelant[eé]|adelanto|adelantar)\s+(?:(?:S\/\.?\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:soles?)?\s+)?(?:(?:a|al|de|del|para|en)\s+)?(?:(?:la|el|mi|una)\s+)?(?:cuota\s+)?(?:(?:de|del)\s+)?(?:(?:la|el|mi)\s+)?(?:pr[eé]stamo\s+)?(?:(?:de|del|la|el)\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ ]*?)\s*(?:S\/\.?\s*)?(\d+(?:[.,]\d{1,2})?)?\s*(?:soles?)?\s*$/i);
+
+    if (!m) return null;
+
+    const monto = parseFloat(String(m[1] || m[3] || "").replace(",", "."));
+
+    if (!(monto > 0)) return null;
+
+    const lista = estado.fijos.filter((f) => f.tipo === "Cuota" && !(f.cuotas > 0 && f.pagadas >= f.cuotas));
+
+    if (!lista.length) return null;
+
+    const nombre = claveTarjeta(m[2]);
+
+    let c = null;
+
+    if (!nombre) c = lista.length === 1 ? lista[0] : null;
+
+    else {
+
+        const exacto = lista.filter((f) => claveTarjeta(f.nombre) === nombre);
+
+        const parecido = lista.filter((f) => claveTarjeta(f.nombre).includes(nombre) || nombre.includes(claveTarjeta(f.nombre)));
+
+        c = exacto.length === 1 ? exacto[0] : (parecido.length === 1 ? parecido[0] : null);
+
+    }
+
+    return c ? { c, monto } : null;
+
+}
+
+async function adelantarPrestamo(nombre, monto) {
+
+    const f = estado.fijos.find((x) => x.tipo === "Cuota" && claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+    if (f) {
+
+        const d = datosPrestamo(f);
+
+        if (monto > d.saldo + 0.005) {
+
+            mostrarToast(`Solo te faltan ${money(d.saldo)} de capital. Pon un monto menor.`);
+
+            return;
+
+        }
+
+    }
+
+    try {
+
+        await api("adelantarCuota", { nombre, monto });
+
+        estado.mes = null;
+
+        await cargarDatos();
+
+        renderTodo();
+
+        animar(".tarjeta");
+
+        const n = estado.fijos.find((x) => x.tipo === "Cuota" && claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+        const quedan = n ? planPrestamo(datosPrestamo(n).saldo, n.monto, datosPrestamo(n).i).n : null;
+
+        $("respuesta").innerHTML = `✅ Adelantaste <strong>${money(monto)}</strong> a <strong>${esc(nombre)}</strong>`;
+
+        mostrarToast(quedan === 0 ? `🎉 ¡Terminaste de pagar ${nombre}!`
+            : `✅ Adelanto de ${money(monto)} registrado${quedan != null ? ` · te quedan ${quedan} ${quedan === 1 ? "cuota" : "cuotas"}` : ""}`);
+
+    } catch (err) {
+
+        errorDeAccion(err);
+
+    }
+
+}
+
 async function pagarCuotaDesdeBarra(c) {
 
     try {
@@ -3384,6 +3560,19 @@ async function registrarMovimiento() {
 
     }
 
+    // «adelanté 1000 a la moto» → baja el capital del préstamo (sin IA)
+    const adelanto = parsearAdelanto(texto);
+
+    if (adelanto) {
+
+        $("mensaje").value = "";
+
+        adelantarPrestamo(adelanto.c.nombre, adelanto.monto);
+
+        return;
+
+    }
+
     // «pagué la cuota del préstamo Moto» → marca la cuota del mes (sin IA)
     const cuotaBarra = parsearPagoCuota(texto);
 
@@ -3401,6 +3590,33 @@ async function registrarMovimiento() {
     const rapido = parsearRapido(texto);
 
     if (rapido) {
+
+        // Pagar la tarjeta de más escondería un sobrepago: se pide un monto que no pase de la deuda
+        if (esPagoTarjeta({ tipo: rapido.tipo, categoria: rapido.categoria })) {
+
+            const info = infoTarjetas().find((x) => claveTarjeta(x.nombre) === claveTarjeta(rapido.medio));
+
+            if (info && info.deuda <= 0.005) {
+
+                $("respuesta").textContent = `💳 Tu ${info.nombre} está al día: no debes nada, así que no anoto ese pago.`;
+
+                mostrarToast("💳 No debes nada en esa tarjeta");
+
+                return;
+
+            }
+
+            if (info && rapido.monto > info.deuda + 0.005) {
+
+                $("respuesta").textContent = `💳 Solo debes ${money(info.deuda)} en tu ${info.nombre}. Escribe un monto menor o «pagué la tarjeta ${info.nombre}» para pagar todo.`;
+
+                mostrarToast(`💳 Solo debes ${money(info.deuda)}`);
+
+                return;
+
+            }
+
+        }
 
         $("mensaje").value = "";
 
@@ -4321,6 +4537,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("cuotaDia").value = item.dataset.dia;
 
+            const tea = Number(item.dataset.tea) || 0;
+
+            $("cuotaConInteres").checked = tea > 0;
+
+            $("cuotaTea").value = tea > 0 ? tea : "";
+
+            $("cuotaTeaCampo").hidden = !(tea > 0);
+
             abrirForm("cuotaForm");
 
             $("cuotaMonto").focus();
@@ -4360,6 +4584,22 @@ window.addEventListener("DOMContentLoaded", () => {
             abrirForm("fijoForm");
 
             $("fijoMonto").focus();
+
+            return;
+
+        }
+
+        if (accion === "adelantar") {
+
+            const f = item.querySelector("[data-adelanto]");
+
+            if (f) {
+
+                f.hidden = !f.hidden;
+
+                if (!f.hidden) f.querySelector("input").focus();
+
+            }
 
             return;
 
@@ -4444,6 +4684,44 @@ window.addEventListener("DOMContentLoaded", () => {
 
     $("cuotas").addEventListener("click", clickFijo);
 
+    // Casilla «tiene intereses»: muestra el campo de la tasa
+    $("cuotaConInteres").addEventListener("change", () => {
+
+        $("cuotaTeaCampo").hidden = !$("cuotaConInteres").checked;
+
+        if (!$("cuotaTeaCampo").hidden) $("cuotaTea").focus();
+
+    });
+
+    // Adelantar pago: vista previa mientras escribes y registro al enviar
+    $("cuotas").addEventListener("input", (e) => {
+
+        const f = e.target.closest("[data-adelanto]");
+
+        if (!f) return;
+
+        f.querySelector(".adelanto-vista").textContent = vistaAdelanto(f.closest("[data-nombre]"), Number(e.target.value));
+
+    });
+
+    $("cuotas").addEventListener("submit", async (e) => {
+
+        const f = e.target.closest("[data-adelanto]");
+
+        if (!f) return;
+
+        e.preventDefault();
+
+        const item = f.closest("[data-nombre]");
+
+        const monto = Number(f.querySelector("input").value);
+
+        if (!(monto > 0)) return;
+
+        await adelantarPrestamo(item.dataset.nombre, monto);
+
+    });
+
     // Préstamos en cuotas: guardar
     $("cuotaForm").addEventListener("submit", async (e) => {
 
@@ -4455,8 +4733,17 @@ window.addEventListener("DOMContentLoaded", () => {
             monto: Number($("cuotaMonto").value),
             cuotas: Number($("cuotaTotal").value),
             pagadas: Number($("cuotaPagadas").value || 0),
-            dia: Number($("cuotaDia").value)
+            dia: Number($("cuotaDia").value),
+            tea: $("cuotaConInteres").checked ? Number($("cuotaTea").value) : 0
         };
+
+        if ($("cuotaConInteres").checked && !(datos.tea > 0)) {
+
+            mostrarToast("📈 Escribe la tasa de interés anual (TEA) o desmarca «tiene intereses»");
+
+            return;
+
+        }
 
         if (!datos.nombre || !(datos.monto > 0) || !Number.isInteger(datos.cuotas) || datos.cuotas < 1 ||
             !Number.isInteger(datos.pagadas) || datos.pagadas < 0 || !Number.isInteger(datos.dia) || datos.dia < 1 || datos.dia > 31) {
@@ -4485,7 +4772,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             await guardarFijo(datos);
 
-            $("cuotaForm").reset(); cerrarForm("cuotaForm");
+            $("cuotaForm").reset(); $("cuotaTeaCampo").hidden = true; cerrarForm("cuotaForm");
 
             mostrarToast(`✅ Préstamo "${datos.nombre}" guardado`);
 
