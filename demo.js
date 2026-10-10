@@ -52,7 +52,7 @@ const DemoBackend = (() => {
             movimientos: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
             deudas: [["Persona", "Fecha", "Monto", "Estado"]],
             presupuestos: [["Categoría", "Límite"]],
-            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo", "Cuotas", "Pagadas"]],
+            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo", "Cuotas", "Pagadas", "TEA %", "Saldo", "Capital"]],
             metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
             tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]]
         };
@@ -555,6 +555,25 @@ const DemoBackend = (() => {
 
     }
 
+    // Matemática de préstamos (cuota fija; TEA en %)
+    const tasaMensual = (tea) => tea > 0 ? Math.pow(1 + tea / 100, 1 / 12) - 1 : 0;
+
+    const principalCuotas = (c, n, i) => i > 0 ? c * (1 - Math.pow(1 + i, -n)) / i : c * n;
+
+    const saldoTrasCuotas = (P, c, i, k) => i > 0 ? P * Math.pow(1 + i, k) - c * (Math.pow(1 + i, k) - 1) / i : P - c * k;
+
+    function cuotasQueFaltan(B, c, i) {
+
+        if (B <= 0.005) return 0;
+
+        if (i <= 0) return Math.ceil(B / c - 1e-9);
+
+        if (B * i >= c) return 600;
+
+        return Math.min(600, Math.ceil(-Math.log(1 - B * i / c) / Math.log(1 + i) - 1e-9));
+
+    }
+
     const tipoFijo = (v) => { const t = String(v || "").trim(); return t === "Ingreso" ? "Ingreso" : (t === "Cuota" ? "Cuota" : "Gasto"); };
 
     const tipoDeFila = (r) => tipoFijo(r[5]);
@@ -599,7 +618,7 @@ const DemoBackend = (() => {
 
         if (!Number.isInteger(dia) || dia < 1 || dia > 31) return fallo("El día de cobro debe ser del 1 al 31");
 
-        let cuotas = 0, pagadas = 0;
+        let cuotas = 0, pagadas = 0, tea = 0, saldo = "", capital = "";
 
         if (tipo === "Cuota") {
 
@@ -611,6 +630,18 @@ const DemoBackend = (() => {
 
             if (!Number.isInteger(pagadas) || pagadas < 0 || pagadas > cuotas) return fallo("Las cuotas pagadas no pueden pasar del total");
 
+            tea = Number(p.tea || 0);
+
+            if (!isFinite(tea) || tea < 0 || tea > 500) return fallo("La tasa (TEA) debe estar entre 0 y 500");
+
+            const im = tasaMensual(tea);
+
+            const P = principalCuotas(monto, cuotas, im);
+
+            capital = Math.round(P * 100) / 100;
+
+            saldo = pagadas >= cuotas ? 0 : Math.max(0, Math.round(saldoTrasCuotas(P, monto, im, pagadas) * 100) / 100);
+
         }
 
         if (fila) {
@@ -619,11 +650,11 @@ const DemoBackend = (() => {
 
             r[0] = nombre; r[1] = categoria; r[2] = monto; r[3] = dia;
 
-            if (tipo === "Cuota") { r[6] = cuotas; r[7] = pagadas; }
+            if (tipo === "Cuota") { r[6] = cuotas; r[7] = pagadas; r[8] = tea > 0 ? tea : ""; r[9] = saldo; r[10] = capital; }
 
         } else {
 
-            db.fijos.push([nombre, categoria, monto, dia, "", tipo === "Gasto" ? "" : tipo, tipo === "Cuota" ? cuotas : "", tipo === "Cuota" ? pagadas : ""]);
+            db.fijos.push([nombre, categoria, monto, dia, "", tipo === "Gasto" ? "" : tipo, tipo === "Cuota" ? cuotas : "", tipo === "Cuota" ? pagadas : "", tipo === "Cuota" && tea > 0 ? tea : "", tipo === "Cuota" ? saldo : "", tipo === "Cuota" ? capital : ""]);
 
         }
 
@@ -657,9 +688,25 @@ const DemoBackend = (() => {
 
             if (total > 0 && antes >= total) return fallo("Ya terminaste de pagar este préstamo");
 
-            nuevaFilaMov("Gasto", "Cuotas", "Cuota " + String(r[0]), Number(r[2]));
+            const c = Number(r[2]);
+
+            const im = tasaMensual(Number(r[8]) || 0);
+
+            const B = (r[9] === "" || r[9] == null) ? Math.max(0, total - antes) * c : Number(r[9]);
+
+            const debe = im > 0 ? B * (1 + im) : B;
+
+            let nuevo = Math.max(0, im > 0 ? B * (1 + im) - c : B - c);
+
+            if (nuevo < 0.005) nuevo = 0;
+
+            nuevaFilaMov("Gasto", "Cuotas", "Cuota " + String(r[0]), Math.round(Math.min(c, debe) * 100) / 100);
+
+            r[6] = antes + 1 + cuotasQueFaltan(nuevo, c, im);
 
             r[7] = antes + 1;
+
+            r[9] = Math.round(nuevo * 100) / 100;
 
         } else {
 
@@ -668,6 +715,42 @@ const DemoBackend = (() => {
         }
 
         r[4] = textoFecha(hoy);
+
+        return ok();
+
+    }
+
+    function adelantarCuota(p) {
+
+        const fila = filaFijo(p.nombre, "Cuota");
+
+        if (!fila) return fallo("Ese préstamo ya no existe");
+
+        const monto = Math.round(Number(p.monto) * 100) / 100;
+
+        if (!isFinite(monto) || monto <= 0 || monto > 10000000) return fallo("Monto no válido");
+
+        const r = db.fijos[fila - 1];
+
+        const c = Number(r[2]), total = Number(r[6]) || 0, pagadas = Number(r[7]) || 0;
+
+        const im = tasaMensual(Number(r[8]) || 0);
+
+        const B = (r[9] === "" || r[9] == null) ? Math.max(0, total - pagadas) * c : Number(r[9]);
+
+        if (B <= 0.005) return fallo("Ya terminaste de pagar este préstamo");
+
+        if (monto > B + 0.005) return fallo("Solo te faltan S/ " + B.toFixed(2) + " de capital. Pon un monto menor.");
+
+        let nuevo = Math.round((B - monto) * 100) / 100;
+
+        if (nuevo < 0.005) nuevo = 0;
+
+        nuevaFilaMov("Gasto", "Cuotas", "Adelanto " + String(r[0]), monto);
+
+        r[6] = pagadas + cuotasQueFaltan(nuevo, c, im);
+
+        r[9] = nuevo;
 
         return ok();
 
@@ -922,6 +1005,7 @@ const DemoBackend = (() => {
             case "presupuesto": return presupuesto(p);
             case "fijo": return fijo(p);
             case "pagarFijo": return pagarFijo(p);
+            case "adelantarCuota": return adelantarCuota(p);
             case "tarjeta": return tarjeta(p);
             case "meta": return meta(p);
             case "aporte": return aporte(p);
