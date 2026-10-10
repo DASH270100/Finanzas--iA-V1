@@ -4177,3 +4177,7 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 }
 .tarj-pago-form input:focus{outline:none;border-color:var(--primary)}
 .tarj-pago-form button{padding:11px 18px;border-radius:12px;font-size:14px}
+
+/* v5.1 - saldo en efectivo: nota de deuda en tarjetas */
+.card-nota{display:block;margin-top:6px;font-size:12px;font-weight:600;color:var(--text-muted)}
+.card-nota[hidden],.hs-chip[hidden]{display:none}
