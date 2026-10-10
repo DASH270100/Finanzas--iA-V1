@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.7 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v4.8 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -1477,7 +1477,11 @@ function renderEstadisticas() {
 
     if (!$("vista-estadisticas").hidden) renderBarrasMeses(meses);
 
+    $("masDetalles").hidden = !(gastos.length || ingresos.length);
+
     if (!gastos.length && !ingresos.length) {
+
+        $("statExtra").innerHTML = "";
 
         $("statTiles").innerHTML = estado.movimientos.length
             ? '<p class="vacio">Sin movimientos en este periodo.</p>'
@@ -1507,47 +1511,58 @@ function renderEstadisticas() {
 
     const ahorro = totalIngresos - totalGastos;
 
-    const tiles = [
-        {
-            icono: "📅",
-            etiqueta: "Promedio diario",
-            valor: money(promedio),
-            nota: `En ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}`
-        },
-        {
-            icono: "🔮",
-            etiqueta: esActual ? "Proyección a fin de mes" : "Total del mes",
-            valor: money(esActual ? proyeccion : totalGastos),
-            nota: esActual ? "Si sigues a este ritmo" : "Gastos reales del mes"
-        },
-        {
-            icono: "💥",
-            etiqueta: "Mayor gasto",
-            valor: mayor ? money(mayor.monto) : "—",
-            nota: mayor ? esc(mayor.descripcion || mayor.categoria) : "Sin gastos"
-        },
-        {
-            icono: "🗓️",
-            etiqueta: "Día que más gastas",
-            valor: diaCaro ? diaCaro.charAt(0).toUpperCase() + diaCaro.slice(1) : "—",
-            nota: diaCaro ? money(maxDia) + " en total" : "Sin gastos"
-        },
-        {
-            icono: ahorro >= 0 ? "🐷" : "⚠️",
-            etiqueta: ahorro >= 0 ? "Te sobró" : "Gastaste de más",
-            valor: money(Math.abs(ahorro)),
-            nota: `${money(totalIngresos)} de ingresos`
-        }
-    ];
+    const T_PROMEDIO = {
+        icono: "📅",
+        etiqueta: "Promedio diario",
+        valor: money(promedio),
+        nota: `En ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}`
+    };
 
-    $("statTiles").innerHTML = tiles.map((t) => `
+    const T_PROYECCION = {
+        icono: "🔮",
+        etiqueta: esActual ? "Proyección a fin de mes" : "Total del mes",
+        valor: money(esActual ? proyeccion : totalGastos),
+        nota: esActual ? "Si sigues a este ritmo" : "Gastos reales del mes"
+    };
+
+    const T_MAYOR = {
+        icono: "💥",
+        etiqueta: "Mayor gasto",
+        valor: mayor ? money(mayor.monto) : "—",
+        nota: mayor ? esc(mayor.descripcion || mayor.categoria) : "Sin gastos"
+    };
+
+    const T_DIA = {
+        icono: "🗓️",
+        etiqueta: "Día que más gastas",
+        valor: diaCaro ? diaCaro.charAt(0).toUpperCase() + diaCaro.slice(1) : "—",
+        nota: diaCaro ? money(maxDia) + " en total" : "Sin gastos"
+    };
+
+    const T_AHORRO = {
+        icono: ahorro >= 0 ? "🐷" : "⚠️",
+        etiqueta: ahorro >= 0 ? "Te sobró" : "Gastaste de más",
+        valor: money(Math.abs(ahorro)),
+        nota: `${money(totalIngresos)} de ingresos`
+    };
+
+    // Lo esencial a la vista; el resto, en "Ver más detalles"
+    const tiles = [T_AHORRO, T_PROYECCION, T_MAYOR];
+
+    const extra = [T_PROMEDIO, T_DIA];
+
+    const tileHTML = (t) => `
         <div class="stat-tile">
             <div class="stat-icono">${t.icono}</div>
             <div class="stat-etiqueta">${t.etiqueta}</div>
             <div class="stat-valor">${t.valor}</div>
             <div class="stat-nota">${t.nota}</div>
         </div>
-    `).join("");
+    `;
+
+    $("statTiles").innerHTML = tiles.map(tileHTML).join("");
+
+    $("statExtra").innerHTML = extra.map(tileHTML).join("");
 
 }
 
