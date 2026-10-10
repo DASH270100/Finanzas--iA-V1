@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.9 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v5.0 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -1963,8 +1963,8 @@ async function guardarFijo(datos) {
 
 // =========================
 // TARJETAS DE CRÉDITO
-// Cada compra se cuenta cuando la haces; pagar la tarjeta no se vuelve a contar.
-// El presupuesto de cada tarjeta es mensual y lo puedes cambiar cuando quieras.
+// Cada compra se cuenta cuando la haces y sube lo que debes; pagar la tarjeta baja la deuda
+// (no cuenta como gasto nuevo). La deuda no se reinicia sola cada mes. El límite lo cambias cuando quieras.
 // =========================
 
 const ORDEN_NIVEL_TARJETA = { sin: 0, ok: 1, alerta: 2, limite: 3, exceso: 4 };
@@ -1977,8 +1977,6 @@ function infoTarjetas() {
 
     const actual = claveMes(hoy);
 
-    const previo = claveMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
-
     const mapa = new Map();
 
     const tomar = (nombre) => {
@@ -1987,58 +1985,67 @@ function infoTarjetas() {
 
         if (!k) return null;
 
-        if (!mapa.has(k)) mapa.set(k, { nombre: String(nombre).trim(), presupuesto: 0, dia: 0, gastado: 0, previo: 0, pagado: 0 });
+        if (!mapa.has(k)) mapa.set(k, { nombre: String(nombre).trim(), presupuesto: 0, dia: 0, enHoja: false, compras: 0, pagos: 0, mes: 0, pagadoMes: 0 });
 
         return mapa.get(k);
 
     };
 
-    estado.tarjetas.forEach((t) => { const x = tomar(t.nombre); x.presupuesto = t.presupuesto; x.dia = t.dia; });
+    estado.tarjetas.forEach((t) => { const x = tomar(t.nombre); x.presupuesto = t.presupuesto; x.dia = t.dia; x.enHoja = true; });
 
     estado.movimientos.forEach((m) => {
 
         if (!m.medio || !esGasto(m)) return;
 
-        if (!m.fecha) return;
-
-        const c = claveMes(m.fecha);
-
-        // Una tarjeta solo aparece por sus compras de este mes (o si la guardaste tú)
-        const t = c === actual || mapa.has(claveTarjeta(m.medio)) ? tomar(m.medio) : null;
+        const t = tomar(m.medio);
 
         if (!t) return;
 
+        const esteMes = !!m.fecha && claveMes(m.fecha) === actual;
+
         if (esPagoTarjeta(m)) {
 
-            if (c === actual) t.pagado += m.monto;
+            t.pagos += m.monto;
+
+            if (esteMes) t.pagadoMes += m.monto;
 
             return;
 
         }
 
-        if (c === actual) t.gastado += m.monto;
+        t.compras += m.monto;
 
-        else if (c === previo) t.previo += m.monto;
+        if (esteMes) t.mes += m.monto;
 
     });
 
     return [...mapa.values()].map((t) => {
 
-        const pct = t.presupuesto > 0 ? t.gastado / t.presupuesto : 0;
+        // Lo que debes ahora: todas las compras menos todos los pagos. No se reinicia con el mes.
+        const deuda = Math.max(0, Math.round((t.compras - t.pagos) * 100) / 100);
+
+        return { ...t, deuda };
+
+    }).filter((t) => t.enHoja || t.deuda > 0.005 || t.mes > 0 || t.pagadoMes > 0).map((t) => {
+
+        const deuda = t.deuda;
+
+        const pct = t.presupuesto > 0 ? deuda / t.presupuesto : 0;
 
         const nivel = t.presupuesto <= 0 ? "sin"
-            : t.gastado > t.presupuesto + 0.005 ? "exceso"
-            : t.gastado >= t.presupuesto - 0.005 ? "limite"
+            : deuda > t.presupuesto + 0.005 ? "exceso"
+            : deuda >= t.presupuesto - 0.005 ? "limite"
             : pct >= 0.8 ? "alerta"
             : "ok";
 
-        const resto = t.presupuesto - t.gastado;
+        const resto = t.presupuesto - deuda;
 
-        const mensaje = nivel === "sin" ? "Fija un presupuesto para recibir avisos"
-            : nivel === "exceso" ? `Te pasaste por ${money(-resto)}`
-            : nivel === "limite" ? "Llegaste al límite de tu presupuesto"
-            : nivel === "alerta" ? `Cuidado: te quedan solo ${money(resto)}`
-            : `Te quedan ${money(resto)}`;
+        const mensaje = nivel === "sin" ? "Fija un límite para recibir avisos"
+            : nivel === "exceso" ? `Te pasaste del límite por ${money(-resto)}`
+            : nivel === "limite" ? "Llegaste al límite de tu tarjeta"
+            : nivel === "alerta" ? `Cuidado: te quedan solo ${money(resto)} disponibles`
+            : deuda <= 0.005 ? "Al día: no debes nada"
+            : `Te quedan ${money(resto)} disponibles`;
 
         // Próximo día de pago de la tarjeta
         let pagoDias = null;
@@ -2065,7 +2072,7 @@ function infoTarjetas() {
 
         return { ...t, pct, nivel, resto, mensaje, pagoDias, pagoTexto };
 
-    }).sort((a, b) => (ORDEN_NIVEL_TARJETA[b.nivel] - ORDEN_NIVEL_TARJETA[a.nivel]) || (b.gastado - a.gastado));
+    }).sort((a, b) => (ORDEN_NIVEL_TARJETA[b.nivel] - ORDEN_NIVEL_TARJETA[a.nivel]) || (b.deuda - a.deuda));
 
 }
 
@@ -2093,9 +2100,9 @@ function avisoCambioTarjetas(antes) {
 
     if (!peor) return null;
 
-    return peor.nivel === "alerta" ? `⚠️ ${peor.nombre}: ya usaste el ${Math.round(peor.pct * 100)}% de tu presupuesto`
-        : peor.nivel === "limite" ? `🚨 ${peor.nombre}: llegaste al límite de tu presupuesto`
-        : `🚨 ${peor.nombre}: te pasaste por ${money(-peor.resto)}`;
+    return peor.nivel === "alerta" ? `⚠️ ${peor.nombre}: ya usaste el ${Math.round(peor.pct * 100)}% de tu límite`
+        : peor.nivel === "limite" ? `🚨 ${peor.nombre}: llegaste al límite de tu tarjeta`
+        : `🚨 ${peor.nombre}: te pasaste del límite por ${money(-peor.resto)}`;
 
 }
 
@@ -2113,7 +2120,7 @@ function barraUsoHTML(t) {
 
                 <span class="presupuesto-nombre">💳 ${esc(t.nombre)}</span>
 
-                <span class="presupuesto-monto">${money(t.gastado)}${t.presupuesto > 0 ? ` de ${money(t.presupuesto)}` : ""}</span>
+                <span class="presupuesto-monto">${t.deuda > 0.005 ? `Debes ${money(t.deuda)}${t.presupuesto > 0 ? ` de ${money(t.presupuesto)}` : ""}` : `Sin deuda${t.presupuesto > 0 ? ` · límite ${money(t.presupuesto)}` : ""}`}</span>
 
             </div>
 
@@ -2168,48 +2175,59 @@ function renderTarjetas() {
     const items = infoTarjetas();
 
     $("subtituloTarjetas").textContent = items.length
-        ? `${nombreMes(claveMes(new Date()))} · ${money(items.reduce((t, x) => t + x.gastado, 0))} gastados con tarjeta`
-        : "Controla cuánto gastas con cada tarjeta y recibe avisos.";
+        ? (items.reduce((t, x) => t + x.deuda, 0) > 0.005 ? `Debes ${money(items.reduce((t, x) => t + x.deuda, 0))} en tus tarjetas` : "Estás al día con tus tarjetas")
+        : "Mira cuánto debes en cada tarjeta y recibe avisos.";
 
     if (!items.length) {
 
         $("tarjetas").innerHTML = vacioGuia("💳", "Aún no tienes tarjetas",
-            "Escribe en la barra, por ejemplo: «compré zapatos 200 con la BCP». La tarjeta se crea sola y aquí le pones su presupuesto.",
+            "Escribe en la barra, por ejemplo: «compré zapatos 200 con la BCP». La tarjeta se crea sola y aquí le pones su límite.",
             "almuerzo 25 con la BCP");
 
     } else {
 
         $("tarjetas").innerHTML = items.map((t) => {
 
-            const ancho = Math.min(100, Math.round(t.pct * 100));
-
             const detalle = [
-                t.previo > 0 ? `Mes pasado: ${money(t.previo)}` : "",
-                t.pagado > 0 ? `Pagado este mes: ${money(t.pagado)}` : ""
+                t.mes > 0 ? `Compras de este mes: ${money(t.mes)}` : "",
+                t.pagadoMes > 0 ? `Pagado este mes: ${money(t.pagadoMes)}` : ""
             ].filter(Boolean).join(" · ");
 
             return `
             <div class="presupuesto-item tarjeta-item" data-nombre="${esc(t.nombre)}"
-                data-presupuesto="${t.presupuesto}" data-previo="${Math.round(t.previo)}" data-dia="${t.dia || ""}">
+                data-presupuesto="${t.presupuesto}" data-deuda="${t.deuda}" data-dia="${t.dia || ""}">
 
                 ${barraUsoHTML(t)}
 
-                ${t.presupuesto > 0 ? `<div class="tarjeta-detalle">Máximo del mes: <strong>${money(t.presupuesto)}</strong></div>` : ""}
-
-                ${t.pagoTexto ? `<div class="tarjeta-pago ${t.pagoDias <= 3 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : ""}
+                ${t.pagoTexto ? `<div class="tarjeta-pago ${t.pagoDias <= 3 && t.deuda > 0.005 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : ""}
 
                 ${detalle ? `<div class="tarjeta-detalle">${esc(detalle)}</div>` : ""}
 
+                ${t.deuda > 0.005 ? `
+                <div class="presupuesto-acciones tarjeta-acciones tarjeta-pagar">
+
+                    <button class="mov-btn mov-btn-primario" type="button" data-tarj="pagartodo">✓ Pagué todo (${money(t.deuda)})</button>
+
+                    <button class="mov-btn" type="button" data-tarj="pagarparte">Pagar una parte</button>
+
+                </div>
+
+                <form class="tarj-pago-form" data-tarjpago hidden>
+
+                    <input type="number" step="0.01" min="0.01" max="${t.deuda}" inputmode="decimal"
+                        placeholder="¿Cuánto pagaste?" aria-label="Monto pagado" required>
+
+                    <button type="submit">Registrar pago</button>
+
+                </form>` : ""}
+
                 <div class="presupuesto-acciones tarjeta-acciones">
 
-                    ${t.previo > 0 && Math.round(t.previo) !== Math.round(t.presupuesto)
-                        ? `<button class="mov-btn mov-btn-primario" type="button" data-tarj="igual">Usar ${money(Math.round(t.previo))} (mes pasado)</button>` : ""}
-
-                    <button class="mov-btn" type="button" data-tarj="editar">Cambiar presupuesto o día</button>
+                    <button class="mov-btn" type="button" data-tarj="editar">Cambiar límite o día de pago</button>
 
                     ${t.presupuesto > 0
-                        ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar presupuesto</button>`
-                        : (t.gastado === 0 && t.pagado === 0
+                        ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar límite</button>`
+                        : (t.deuda <= 0.005
                             ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar tarjeta</button>` : "")}
 
                 </div>
@@ -2225,8 +2243,8 @@ function renderTarjetas() {
     resumen.hidden = !items.length;
 
     resumen.innerHTML = items.length
-        ? `<div class="card-title"><div><h2>💳 Uso de tus tarjetas</h2><p>${esc(nombreMes(claveMes(new Date())))}</p></div></div>` +
-          items.map((t) => barraUsoHTML(t) + (t.pagoTexto ? `<div class="tarjeta-pago ${t.pagoDias <= 3 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : "")).join("")
+        ? `<div class="card-title"><div><h2>💳 Uso de tus tarjetas</h2><p>Lo que debes en cada tarjeta</p></div></div>` +
+          items.map((t) => barraUsoHTML(t) + (t.pagoTexto && t.deuda > 0.005 ? `<div class="tarjeta-pago ${t.pagoDias <= 3 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : "")).join("")
         : "";
 
     renderAvisoTarjetas(items);
@@ -2243,7 +2261,7 @@ function renderAvisoTarjetas(items) {
     const malas = items.filter((t) => ORDEN_NIVEL_TARJETA[t.nivel] >= 2);
 
     const pagos = items
-        .filter((t) => t.pagoDias !== null && t.pagoDias <= 3)
+        .filter((t) => t.pagoDias !== null && t.pagoDias <= 3 && t.deuda > 0.005)
         .sort((a, b) => a.pagoDias - b.pagoDias);
 
     if (!malas.length && !pagos.length) {
@@ -2262,15 +2280,15 @@ function renderAvisoTarjetas(items) {
             : t.pagoDias === 1 ? "<strong>Mañana pagas</strong>"
             : `En <strong>${t.pagoDias} días</strong> pagas`;
 
-        lineas.push(`📅 ${cuando} tu tarjeta ${esc(t.nombre)} (llevas ${money(t.gastado)} este mes)`);
+        lineas.push(`📅 ${cuando} tu tarjeta ${esc(t.nombre)} (debes ${money(t.deuda)})`);
 
     });
 
     malas.slice(0, 2).forEach((t) => {
 
-        const txt = t.nivel === "alerta" ? `va en ${Math.round(t.pct * 100)}% de su presupuesto`
+        const txt = t.nivel === "alerta" ? `va en ${Math.round(t.pct * 100)}% de su límite`
             : t.nivel === "limite" ? "llegó al límite"
-            : `se pasó por ${money(-t.resto)}`;
+            : `se pasó del límite por ${money(-t.resto)}`;
 
         lineas.push(`💳 ${esc(t.nombre)} ${txt}`);
 
@@ -2589,6 +2607,19 @@ function nombreBonito(n) {
 // "pagué la tarjeta BCP 450" / "pagué 450 de la tarjeta BCP"
 function parsearPagoTarjeta(original) {
 
+    // Sin monto: "pagué la tarjeta BCP" paga todo lo que debes en esa tarjeta
+    const sinMonto = original.match(/^\s*(?:pagu[eé]|pago|pagar|abon[eé])\s+(?:toda\s+|todo\s+)?(?:la\s+|mi\s+)?tarjeta\s+(?:de\s+cr[eé]dito\s+)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]{2,30}?)\s*$/i);
+
+    if (sinMonto) {
+
+        const k = claveTarjeta(sinMonto[1]);
+
+        const t = infoTarjetas().find((x) => claveTarjeta(x.nombre) === k);
+
+        if (t && t.deuda > 0.005) return { tipo: "Gasto", categoria: "Pago de tarjeta", descripcion: "Pago tarjeta " + t.nombre, monto: t.deuda, medio: t.nombre };
+
+    }
+
     const num = "(?:S\\/\\.?\\s*)?(\\d+(?:[.,]\\d{1,2})?)\\s*(?:soles?)?";
 
     let m = original.match(new RegExp("^\\s*(?:pagu[eé]|pago|pagar|abon[eé])\\s+(?:la\\s+|mi\\s+)?(tarjeta\\s+(?:de\\s+cr[eé]dito\\s+)?)?([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]{2,30}?)\\s+" + num + "\\s*$", "i"));
@@ -2778,6 +2809,17 @@ function parsearRapidoBase(texto) {
 
 let pendientesGuardar = 0;
 
+// Pago de una tarjeta (todo o una parte): baja lo que debes, no cuenta como gasto nuevo
+function registrarPagoTarjeta(nombre, monto) {
+
+    const valor = Math.round(Number(monto) * 100) / 100;
+
+    if (!(valor > 0)) return;
+
+    registrarRapido({ tipo: "Gasto", categoria: "Pago de tarjeta", descripcion: "Pago tarjeta " + nombre, monto: valor, medio: nombre });
+
+}
+
 // Muestra el movimiento al instante y lo guarda en segundo plano
 function registrarRapido(r) {
 
@@ -2813,7 +2855,19 @@ function registrarRapido(r) {
 
     mostrarRegistrados([temporal]);
 
-    mostrarToast(esPagoTarjeta(temporal) ? "✅ Pago de tarjeta registrado (no cuenta como gasto)" : "✅ Movimiento registrado");
+    if (esPagoTarjeta(temporal)) {
+
+        const info = infoTarjetas().find((x) => claveTarjeta(x.nombre) === claveTarjeta(temporal.medio));
+
+        mostrarToast(info && info.deuda <= 0.005
+            ? `✅ Pagaste ${money(temporal.monto)} · ${temporal.medio} al día 🎉`
+            : `✅ Pagaste ${money(temporal.monto)}${info ? ` · aún debes ${money(info.deuda)}` : ""}`);
+
+    } else {
+
+        mostrarToast("✅ Movimiento registrado");
+
+    }
 
     avisarCambioTarjetas(nivelesAntes, [temporal.medio]);
 
@@ -4154,7 +4208,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         if (!nombre || !(presupuesto >= 0) || !Number.isInteger(dia) || dia < 0 || dia > 31) {
 
-            mostrarToast("💳 Revisa el nombre, el presupuesto y el día de pago (1 al 31)");
+            mostrarToast("💳 Revisa el nombre, el límite y el día de pago (1 al 31)");
 
             return;
 
@@ -4191,6 +4245,34 @@ window.addEventListener("DOMContentLoaded", () => {
             boton.textContent = "Guardar tarjeta";
 
         }
+
+    });
+
+    $("tarjetas").addEventListener("submit", (e) => {
+
+        const f = e.target.closest("[data-tarjpago]");
+
+        if (!f) return;
+
+        e.preventDefault();
+
+        const item = f.closest("[data-nombre]");
+
+        const monto = Number(f.querySelector("input").value);
+
+        const deuda = Number(item.dataset.deuda);
+
+        if (!(monto > 0)) return;
+
+        if (monto > deuda + 0.005) {
+
+            mostrarToast(`💳 Solo debes ${money(deuda)}. Pon un monto menor o toca "Pagué todo".`);
+
+            return;
+
+        }
+
+        registrarPagoTarjeta(item.dataset.nombre, monto);
 
     });
 
@@ -4238,17 +4320,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            if (accion === "igual") {
+            if (accion === "pagartodo") {
 
-                const antes = nivelesTarjetas();
+                registrarPagoTarjeta(nombre, Number(item.dataset.deuda));
 
-                await guardarTarjeta(nombre, Number(item.dataset.previo));
+                return;
 
-                mostrarToast(`✅ Presupuesto de ${nombre}: ${money(item.dataset.previo)}`);
+            }
 
-                const aviso = avisoCambioTarjetas(antes);
+            if (accion === "pagarparte") {
 
-                if (aviso) setTimeout(() => mostrarToast(aviso), 1600);
+                const f = item.querySelector("[data-tarjpago]");
+
+                if (f) {
+
+                    f.hidden = !f.hidden;
+
+                    if (!f.hidden) f.querySelector("input").focus();
+
+                }
 
                 return;
 
