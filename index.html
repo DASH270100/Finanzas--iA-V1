@@ -26,7 +26,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=53">
+    <link rel="stylesheet" href="style.css?v=54">
 
 </head>
 
@@ -678,11 +678,21 @@
                         inputmode="numeric" placeholder="15" required>
                 </label>
 
+                <label class="check-interes">
+                    <input id="cuotaConInteres" type="checkbox">
+                    <span>Este préstamo tiene intereses</span>
+                </label>
+
+                <label id="cuotaTeaCampo" hidden>Tasa de interés anual (TEA %)
+                    <input id="cuotaTea" type="number" step="0.01" min="0" max="500"
+                        inputmode="decimal" placeholder="Ej: 18.5">
+                </label>
+
                 <button id="cuotaBoton" type="submit">Guardar préstamo</button>
 
             </form>
 
-            <p class="presupuesto-nota">Cada mes te aviso el día de la cuota. Con «Pagar cuota» (o escribiendo «pagué la cuota de la moto») se registra como gasto y avanza la barra. Si te pasas de la fecha, el interés lo anotas como siempre: «interés moto 20».</p>
+            <p class="presupuesto-nota">Cada mes te aviso el día de la cuota. Con «Pagar cuota» (o escribiendo «pagué la cuota de la moto») se registra como gasto y avanza la barra. Si tiene intereses, marca la casilla y pon la TEA (la ves en tu contrato o cronograma): así calculo cuánto de lo que pagas son intereses. Si quieres pagar de más, usa «Adelantar pago» (o escribe «adelanté 1000 a la moto») y te digo cuántas cuotas te quedan y cuánto ahorras. Si te atrasas, el interés por mora lo anotas como siempre: «interés moto 20». Los números son un cálculo aproximado: tu banco puede sumar seguros o comisiones.</p>
 
         </section>
 
@@ -977,11 +987,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=53"></script>
+<script src="graficos.js?v=54"></script>
 
-<script src="demo.js?v=53"></script>
+<script src="demo.js?v=54"></script>
 
-<script src="script.js?v=53"></script>
+<script src="script.js?v=54"></script>
 
 </body>
 
