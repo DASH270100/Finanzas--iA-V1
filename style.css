@@ -4136,3 +4136,20 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 .mas-detalles .stat-tiles{margin-top:6px}
 .mas-detalles .ingresos-fuente{margin-top:20px;margin-bottom:0}
 .ingresos-card #ingresosFijos{margin-top:16px}
+
+/* v4.9 - "Ver más detalles" bien visible */
+.mas-detalles{border-top:none;padding-top:0;margin-top:26px}
+.mas-detalles > summary{
+    display:flex;justify-content:center;align-items:center;gap:10px;
+    width:100%;padding:14px 18px;
+    border:1px solid var(--border);border-radius:14px;
+    background:var(--surface-light);
+    color:var(--text);font-size:15px;font-weight:700;
+    transition:background .2s,transform .15s,border-color .2s;
+}
+.mas-detalles > summary:hover{border-color:var(--primary);background:rgba(127,127,160,.12)}
+.mas-detalles > summary:active{transform:scale(.99)}
+.mas-detalles > summary::before{content:none}
+.mas-detalles > summary::after{content:"▾";font-size:14px;color:var(--primary);transition:transform .2s}
+.mas-detalles[open] > summary::after{transform:rotate(180deg)}
+.mas-detalles[open] > summary{margin-bottom:12px}
