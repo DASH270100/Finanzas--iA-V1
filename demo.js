@@ -52,7 +52,7 @@ const DemoBackend = (() => {
             movimientos: [["Fecha", "Tipo", "Categoría", "Descripción", "Monto"]],
             deudas: [["Persona", "Fecha", "Monto", "Estado"]],
             presupuestos: [["Categoría", "Límite"]],
-            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro"]],
+            fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo"]],
             metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
             tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]]
         };
@@ -555,19 +555,31 @@ const DemoBackend = (() => {
 
     }
 
+    const tipoFijo = (v) => String(v || "").trim() === "Ingreso" ? "Ingreso" : "Gasto";
+
+    const tipoDeFila = (r) => tipoFijo(r[5]);
+
+    function filaFijo(nombre, tipo) {
+
+        for (let i = 1; i < db.fijos.length; i++) {
+
+            if (clave(db.fijos[i][0]) === clave(nombre) && tipoDeFila(db.fijos[i]) === tipo) return i + 1;
+
+        }
+
+        return 0;
+
+    }
+
     function fijo(p) {
 
         const nombre = seguro(p.nombre, 60);
 
         if (!nombre.trim()) return fallo("Falta el nombre");
 
-        let fila = 0;
+        const tipo = tipoFijo(p.tipo);
 
-        for (let i = 1; i < db.fijos.length; i++) {
-
-            if (clave(db.fijos[i][0]) === clave(nombre)) { fila = i + 1; break; }
-
-        }
+        const fila = filaFijo(nombre, tipo);
 
         if (p.quitar) {
 
@@ -577,7 +589,7 @@ const DemoBackend = (() => {
 
         }
 
-        const categoria = seguro(p.categoria, 40) || "Otros";
+        const categoria = seguro(p.categoria, 40) || (tipo === "Ingreso" ? "Sueldo" : "Otros");
 
         const monto = Number(p.monto);
 
@@ -595,7 +607,7 @@ const DemoBackend = (() => {
 
         } else {
 
-            db.fijos.push([nombre, categoria, monto, dia, ""]);
+            db.fijos.push([nombre, categoria, monto, dia, "", tipo === "Ingreso" ? "Ingreso" : ""]);
 
         }
 
@@ -605,17 +617,11 @@ const DemoBackend = (() => {
 
     function pagarFijo(p) {
 
-        const nombre = clave(p.nombre);
+        const tipo = tipoFijo(p.tipo);
 
-        let fila = 0;
+        const fila = filaFijo(p.nombre, tipo);
 
-        for (let i = 1; i < db.fijos.length; i++) {
-
-            if (clave(db.fijos[i][0]) === nombre) { fila = i + 1; break; }
-
-        }
-
-        if (!fila) return fallo("Ese gasto fijo ya no existe");
+        if (!fila) return fallo("Ese fijo ya no existe");
 
         const r = db.fijos[fila - 1];
 
@@ -629,7 +635,7 @@ const DemoBackend = (() => {
 
         }
 
-        nuevaFilaMov("Gasto", String(r[1] || "Otros"), String(r[0]), Number(r[2]));
+        nuevaFilaMov(tipo, String(r[1] || (tipo === "Ingreso" ? "Sueldo" : "Otros")), String(r[0]), Number(r[2]));
 
         r[4] = textoFecha(hoy);
 
