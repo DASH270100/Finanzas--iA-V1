@@ -1,4 +1,4 @@
-// Finanzas IA - Script v5.0 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v5.1 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -929,9 +929,29 @@ function renderDashboard() {
 
     $("gastos").textContent = money(gastos);
 
+    // Saldo en efectivo (lo que hay en tu cuenta): las compras con tarjeta se descuentan
+    // cuando pagas la tarjeta, no al comprar. El pago de tarjeta sí baja el saldo.
+    const esCompraTarjeta = (m) => !!m.medio && esGasto(m) && !esPagoTarjeta(m);
+
     const saldo = hayMovimientos
-        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter((m) => esGasto(m) && !esPagoTarjeta(m)))
+        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter((m) => esGasto(m) && !esCompraTarjeta(m)))
         : valorDashboard("saldo");
+
+    const deudaTarjetas = hayMovimientos ? infoTarjetas().reduce((t, x) => t + x.deuda, 0) : 0;
+
+    const nota = $("saldoNota");
+
+    if (nota) {
+
+        nota.hidden = !(deudaTarjetas > 0.005);
+
+        nota.textContent = `Debes ${money(deudaTarjetas)} en tarjetas`;
+
+    }
+
+    $("hsDeudaChip").hidden = !(deudaTarjetas > 0.005);
+
+    $("hsDeuda").textContent = money(deudaTarjetas);
 
     $("saldo").textContent = money(saldo);
 
