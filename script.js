@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.8 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v4.9 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
