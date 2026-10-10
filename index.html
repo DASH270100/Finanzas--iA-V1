@@ -26,7 +26,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=44">
+    <link rel="stylesheet" href="style.css?v=45">
 
 </head>
 
@@ -474,6 +474,40 @@
 
             <div id="ingresosFuente" class="ingresos-fuente"></div>
 
+            <h3 class="stat-subtitulo">💼 Tus ingresos fijos</h3>
+
+            <p id="subtituloIngFijos" class="ing-fijos-sub">Lo que te pagan cada mes, con su fecha.</p>
+
+            <div id="ingresosFijos"></div>
+
+            <form id="ingFijoForm" class="presupuesto-form ing-fijo-form">
+
+                <label>Nombre
+                    <input id="ingFijoNombre" type="text" maxlength="60"
+                        placeholder="Ej: Sueldo, Alquiler del cuarto" autocomplete="off" required>
+                </label>
+
+                <label>Fuente
+                    <input id="ingFijoCategoria" type="text" maxlength="40"
+                        list="categoriasPresupuesto" placeholder="Sueldo" autocomplete="off">
+                </label>
+
+                <label>Monto (S/)
+                    <input id="ingFijoMonto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="2500" required>
+                </label>
+
+                <label>Día que te pagan
+                    <input id="ingFijoDia" type="number" step="1" min="1" max="31"
+                        inputmode="numeric" placeholder="28" required>
+                </label>
+
+                <button id="ingFijoBoton" type="submit">Guardar ingreso fijo</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Cuando llegue el día te aviso, y con un toque lo registras como ingreso. Si el nombre ya existe, se actualiza.</p>
+
             <h3 class="stat-subtitulo">Ingresos vs gastos (últimos 6 meses)</h3>
 
             <div id="graficoMeses" class="grafico-meses"></div>
@@ -550,7 +584,7 @@
 
             </div>
 
-            <form id="tarjForm" class="presupuesto-form">
+            <form id="tarjForm" class="presupuesto-form tarj-form">
 
                 <label>Tarjeta
                     <input id="tarjNombre" type="text" maxlength="40"
@@ -866,11 +900,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=44"></script>
+<script src="graficos.js?v=45"></script>
 
-<script src="demo.js?v=44"></script>
+<script src="demo.js?v=45"></script>
 
-<script src="script.js?v=44"></script>
+<script src="script.js?v=45"></script>
 
 </body>
 
