@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.6 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v4.7 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -2802,9 +2802,13 @@ function registrarRapido(r) {
 
     avisarCambioTarjetas(nivelesAntes, [temporal.medio]);
 
+    let promesaGuardado = Promise.resolve();
+
+    agregarDeshacer(temporal, () => promesaGuardado);
+
     pendientesGuardar++;
 
-    (async () => {
+    promesaGuardado = (async () => {
 
         let fallo = null;
 
@@ -3517,7 +3521,132 @@ async function salirDemo() {
 
 }
 
+// Formularios plegados: se ven solo al tocar "+ Agregar"
+const PLEGABLES = {
+    presForm: "Nuevo presupuesto",
+    tarjForm: "Agregar tarjeta",
+    fijoForm: "Agregar gasto fijo",
+    ingFijoForm: "Agregar ingreso fijo",
+    metaForm: "Nueva meta"
+};
+
+function ponerPlegable(id, abierto) {
+
+    const form = $(id);
+
+    if (!form) return;
+
+    const nota = form.nextElementSibling && form.nextElementSibling.classList.contains("presupuesto-nota")
+        ? form.nextElementSibling : null;
+
+    form.hidden = !abierto;
+
+    if (nota) nota.hidden = !abierto;
+
+    const b = form.previousElementSibling;
+
+    if (b && b.classList.contains("btn-agregar")) {
+
+        b.setAttribute("aria-expanded", abierto ? "true" : "false");
+
+        b.textContent = abierto ? "✕ Cerrar" : "＋ " + PLEGABLES[id];
+
+    }
+
+}
+
+const abrirForm = (id) => ponerPlegable(id, true);
+
+const cerrarForm = (id) => ponerPlegable(id, false);
+
+function iniciarPlegables() {
+
+    Object.keys(PLEGABLES).forEach((id) => {
+
+        const form = $(id);
+
+        if (!form || form.dataset.plegable) return;
+
+        form.dataset.plegable = "1";
+
+        const b = document.createElement("button");
+
+        b.type = "button";
+
+        b.className = "btn-agregar";
+
+        b.addEventListener("click", () => ponerPlegable(id, form.hidden));
+
+        form.parentNode.insertBefore(b, form);
+
+        ponerPlegable(id, false);
+
+    });
+
+}
+
+// Botón "Deshacer" tras un registro rápido
+function agregarDeshacer(temporal, esperarGuardado) {
+
+    const caja = $("respuesta");
+
+    const b = document.createElement("button");
+
+    b.type = "button";
+
+    b.className = "btn-deshacer";
+
+    b.textContent = "↩ Deshacer";
+
+    b.addEventListener("click", async () => {
+
+        b.disabled = true;
+
+        b.textContent = "⏳ Deshaciendo…";
+
+        try {
+
+            await esperarGuardado();
+
+            // Espera a que la hoja real reemplace al movimiento provisional
+            for (let i = 0; i < 40 && estado.movimientos.includes(temporal); i++) await dormir(300);
+
+            const real = estado.movimientos
+                .filter((x) => x !== temporal && x.tipo === temporal.tipo && x.monto === temporal.monto &&
+                    x.descripcion === temporal.descripcion && x.categoria === temporal.categoria)
+                .sort((a, c) => c.fila - a.fila)[0];
+
+            if (real) await eliminarMovimiento(real.fila);
+
+            caja.textContent = "↩ Deshecho: " + (temporal.descripcion || temporal.categoria) + " se quitó.";
+
+            mostrarToast("↩ Movimiento deshecho");
+
+        } catch (e) {
+
+            b.disabled = false;
+
+            b.textContent = "↩ Deshacer";
+
+            errorDeAccion(e);
+
+        }
+
+    });
+
+    const fila = document.createElement("div");
+
+    fila.className = "deshacer-fila";
+
+    fila.appendChild(b);
+
+    caja.appendChild(fila);
+
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+
+    iniciarPlegables();
 
     aplicarTema(temaGuardado(), false);
 
@@ -3651,7 +3780,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             await guardarFijo(datos);
 
-            $("fijoForm").reset();
+            $("fijoForm").reset(); cerrarForm("fijoForm");
 
             mostrarToast(`✅ Gasto fijo "${datos.nombre}" guardado`);
 
@@ -3702,7 +3831,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             await guardarFijo(datos);
 
-            $("ingFijoForm").reset();
+            $("ingFijoForm").reset(); cerrarForm("ingFijoForm");
 
             mostrarToast(`✅ Ingreso fijo "${datos.nombre}" guardado`);
 
@@ -3744,6 +3873,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("ingFijoDia").value = item.dataset.dia;
 
+            abrirForm("ingFijoForm");
+
             $("ingFijoMonto").focus();
 
             return;
@@ -3759,6 +3890,8 @@ window.addEventListener("DOMContentLoaded", () => {
             $("fijoMonto").value = item.dataset.monto;
 
             $("fijoDia").value = item.dataset.dia;
+
+            abrirForm("fijoForm");
 
             $("fijoMonto").focus();
 
@@ -3860,7 +3993,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             await guardarMeta(datos);
 
-            $("metaForm").reset();
+            $("metaForm").reset(); cerrarForm("metaForm");
 
             mostrarToast(`✅ Meta "${datos.nombre}" guardada`);
 
@@ -3897,6 +4030,8 @@ window.addEventListener("DOMContentLoaded", () => {
             $("metaObjetivo").value = item.dataset.objetivo;
 
             $("metaFecha").value = item.dataset.fecha;
+
+            abrirForm("metaForm");
 
             $("metaObjetivo").focus();
 
@@ -4022,7 +4157,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             await guardarTarjeta(nombre, presupuesto, dia);
 
-            $("tarjForm").reset();
+            $("tarjForm").reset(); cerrarForm("tarjForm");
 
             mostrarToast(`✅ Tarjeta "${nombre}" guardada`);
 
@@ -4077,6 +4212,8 @@ window.addEventListener("DOMContentLoaded", () => {
             $("tarjPresupuesto").value = Number(item.dataset.presupuesto) || "";
 
             $("tarjDia").value = item.dataset.dia || "";
+
+            abrirForm("tarjForm");
 
             $("tarjPresupuesto").focus();
 
@@ -4230,6 +4367,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("presLimite").value = "";
 
+            cerrarForm("presForm");
+
             mostrarToast(`✅ Presupuesto de ${categoria} guardado`);
 
         } catch (err) {
@@ -4261,6 +4400,8 @@ window.addEventListener("DOMContentLoaded", () => {
             $("presCategoria").value = categoria;
 
             $("presLimite").value = item.dataset.limite;
+
+            abrirForm("presForm");
 
             $("presLimite").focus();
 
