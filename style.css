@@ -4153,3 +4153,16 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
 .mas-detalles > summary::after{content:"▾";font-size:14px;color:var(--primary);transition:transform .2s}
 .mas-detalles[open] > summary::after{transform:rotate(180deg)}
 .mas-detalles[open] > summary{margin-bottom:12px}
+
+/* v4.10 - "Ver más detalles" morado como los demás botones */
+.mas-detalles > summary{
+    border:none;color:#fff;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2,#6A4BFA));
+    box-shadow:0 10px 25px var(--boton-sombra,rgba(124,92,252,.25));
+}
+.mas-detalles > summary:hover{
+    border:none;
+    background:linear-gradient(135deg,var(--primary-hover),var(--primary));
+    box-shadow:0 14px 32px var(--boton-sombra-hover,rgba(124,92,252,.30));
+}
+.mas-detalles > summary::after{color:#fff}
