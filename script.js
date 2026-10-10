@@ -1,4 +1,4 @@
-// Finanzas IA - Script v5.1 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v5.2 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -46,6 +46,7 @@ const ICONOS = {
     compras: "🛍️",
     hogar: "🏠",
     ropa: "👕",
+    intereses: "😬",
     otros: "📦"
 };
 
@@ -91,6 +92,10 @@ const esReembolso = (m) =>
 // Pagar la tarjeta no es un gasto nuevo: las compras ya se contaron cuando las hiciste
 const esPagoTarjeta = (m) =>
     esGasto(m) && String(m.categoria).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "pago de tarjeta";
+
+// Interés que te cobra el banco: es un gasto real y se suma a lo que debes en esa tarjeta
+const esInteres = (m) =>
+    esGasto(m) && String(m.categoria).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase() === "intereses";
 
 const esGastoReal = (m) => esGasto(m) && !esPrestamo(m) && !esPagoTarjeta(m);
 
@@ -1567,7 +1572,18 @@ function renderEstadisticas() {
     };
 
     // Lo esencial a la vista; el resto, en "Ver más detalles"
+    const interesMes = sumar(delPeriodo(esInteres));
+
+    const T_INTERES = {
+        icono: "😬",
+        etiqueta: "Intereses de tarjeta",
+        valor: money(interesMes),
+        nota: "Pagando a tiempo se evitan"
+    };
+
     const tiles = [T_AHORRO, T_PROYECCION, T_MAYOR];
+
+    if (interesMes > 0.005) tiles.push(T_INTERES);
 
     const extra = [T_PROMEDIO, T_DIA];
 
@@ -2005,7 +2021,7 @@ function infoTarjetas() {
 
         if (!k) return null;
 
-        if (!mapa.has(k)) mapa.set(k, { nombre: String(nombre).trim(), presupuesto: 0, dia: 0, enHoja: false, compras: 0, pagos: 0, mes: 0, pagadoMes: 0 });
+        if (!mapa.has(k)) mapa.set(k, { nombre: String(nombre).trim(), presupuesto: 0, dia: 0, enHoja: false, compras: 0, pagos: 0, mes: 0, pagadoMes: 0, lista: [], interesMes: 0 });
 
         return mapa.get(k);
 
@@ -2035,7 +2051,11 @@ function infoTarjetas() {
 
         t.compras += m.monto;
 
+        if (m.fecha) t.lista.push({ f: m.fecha, m: m.monto });
+
         if (esteMes) t.mes += m.monto;
+
+        if (esteMes && esInteres(m)) t.interesMes += m.monto;
 
     });
 
@@ -2072,6 +2092,11 @@ function infoTarjetas() {
 
         let pagoTexto = "";
 
+        // Deuda que ya debió pagarse: compras de antes del último día de pago (hace más de ~30 días) que siguen sin pagar
+        let vencido = 0;
+
+        let vencidoDias = 0;
+
         if (t.dia > 0) {
 
             const h0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
@@ -2088,9 +2113,21 @@ function infoTarjetas() {
                 : pagoDias === 1 ? "Pagas mañana"
                 : `Pagas el ${fechaCorta(prox)} · en ${pagoDias} días`;
 
+            let ult = en(h0.getFullYear(), h0.getMonth());
+
+            if (ult >= h0) ult = en(h0.getFullYear(), h0.getMonth() - 1);
+
+            const corte = new Date(ult.getTime() - 30 * MS_DIA);
+
+            const antiguas = t.lista.filter((x) => x.f <= corte).reduce((a, x) => a + x.m, 0);
+
+            vencido = Math.min(deuda, Math.max(0, Math.round((antiguas - t.pagos) * 100) / 100));
+
+            vencidoDias = Math.round((h0 - ult) / MS_DIA);
+
         }
 
-        return { ...t, pct, nivel, resto, mensaje, pagoDias, pagoTexto };
+        return { ...t, pct, nivel, resto, mensaje, pagoDias, pagoTexto, vencido, vencidoDias };
 
     }).sort((a, b) => (ORDEN_NIVEL_TARJETA[b.nivel] - ORDEN_NIVEL_TARJETA[a.nivel]) || (b.deuda - a.deuda));
 
@@ -2219,6 +2256,7 @@ function renderTarjetas() {
 
                 ${barraUsoHTML(t)}
 
+                ${t.vencido > 0.005 ? `<div class="tarjeta-vencida">⚠️ Pasó tu día de pago: ya debías ${money(t.vencido)}. Paga hoy y evitas que crezca 💪</div>` : ""}
                 ${t.pagoTexto ? `<div class="tarjeta-pago ${t.pagoDias <= 3 && t.deuda > 0.005 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : ""}
 
                 ${detalle ? `<div class="tarjeta-detalle">${esc(detalle)}</div>` : ""}
@@ -2284,7 +2322,9 @@ function renderAvisoTarjetas(items) {
         .filter((t) => t.pagoDias !== null && t.pagoDias <= 3 && t.deuda > 0.005)
         .sort((a, b) => a.pagoDias - b.pagoDias);
 
-    if (!malas.length && !pagos.length) {
+    const vencidas = items.filter((t) => t.vencido > 0.005).sort((a, b) => b.vencido - a.vencido);
+
+    if (!malas.length && !pagos.length && !vencidas.length) {
 
         aviso.hidden = true;
 
@@ -2294,7 +2334,13 @@ function renderAvisoTarjetas(items) {
 
     const lineas = [];
 
-    pagos.forEach((t) => {
+    vencidas.slice(0, 2).forEach((t) => {
+
+        lineas.push(`⚠️ Pasó tu día de pago de ${esc(t.nombre)} y aún debes ${money(t.vencido)}. Paga hoy y evitas que crezca 💪`);
+
+    });
+
+    pagos.filter((t) => !(t.vencido > 0.005)).forEach((t) => {
 
         const cuando = t.pagoDias === 0 ? "<strong>Hoy pagas</strong>"
             : t.pagoDias === 1 ? "<strong>Mañana pagas</strong>"
@@ -2709,9 +2755,64 @@ function extraerTarjeta(original) {
 
 }
 
+// «interés BCP 25» / «interés de la tarjeta BCP 25» / «me cobraron 25 de interés en la BCP»
+function parsearInteres(original) {
+
+    const nom = "([A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]{2,30}?)";
+
+    const num = "(?:S\\/\\.?\\s*)?(\\d+(?:[.,]\\d{1,2})?)\\s*(?:soles?)?";
+
+    const pre = "(?:(?:de|en)\\s+)?(?:(?:la|mi)\\s+)?(tarjeta\\s+(?:de\\s+cr[eé]dito\\s+)?)?";
+
+    const intro = "(?:me\\s+(?:cobraron|cobr[oó]|salieron)\\s+)?";
+
+    let m = original.match(new RegExp("^\\s*" + intro + "inter[eé]s(?:es)?\\s+" + pre + nom + "\\s+" + num + "\\s*$", "i"));
+
+    let nombre, monto, conTarjeta;
+
+    if (m) { conTarjeta = m[1]; nombre = m[2]; monto = m[3]; }
+
+    else {
+
+        m = original.match(new RegExp("^\\s*" + intro + "inter[eé]s(?:es)?\\s+" + num + "\\s+" + pre + nom + "\\s*$", "i"));
+
+        if (m) { monto = m[1]; conTarjeta = m[2]; nombre = m[3]; }
+
+        else {
+
+            m = original.match(new RegExp("^\\s*me\\s+(?:cobraron|cobr[oó]|salieron)\\s+" + num + "\\s+(?:de|en)\\s+inter[eé]s(?:es)?\\s+" + pre + nom + "\\s*$", "i"));
+
+            if (!m) return null;
+
+            monto = m[1]; conTarjeta = m[2]; nombre = m[3];
+
+        }
+
+    }
+
+    nombre = nombre.replace(/^(?:la|mi|de|tarjeta)\s+/i, "").trim();
+
+    const valor = parseFloat(monto.replace(",", "."));
+
+    if (!nombre || !(valor > 0) || valor > 1000000) return null;
+
+    const conocida = infoTarjetas().some((x) => claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+    if (!conTarjeta && !conocida && !new RegExp("^(" + MARCAS_TARJETA + ")$", "i").test(nombre.trim())) return null;
+
+    const medio = nombreBonito(nombre);
+
+    return { tipo: "Gasto", categoria: "Intereses", descripcion: "Interés tarjeta " + medio, monto: valor, medio };
+
+}
+
 function parsearRapido(texto) {
 
     const original = String(texto || "").trim();
+
+    const interes = parsearInteres(original);
+
+    if (interes) return interes;
 
     const pago = parsearPagoTarjeta(original);
 
@@ -2830,6 +2931,103 @@ function parsearRapidoBase(texto) {
 let pendientesGuardar = 0;
 
 // Pago de una tarjeta (todo o una parte): baja lo que debes, no cuenta como gasto nuevo
+// "Pagué todo": si ya pasó el día de pago, primero pregunta si te cobraron interés (así el total cuadra con el banco)
+function pagarTodoTarjeta(nombre) {
+
+    const buscar = () => infoTarjetas().find((x) => claveTarjeta(x.nombre) === claveTarjeta(nombre));
+
+    const info = buscar();
+
+    if (!info || !(info.deuda > 0.005)) return;
+
+    const pagar = () => { const t = buscar(); if (t && t.deuda > 0.005) registrarPagoTarjeta(t.nombre, t.deuda); };
+
+    if (info.vencido > 0.005) preguntarInteres(info.nombre, pagar);
+
+    else pagar();
+
+}
+
+function preguntarInteres(nombre, continuar) {
+
+    const viejo = $("preguntaInteres");
+
+    if (viejo) viejo.remove();
+
+    const caja = document.createElement("div");
+
+    caja.id = "preguntaInteres";
+
+    caja.className = "pregunta-interes";
+
+    caja.innerHTML = `
+        <div class="pi-caja" role="dialog" aria-modal="true" aria-labelledby="piTitulo">
+            <p class="pi-titulo" id="piTitulo">Antes de pagar 💳</p>
+            <p class="pi-texto">¿Te cobraron interés en tu ${esc(nombre)}?</p>
+            <div class="pi-botones">
+                <button type="button" class="pi-btn" data-pi="no">No, pagar todo</button>
+                <button type="button" class="pi-btn pi-principal" data-pi="si">Sí, anotarlo</button>
+            </div>
+            <form class="pi-form" hidden>
+                <input type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="¿Cuánto? Ej: 25" aria-label="Monto del interés" required>
+                <button type="submit" class="pi-btn pi-principal">Anotar y pagar</button>
+            </form>
+            <button type="button" class="pi-cancelar" data-pi="cancelar">Cancelar</button>
+        </div>
+    `;
+
+    const cerrar = () => { caja.remove(); document.removeEventListener("keydown", tecla); };
+
+    const tecla = (e) => { if (e.key === "Escape") cerrar(); };
+
+    document.addEventListener("keydown", tecla);
+
+    caja.addEventListener("click", (e) => {
+
+        if (e.target === caja) { cerrar(); return; }
+
+        const b = e.target.closest("[data-pi]");
+
+        if (!b) return;
+
+        if (b.dataset.pi === "cancelar") cerrar();
+
+        else if (b.dataset.pi === "no") { cerrar(); continuar(); }
+
+        else if (b.dataset.pi === "si") {
+
+            const f = caja.querySelector(".pi-form");
+
+            f.hidden = false;
+
+            caja.querySelector(".pi-botones").hidden = true;
+
+            f.querySelector("input").focus();
+
+        }
+
+    });
+
+    caja.querySelector(".pi-form").addEventListener("submit", (e) => {
+
+        e.preventDefault();
+
+        const valor = Math.round(Number(caja.querySelector("input").value) * 100) / 100;
+
+        if (!(valor > 0)) return;
+
+        cerrar();
+
+        registrarRapido({ tipo: "Gasto", categoria: "Intereses", descripcion: "Interés tarjeta " + nombre, monto: valor, medio: nombre });
+
+        continuar();
+
+    });
+
+    document.body.appendChild(caja);
+
+}
+
 function registrarPagoTarjeta(nombre, monto) {
 
     const valor = Math.round(Number(monto) * 100) / 100;
@@ -2882,6 +3080,12 @@ function registrarRapido(r) {
         mostrarToast(info && info.deuda <= 0.005
             ? `✅ Pagaste ${money(temporal.monto)} · ${temporal.medio} al día 🎉`
             : `✅ Pagaste ${money(temporal.monto)}${info ? ` · aún debes ${money(info.deuda)}` : ""}`);
+
+    } else if (esInteres(temporal)) {
+
+        const info = infoTarjetas().find((x) => claveTarjeta(x.nombre) === claveTarjeta(temporal.medio));
+
+        mostrarToast(`😬 Interés de ${money(temporal.monto)} anotado${info ? ` · ahora debes ${money(info.deuda)} en ${info.nombre}` : ""}`);
 
     } else {
 
@@ -4342,7 +4546,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             if (accion === "pagartodo") {
 
-                registrarPagoTarjeta(nombre, Number(item.dataset.deuda));
+                pagarTodoTarjeta(nombre);
 
                 return;
 
