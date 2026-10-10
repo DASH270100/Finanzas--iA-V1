@@ -1,4 +1,4 @@
-// Finanzas IA - Script v4.5 (multi-usuario + estilos + tarjetas + ingresos fijos)
+// Finanzas IA - Script v4.6 (multi-usuario + estilos + tarjetas + ingresos fijos)
 // Backend: Google Apps Script. Cada persona entra con su código y usa su propia hoja.
 "use strict";
 
@@ -1333,9 +1333,7 @@ function renderIngresosFuente(periodo) {
 
     if (!conIngreso.length) {
 
-        caja.innerHTML = vacioGuia("💼", "Aún no hay ingresos que repartir",
-            "Escribe cada ingreso con su origen y la app los separa sola: «sueldo 2500», «me pagaron 800 por un logo».",
-            "me pagaron 800 por un logo");
+        caja.innerHTML = "";
 
         return;
 
@@ -1402,6 +1400,8 @@ function renderIngresosFuente(periodo) {
         : valores.length >= 2 ? "Tus ingresos están bastante parejos estos meses." : "Con 2 o 3 meses de datos te digo cuánto puedes contar como ingreso seguro.");
 
     caja.innerHTML = `
+        <h4 class="fuente-titulo">Cómo se reparten tus ingresos</h4>
+
         <div class="fuentes">${filas}</div>
 
         <div class="fuente-resumen">
@@ -1851,7 +1851,8 @@ function renderFijos() {
     $("ingresosFijos").innerHTML = ingresos.length
         ? ingresos.map(fijoHTML).join("")
         : vacioGuia("💼", "Aún no tienes ingresos fijos",
-            "Agrega tu sueldo u otro ingreso que llegue cada mes, con su fecha, y te aviso cuando toque cobrar.");
+            "Agrega tu sueldo u otro ingreso fijo abajo, con su fecha. Los variables (freelance, ventas) solo escríbelos: «me pagaron 800 por un logo».",
+            "me pagaron 800 por un logo");
 
     renderAvisoFijos(items, ingresos);
 
