@@ -4166,3 +4166,14 @@ html[data-tema="atardecer"] .tarjetas-resumen{ order:5; }
     box-shadow:0 14px 32px var(--boton-sombra-hover,rgba(124,92,252,.30));
 }
 .mas-detalles > summary::after{color:#fff}
+
+/* v5.0 - tarjetas: lo que debes + pagar */
+.tarjeta-pagar{margin-top:12px}
+.tarj-pago-form{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.tarj-pago-form[hidden]{display:none}
+.tarj-pago-form input{
+    flex:1 1 160px;min-width:0;padding:11px 14px;border-radius:12px;
+    border:1px solid var(--border);background:var(--surface-light);color:var(--text);font:inherit;
+}
+.tarj-pago-form input:focus{outline:none;border-color:var(--primary)}
+.tarj-pago-form button{padding:11px 18px;border-radius:12px;font-size:14px}
