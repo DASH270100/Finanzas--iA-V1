@@ -26,7 +26,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=42">
+    <link rel="stylesheet" href="style.css?v=43">
 
 </head>
 
@@ -227,6 +227,10 @@
             🤖 Esperando movimiento...
 
         </section>
+
+        <!-- USO DE TUS TARJETAS (solo si tienes tarjetas) -->
+
+        <section id="tarjetasResumen" class="card tarjetas-resumen" hidden></section>
 
         <!-- BIENVENIDA (solo cuando aún no hay movimientos) -->
 
@@ -554,6 +558,11 @@
                         inputmode="decimal" placeholder="800" required>
                 </label>
 
+                <label>Día de pago (opcional)
+                    <input id="tarjDia" type="number" step="1" min="1" max="31"
+                        inputmode="numeric" placeholder="25">
+                </label>
+
                 <button id="tarjBoton" type="submit">Guardar tarjeta</button>
 
             </form>
@@ -853,11 +862,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=42"></script>
+<script src="graficos.js?v=43"></script>
 
-<script src="demo.js?v=42"></script>
+<script src="demo.js?v=43"></script>
 
-<script src="script.js?v=42"></script>
+<script src="script.js?v=43"></script>
 
 </body>
 
