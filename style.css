@@ -4813,3 +4813,16 @@ button.buzon-x:hover{ background:var(--surface-light); color:var(--text); box-sh
     .header button.chip-beta{ display:flex; width:max-content; margin:8px 0 6px; }
     body:not([data-vista="dashboard"]) .header button.chip-beta{ display:none; }
 }
+
+/* Peso extra para ganarle a los estilos de botón de cada tema */
+html #buzonForm .buzon-tipos.buzon-tipos > button.buzon-tipo{
+    border:1.5px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text-soft);
+    box-shadow:none;
+}
+html #buzonForm .buzon-tipos.buzon-tipos > button.buzon-tipo[aria-checked="true"]{
+    border:2px solid var(--primary);
+    color:var(--text);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
+}
