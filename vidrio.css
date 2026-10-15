@@ -520,3 +520,10 @@ html{ scroll-behavior:smooth; }
     button:active,.sidebar nav a:active,.cat-tile:active,.card:hover{ transform:none !important; }
     html{ scroll-behavior:auto; }
 }
+
+/* Paleta del gráfico en Vidrio */
+html[data-tema="vidrio"]{
+    --graf-1:#9B87FF; --graf-2:#FF6FA3; --graf-3:#4DD0FF;
+    --graf-4:#7CF5C4; --graf-5:#FFD36E; --graf-6:#C9B6FF;
+    --graf-hueco:#16152A;
+}

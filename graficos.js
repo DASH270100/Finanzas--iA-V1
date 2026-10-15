@@ -52,11 +52,45 @@ function agruparGastos(gastos) {
 
 }
 
+// Paleta del estilo activo (--graf-1 … --graf-6); si el estilo no la define, la de siempre
+function paletaEstilo() {
+
+    const p = [];
+
+    for (let i = 1; i <= 6; i++) {
+
+        const c = colorEstilo("--graf-" + i, "");
+
+        if (c) p.push(c);
+
+    }
+
+    return p.length >= 3 ? p : COLORES_GRAFICO;
+
+}
+
+// Máximo 5 categorías + "Resto", para que la dona se lea de un vistazo
+function gruposParaDona(grupos) {
+
+    if (grupos.length <= 6) return grupos;
+
+    const top = grupos.slice(0, 5);
+
+    const resto = grupos.slice(5).reduce((t, g) => t + g.total, 0);
+
+    return [...top, { nombre: "Resto", total: resto }];
+
+}
+
 function renderGrafico(gastos) {
 
     const grupos = agruparGastos(gastos);
 
     const contenedor = document.querySelector("#graficoCategorias");
+
+    const centro = document.querySelector("#graficoCentro");
+
+    const leyenda = document.querySelector("#leyendaGrafico");
 
     if (grafico) {
 
@@ -68,13 +102,85 @@ function renderGrafico(gastos) {
 
     contenedor.innerHTML = "";
 
-    if (typeof ApexCharts === "undefined") {
+    if (leyenda) leyenda.innerHTML = "";
 
-        contenedor.innerHTML = '<p class="vacio">No se pudo cargar el gráfico.</p>';
+    if (centro) centro.innerHTML = "";
+
+    const dona = gruposParaDona(grupos);
+
+    const total = dona.reduce((t, g) => t + g.total, 0);
+
+    if (!dona.length || total <= 0) {
+
+        contenedor.innerHTML = '<p class="vacio grafico-vacio">Sin gastos en este periodo</p>';
 
         return grupos;
 
     }
+
+    if (typeof ApexCharts === "undefined") {
+
+        contenedor.innerHTML = '<p class="vacio grafico-vacio">No se pudo cargar el gráfico.</p>';
+
+        return grupos;
+
+    }
+
+    const colores = paletaEstilo();
+
+    const pct = (v) => {
+        const n = (v / total) * 100;
+        return (n > 0 && n < 1 ? "<1" : Math.round(n)) + "%";
+    };
+
+    // Centro de la dona: total, o la categoría que se está mirando
+    const pintarCentro = (i) => {
+
+        if (!centro) return;
+
+        const g = i == null ? null : dona[i];
+
+        centro.innerHTML = g
+            ? `<span class="gc-label">${esc(g.nombre)}</span>
+               <strong class="gc-monto">${money(g.total)}</strong>
+               <span class="gc-sub">${pct(g.total)} de tus gastos</span>`
+            : `<span class="gc-label">Gastado</span>
+               <strong class="gc-monto">${money(total)}</strong>
+               <span class="gc-sub">${dona.length} ${dona.length === 1 ? "categoría" : "categorías"}</span>`;
+
+        centro.classList.toggle("mirando", !!g);
+
+        if (leyenda) leyenda.querySelectorAll("li").forEach((li, k) => li.classList.toggle("apagado", g !== null && k !== i));
+
+    };
+
+    // Leyenda: ranking con monto, barra y porcentaje
+    if (leyenda) {
+
+        const max = dona[0].total;
+
+        leyenda.innerHTML = dona.map((g, i) => `
+            <li style="--c:${colores[i % colores.length]}" data-i="${i}" tabindex="0">
+                <span class="lg-punto"></span>
+                <span class="lg-nombre">${esc(g.nombre)}</span>
+                <span class="lg-monto">${money(g.total)}</span>
+                <span class="lg-barra"><i style="width:${Math.max(4, (g.total / max) * 100).toFixed(1)}%"></i></span>
+                <span class="lg-pct">${pct(g.total)}</span>
+            </li>`).join("");
+
+        leyenda.querySelectorAll("li").forEach((li) => {
+            const i = Number(li.dataset.i);
+            li.addEventListener("mouseenter", () => pintarCentro(i));
+            li.addEventListener("focus", () => pintarCentro(i));
+            li.addEventListener("mouseleave", () => pintarCentro(null));
+            li.addEventListener("blur", () => pintarCentro(null));
+        });
+
+    }
+
+    pintarCentro(null);
+
+    const fuente = getComputedStyle(document.body).fontFamily || "Montserrat, sans-serif";
 
     const opciones = {
 
@@ -84,46 +190,33 @@ function renderGrafico(gastos) {
 
             height: "100%",
 
-            fontFamily: "Montserrat, sans-serif",
+            fontFamily: fuente,
 
             toolbar: { show: false },
 
-            animations: {
-                enabled: true,
-                easing: "easeinout",
-                speed: 700
+            animations: { enabled: true, easing: "easeinout", speed: 800, animateGradually: { enabled: true, delay: 90 } },
+
+            events: {
+                dataPointMouseEnter: (e, ctx, cfg) => pintarCentro(cfg.dataPointIndex),
+                dataPointMouseLeave: () => pintarCentro(null)
             }
 
         },
 
-        series: grupos.map((g) => g.total),
+        series: dona.map((g) => g.total),
 
-        labels: grupos.map((g) => g.nombre),
+        labels: dona.map((g) => g.nombre),
 
-        colors: COLORES_GRAFICO,
+        colors: colores,
 
-        legend: {
+        legend: { show: false },
 
-            show: true,
+        // La "separación" entre porciones es un borde del color de la tarjeta
+        stroke: { width: 3, colors: [colorEstilo("--graf-hueco", colorEstilo("--surface", "#121B2C"))] },
 
-            position: "bottom",
-
-            fontSize: "13px",
-
-            labels: { colors: colorEstilo("--text-soft", "#CBD5E1") },
-
-            markers: { width: 10, height: 10, radius: 10 },
-
-            itemMargin: { horizontal: 10, vertical: 4 }
-
-        },
-
-        stroke: {
-
-            width: 6,
-
-            colors: [colorEstilo("--surface", "#121B2C")]
-
+        states: {
+            hover: { filter: { type: "lighten", value: 0.08 } },
+            active: { filter: { type: "none" } }
         },
 
         plotOptions: {
@@ -132,34 +225,7 @@ function renderGrafico(gastos) {
 
                 expandOnClick: false,
 
-                donut: {
-
-                    size: "68%",
-
-                    labels: {
-
-                        show: true,
-
-                        name: { color: colorEstilo("--text-muted", "#94A3B8"), fontSize: "14px" },
-
-                        value: {
-                            color: colorEstilo("--text", "#F8FAFC"),
-                            fontSize: "24px",
-                            fontWeight: 800,
-                            formatter: (val) => money(val)
-                        },
-
-                        total: {
-                            show: true,
-                            label: "Total",
-                            color: colorEstilo("--text-muted", "#94A3B8"),
-                            formatter: (w) =>
-                                money(w.globals.seriesTotals.reduce((a, b) => a + b, 0))
-                        }
-
-                    }
-
-                }
+                donut: { size: "78%", labels: { show: false } }
 
             }
 
@@ -167,21 +233,7 @@ function renderGrafico(gastos) {
 
         dataLabels: { enabled: false },
 
-        tooltip: {
-
-            theme: esEstiloOscuro() ? "dark" : "light",
-
-            y: { formatter: (val) => money(val) }
-
-        },
-
-        noData: {
-
-            text: "Sin gastos en este periodo",
-
-            style: { color: colorEstilo("--text-muted", "#94A3B8"), fontSize: "15px" }
-
-        }
+        tooltip: { enabled: false }
 
     };
 

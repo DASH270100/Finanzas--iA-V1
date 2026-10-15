@@ -37,7 +37,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=56">
+    <link rel="stylesheet" href="style.css?v=57">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -428,7 +428,15 @@
 
                 <div class="contenedor-grafico">
 
-                    <div id="graficoCategorias"></div>
+                    <div class="grafico-dona">
+
+                        <div id="graficoCategorias"></div>
+
+                        <div id="graficoCentro" class="grafico-centro" aria-live="polite"></div>
+
+                    </div>
+
+                    <ul id="leyendaGrafico" class="leyenda-grafico" aria-label="Gastos por categoría"></ul>
 
                 </div>
 
@@ -1098,7 +1106,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=55"></script>
+<script src="graficos.js?v=56"></script>
 
 <script src="demo.js?v=54"></script>
 

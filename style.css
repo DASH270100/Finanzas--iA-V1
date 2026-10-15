@@ -4365,3 +4365,138 @@ a.tema-candado small{
     font-size:12px;
     font-weight:700;
 }
+
+
+/*==================================================
+        GRÁFICO DE CATEGORÍAS (dona + ranking)
+====================================================*/
+
+.contenedor-grafico{
+    width:100%;
+    height:auto;
+    margin:14px 0 22px;
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 1.15fr);
+    gap:28px;
+    align-items:center;
+}
+
+@media(max-width:760px){
+    .contenedor-grafico{ grid-template-columns:1fr; gap:18px; }
+}
+
+.grafico-dona{
+    position:relative;
+    width:100%;
+    max-width:320px;
+    aspect-ratio:1;
+    margin:0 auto;
+}
+
+#graficoCategorias{ width:100%; height:100%; }
+
+.grafico-vacio{ display:flex; align-items:center; justify-content:center; height:100%; margin:0; }
+
+.grafico-centro{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    text-align:center;
+    pointer-events:none;
+    padding:0 22%;
+}
+
+.gc-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.gc-monto{
+    font-size:clamp(22px, 5.5vw, 30px);
+    font-weight:800;
+    line-height:1.1;
+    color:var(--text);
+    white-space:nowrap;
+}
+
+.gc-sub{ font-size:12px; color:var(--text-muted); }
+
+.grafico-centro.mirando .gc-monto{ animation:gc-pop .25s ease-out; }
+
+@keyframes gc-pop{ from{ transform:scale(.94); opacity:.6; } to{ transform:none; opacity:1; } }
+
+.leyenda-grafico{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+}
+
+.leyenda-grafico li{
+    display:grid;
+    grid-template-columns:10px minmax(0, 1fr) auto 42px;
+    grid-template-rows:auto auto;
+    column-gap:10px;
+    row-gap:6px;
+    align-items:center;
+    padding:10px 12px;
+    border-radius:14px;
+    cursor:default;
+    transition:opacity .2s, background-color .2s;
+    outline:none;
+}
+
+.leyenda-grafico li:hover,
+.leyenda-grafico li:focus-visible{ background:var(--surface-hover); }
+
+.leyenda-grafico li.apagado{ opacity:.45; }
+
+.lg-punto{ width:10px; height:10px; border-radius:50%; background:var(--c); box-shadow:0 0 10px var(--c); }
+
+.lg-nombre{
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.lg-monto{ font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+.lg-pct{ font-size:12px; color:var(--text-muted); text-align:right; font-variant-numeric:tabular-nums; }
+
+.lg-barra{
+    grid-column:2 / 5;
+    height:5px;
+    border-radius:999px;
+    background:var(--surface-hover);
+    overflow:hidden;
+}
+
+.lg-barra i{ display:block; height:100%; border-radius:999px; background:var(--c); }
+
+/* El total ya está al centro de la dona: la tarjeta de total sobra */
+.grafico-footer .total-card{ display:none; }
+.grafico-footer{ grid-template-columns:1fr; }
+
+/* Posición fija de cada pieza del ranking */
+.leyenda-grafico .lg-punto{ grid-row:1; grid-column:1; }
+.leyenda-grafico .lg-nombre{ grid-row:1; grid-column:2; }
+.leyenda-grafico .lg-monto{ grid-row:1; grid-column:3; text-align:right; }
+.leyenda-grafico .lg-pct{ grid-row:1; grid-column:4; }
+.leyenda-grafico .lg-barra{ grid-row:2; grid-column:2 / 5; }
