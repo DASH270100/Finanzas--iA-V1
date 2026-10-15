@@ -41,7 +41,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=59">
+    <link rel="stylesheet" href="style.css?v=60">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -98,6 +98,35 @@
 <!-- ===========================
         CAMBIAR CONTRASEÑA
 =========================== -->
+
+<div id="buzonOverlay" class="pin-overlay buzon-overlay" hidden>
+
+    <form id="buzonForm" class="card pin-box buzon-box" role="dialog" aria-modal="true" aria-labelledby="buzonTitulo">
+
+        <button id="buzonCerrar" class="buzon-x" type="button" aria-label="Cerrar">✕</button>
+
+        <h2 id="buzonTitulo">💡 Buzón de mejoras</h2>
+
+        <p class="buzon-intro">La app está en beta y tu opinión la mejora. Lo leo yo, Diego 🙌</p>
+
+        <div class="buzon-tipos" role="radiogroup" aria-label="¿Qué quieres contarme?">
+            <button type="button" class="buzon-tipo" role="radio" aria-checked="false" data-tipo="falla">🐞<span>Algo falla</span></button>
+            <button type="button" class="buzon-tipo" role="radio" aria-checked="true" data-tipo="idea">💡<span>Tengo una idea</span></button>
+            <button type="button" class="buzon-tipo" role="radio" aria-checked="false" data-tipo="confusion">🤔<span>No entendí algo</span></button>
+        </div>
+
+        <textarea id="buzonTexto" maxlength="1000" rows="4" aria-label="Tu sugerencia"
+            placeholder="Ej: me gustaría poder elegir la fecha de pago de mi tarjeta con un calendario"></textarea>
+
+        <div id="buzonError" class="pin-error" role="alert"></div>
+
+        <button id="buzonEnviar" type="submit">Enviar</button>
+
+        <div id="buzonMias" class="buzon-mias" hidden></div>
+
+    </form>
+
+</div>
 
 <div id="claveOverlay" class="pin-overlay" hidden>
 
@@ -218,6 +247,8 @@
             <div>
 
                 <span class="saludo">Bienvenido 👋</span>
+
+                <button id="btnBuzon" class="chip-beta" type="button" aria-haspopup="dialog">💡 Beta · Sugerir</button>
 
                 <h1>Hola DASH</h1>
 
@@ -726,9 +757,9 @@
                         inputmode="decimal" placeholder="1000" required>
                 </label>
 
-                <label>Día de pago (opcional)
-                    <input id="tarjDia" type="number" step="1" min="1" max="31"
-                        inputmode="numeric" placeholder="25">
+                <label>Fecha de pago (opcional)
+                    <input id="tarjFecha" type="date">
+                    <small class="campo-ayuda">Se repite cada mes ese día. Si tu banco la mueve, cámbiala aquí.</small>
                 </label>
 
                 <button id="tarjBoton" type="submit">Guardar tarjeta</button>
@@ -1011,6 +1042,20 @@
 
             </div>
 
+            <div id="buzonBloque" class="config-bloque">
+
+                <div>
+
+                    <h3>💡 Buzón de mejoras</h3>
+
+                    <p>La app está en beta. Cuéntame qué falla, qué no se entiende o qué te gustaría tener.</p>
+
+                </div>
+
+                <button id="buzonAbrir" class="mov-btn" type="button">✍️ Enviar sugerencia</button>
+
+            </div>
+
             <div id="cuentaBloque" class="config-bloque" hidden>
 
                 <div>
@@ -1060,6 +1105,14 @@
             <div id="adminLista" class="admin-lista">
 
                 <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <div class="admin-buzon">
+
+                <h3>📬 Buzón de mejoras <span id="adminBuzonNuevas" class="buzon-contador" hidden></span></h3>
+
+                <div id="adminBuzon" class="admin-buzon-lista"><p class="vacio">Cargando…</p></div>
 
             </div>
 
@@ -1130,7 +1183,7 @@
 
 <script src="demo.js?v=54"></script>
 
-<script src="script.js?v=60"></script>
+<script src="script.js?v=61"></script>
 <script src="fluidez.js?v=1"></script>
 
 </body>

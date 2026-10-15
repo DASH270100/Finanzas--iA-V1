@@ -4646,3 +4646,170 @@ html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[
         linear-gradient(90deg, transparent 0 58%, #1F1B16 58% 58.8%, transparent 58.8%),
         linear-gradient(180deg, #F5F1EA 0 70%, #D9C8B0 70%);
 }
+
+/*==================================================
+        BUZÓN DE MEJORAS (beta)
+====================================================*/
+
+/* Chip en la cabecera */
+button.chip-beta{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    width:auto;
+    margin:0 0 0 8px;
+    padding:4px 10px;
+    min-height:26px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text-soft);
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0;
+    text-transform:none;
+    box-shadow:none;
+    vertical-align:middle;
+    transform:none;
+}
+button.chip-beta:hover{
+    background:var(--surface-hover, var(--surface-light));
+    color:var(--text);
+    box-shadow:none;
+    transform:none;
+}
+.header .chip-beta{ position:relative; z-index:1; }
+body:not([data-vista="dashboard"]) .chip-beta{ display:none; }
+
+/* Ventana */
+.buzon-box{
+    position:relative;
+    max-width:440px;
+    max-height:calc(100dvh - 48px);
+    overflow:auto;
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+.buzon-box h2{ margin:0; padding-right:36px; }
+.buzon-intro{ margin:0; color:var(--text-muted); font-size:14px; }
+
+button.buzon-x{
+    position:absolute;
+    top:14px; right:14px;
+    width:36px; height:36px;
+    min-height:0;
+    margin:0; padding:0;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text-soft);
+    font-size:15px;
+    box-shadow:none;
+    transform:none;
+}
+button.buzon-x:hover{ background:var(--surface-light); color:var(--text); box-shadow:none; transform:none; }
+
+.buzon-tipos{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:8px;
+}
+.buzon-box button.buzon-tipo{
+    width:auto;
+    margin:0;
+    padding:10px 6px;
+    min-height:64px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    border-radius:14px;
+    border:1.5px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text-soft);
+    font-size:20px;
+    line-height:1;
+    box-shadow:none;
+    transform:none;
+}
+.buzon-box button.buzon-tipo span{ font-size:12px; font-weight:600; line-height:1.2; text-align:center; }
+.buzon-box button.buzon-tipo:hover{ background:var(--surface-light); color:var(--text); box-shadow:none; transform:none; }
+.buzon-box button.buzon-tipo[aria-checked="true"]{
+    border-color:var(--primary);
+    color:var(--text);
+    background:var(--surface-light);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.buzon-box textarea{ min-height:110px; font-size:15px; }
+.buzon-box #buzonEnviar{ margin-top:0; }
+
+/* Mis sugerencias */
+.buzon-mias{ border-top:1px solid var(--border); padding-top:12px; }
+.buzon-mias h4{ margin:0 0 8px; font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; }
+.buzon-mias ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.buzon-mias li{
+    padding:10px 12px;
+    border-radius:12px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+}
+.buzon-mias li p{ margin:4px 0 0; font-size:14px; color:var(--text); }
+.buzon-mias .sug-estado{ font-size:12px; font-weight:700; color:var(--text-muted); }
+.buzon-mias .sug-lista .sug-estado{ color:var(--green); }
+.buzon-mias .sug-respuesta{ color:var(--text-soft); font-style:italic; }
+
+/* Ayuda bajo un campo */
+.campo-ayuda{ display:block; margin-top:6px; font-size:12px; font-weight:500; color:var(--text-muted); line-height:1.35; }
+
+/* Panel de admin */
+.admin-buzon{ margin:6px 0 24px; }
+.admin-buzon h3{ display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+.buzon-contador{
+    font-size:12px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:999px;
+    background:var(--primary);
+    color:#fff;
+}
+.buzon-contador[hidden]{ display:none; }
+.admin-buzon-lista{ display:flex; flex-direction:column; gap:10px; max-height:520px; overflow:auto; }
+.admin-sug{
+    padding:12px 14px;
+    border-radius:14px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+}
+.admin-sug-cab{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 10px; }
+.admin-sug-cab span{ font-size:12px; color:var(--text-muted); }
+.admin-sug-texto{ margin:6px 0; color:var(--text); white-space:pre-wrap; }
+.admin-sug-meta{ margin:0 0 10px; font-size:12px; color:var(--text-muted); }
+.admin-sug-acciones{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; }
+.admin-sug-acciones select,
+.admin-sug-acciones input{ margin:0; min-height:40px; }
+.admin-sug-acciones .mov-btn{ margin:0; }
+@media (max-width:520px){
+    .admin-sug-acciones{ grid-template-columns:1fr auto; }
+    .admin-sug-acciones input{ grid-column:1 / -1; grid-row:2; }
+}
+.admin-sug-acciones select,
+.admin-sug-acciones input{
+    width:100%;
+    padding:0 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font:inherit;
+    font-size:14px;
+}
+@media (max-width:480px){
+    /* En celular el chip va en su propia línea para no chocar con "Bloquear" */
+    .header button.chip-beta{ display:flex; width:max-content; margin:8px 0 6px; }
+    body:not([data-vista="dashboard"]) .header button.chip-beta{ display:none; }
+}

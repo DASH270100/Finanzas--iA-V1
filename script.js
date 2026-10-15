@@ -401,7 +401,7 @@ function normalizarDatos(data) {
 
     // Tarjetas de crédito: [Tarjeta, Presupuesto mensual]
     const tarjetas = (data.tarjetas || [])
-        .map((f) => ({ nombre: String(f[0] ?? "").trim(), presupuesto: numero(f[1]), dia: Math.min(31, Math.max(0, Math.round(numero(f[2])))) }))
+        .map((f) => ({ nombre: String(f[0] ?? "").trim(), presupuesto: numero(f[1]), dia: Math.min(31, Math.max(0, Math.round(numero(f[2])))), proximo: parseFecha(f[3]) }))
         .filter((t) => t.nombre !== "" && t.nombre.toLowerCase() !== "tarjeta");
 
     return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas, tarjetas };
@@ -413,6 +413,8 @@ function aplicarDatos(data) {
     estado.usuario = data.usuario || null;
 
     revisarTemas(data.catalogo);
+
+    buzon.avisar(data.sugerencias);
 
     // Entró con una contraseña temporal: tiene que crear la suya antes de seguir
     if (estado.usuario && estado.usuario.cambiarClave && !modoDemo && $("claveOverlay") && $("claveOverlay").hidden) abrirCambioClave(true);
@@ -695,7 +697,7 @@ function renderConfig() {
 
     $("adminCard").hidden = !visible;
 
-    if (visible) cargarPersonas();
+    if (visible) { cargarPersonas(); buzon.cargarAdmin(); }
 
     // "Mi cuenta": solo para personas con usuario (el admin cambia su clave en el Apps Script)
     const u = estado.usuario;
@@ -2572,7 +2574,7 @@ function infoTarjetas() {
 
     };
 
-    estado.tarjetas.forEach((t) => { const x = tomar(t.nombre); x.presupuesto = t.presupuesto; x.dia = t.dia; x.enHoja = true; });
+    estado.tarjetas.forEach((t) => { const x = tomar(t.nombre); x.presupuesto = t.presupuesto; x.dia = t.dia; x.proximo = t.proximo || null; x.enHoja = true; });
 
     estado.movimientos.forEach((m) => {
 
@@ -2637,6 +2639,8 @@ function infoTarjetas() {
 
         let pagoTexto = "";
 
+        let pagoFecha = null;
+
         // Deuda que ya debió pagarse: compras de antes del último día de pago (hace más de ~30 días) que siguen sin pagar
         let vencido = 0;
 
@@ -2651,6 +2655,11 @@ function infoTarjetas() {
             let prox = en(h0.getFullYear(), h0.getMonth());
 
             if (prox < h0) prox = en(h0.getFullYear(), h0.getMonth() + 1);
+
+            // La fecha exacta del calendario manda mientras no haya pasado (el banco a veces la mueve)
+            if (t.proximo && t.proximo >= h0) prox = t.proximo;
+
+            pagoFecha = prox;
 
             pagoDias = Math.round((prox - h0) / MS_DIA);
 
@@ -2672,7 +2681,7 @@ function infoTarjetas() {
 
         }
 
-        return { ...t, pct, nivel, resto, mensaje, pagoDias, pagoTexto, vencido, vencidoDias };
+        return { ...t, pct, nivel, resto, mensaje, pagoDias, pagoTexto, pagoFecha, vencido, vencidoDias };
 
     }).sort((a, b) => (ORDEN_NIVEL_TARJETA[b.nivel] - ORDEN_NIVEL_TARJETA[a.nivel]) || (b.deuda - a.deuda));
 
@@ -2797,7 +2806,7 @@ function renderTarjetas() {
 
             return `
             <div class="presupuesto-item tarjeta-item" data-nombre="${esc(t.nombre)}"
-                data-presupuesto="${t.presupuesto}" data-deuda="${t.deuda}" data-dia="${t.dia || ""}">
+                data-presupuesto="${t.presupuesto}" data-deuda="${t.deuda}" data-dia="${t.dia || ""}" data-fecha="${t.pagoFecha ? aInputFecha(t.pagoFecha) : ""}">
 
                 ${barraUsoHTML(t)}
 
@@ -2925,9 +2934,9 @@ function renderAvisoTarjetas(items) {
 
 }
 
-async function guardarTarjeta(nombre, presupuesto, dia) {
+async function guardarTarjeta(nombre, presupuesto, dia, proximo) {
 
-    await api("tarjeta", { nombre, presupuesto, dia });
+    await api("tarjeta", { nombre, presupuesto, dia, proximo });
 
     await cargarDatos();
 
@@ -4167,6 +4176,288 @@ async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
 }
 
 // =========================
+// BUZÓN DE MEJORAS (beta)
+// =========================
+
+const buzon = (() => {
+
+    const ESTADO_UI = {
+        "Recibida": { ico: "📨", clase: "recibida" },
+        "En revisión": { ico: "👀", clase: "revision" },
+        "Lista": { ico: "✅", clase: "lista" },
+        "No por ahora": { ico: "💤", clase: "no" }
+    };
+
+    const TIPO_ICO = { "Algo falla": "🐞", "Idea": "💡", "No entendí algo": "🤔" };
+
+    const PISTAS = {
+        falla: "Ej: cuando registro con foto, me sale un error…",
+        idea: "Ej: me gustaría poder elegir la fecha de pago de mi tarjeta con un calendario",
+        confusion: "Ej: no entiendo qué significa «proyección a fin de mes»"
+    };
+
+    const vistos = new Set();
+
+    let tipo = "idea";
+
+    function dispositivo() {
+
+        const ua = navigator.userAgent;
+
+        const so = /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android"
+            : /Mac/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "Otro";
+
+        const nav = /CriOS|Chrome/.test(ua) ? "Chrome" : /Safari/.test(ua) ? "Safari" : /Firefox/.test(ua) ? "Firefox" : "";
+
+        return `${so}${nav ? " · " + nav : ""} · ${window.innerWidth}px`;
+
+    }
+
+    function elegir(t) {
+
+        tipo = t;
+
+        document.querySelectorAll(".buzon-tipo").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.tipo === t)));
+
+        $("buzonTexto").placeholder = PISTAS[t];
+
+    }
+
+    function abrir() {
+
+        if (modoDemo) { mostrarToast("💡 En la demo no se envían sugerencias"); return; }
+
+        $("buzonError").textContent = "";
+
+        elegir("idea");
+
+        $("buzonOverlay").hidden = false;
+
+        setTimeout(() => $("buzonTexto").focus(), 50);
+
+        cargarMias();
+
+    }
+
+    function cerrar() { $("buzonOverlay").hidden = true; }
+
+    function itemHTML(x) {
+
+        const e = ESTADO_UI[x.estado] || ESTADO_UI["Recibida"];
+
+        return `<li class="sug-${e.clase}">
+            <span class="sug-estado">${e.ico} ${esc(x.estado)}</span>
+            <p>${TIPO_ICO[x.tipo] || "💡"} ${esc(x.texto)}</p>
+            ${x.respuesta ? `<p class="sug-respuesta">Diego: ${esc(x.respuesta)}</p>` : ""}
+        </li>`;
+
+    }
+
+    async function cargarMias() {
+
+        const caja = $("buzonMias");
+
+        try {
+
+            const r = await api("misSugerencias");
+
+            const lista = r.sugerencias || [];
+
+            caja.hidden = !lista.length;
+
+            caja.innerHTML = lista.length ? `<h4>Tus sugerencias</h4><ul>${lista.map(itemHTML).join("")}</ul>` : "";
+
+        } catch (e) {
+
+            caja.hidden = true;
+
+        }
+
+    }
+
+    async function enviar(ev) {
+
+        ev.preventDefault();
+
+        const texto = $("buzonTexto").value.trim();
+
+        if (texto.replace(/\s/g, "").length < 5) { $("buzonError").textContent = "Cuéntame un poquito más 🙂"; return; }
+
+        const boton = $("buzonEnviar");
+
+        boton.disabled = true;
+
+        boton.textContent = "⏳ Enviando...";
+
+        try {
+
+            await api("sugerir", {
+                tipo,
+                texto,
+                pantalla: document.body.dataset.vista || "",
+                estilo: document.documentElement.getAttribute("data-tema") || "noche",
+                dispositivo: dispositivo()
+            });
+
+            $("buzonTexto").value = "";
+
+            $("buzonError").textContent = "";
+
+            mostrarToast("🙌 ¡Gracias! Tu sugerencia llegó");
+
+            cargarMias();
+
+        } catch (e) {
+
+            if (e instanceof ErrorPin) { cerrar(); manejarError(e); return; }
+
+            $("buzonError").textContent = e && e.message && !/fetch|network|red \(/i.test(e.message) ? e.message : "No se pudo enviar. Inténtalo otra vez.";
+
+        } finally {
+
+            boton.disabled = false;
+
+            boton.textContent = "Enviar";
+
+        }
+
+    }
+
+    // Al entrar: avisa si Diego cambió el estado de alguna sugerencia
+    function avisar(lista) {
+
+        if (modoDemo || !Array.isArray(lista)) return;
+
+        const nuevas = lista.filter((x) => x && x.id && !vistos.has(x.id + x.estado));
+
+        if (!nuevas.length) return;
+
+        nuevas.forEach((x) => vistos.add(x.id + x.estado));
+
+        const corto = (t) => "«" + (t.length > 40 ? t.slice(0, 40) + "…" : t) + "»";
+
+        const textos = nuevas.map((x) =>
+            x.estado === "Lista" ? `🎉 Tu idea ${corto(x.texto)} ya está en la app`
+            : x.estado === "En revisión" ? `👀 Diego está revisando ${corto(x.texto)}`
+            : `💤 ${corto(x.texto)}: por ahora no${x.respuesta ? " · " + x.respuesta : ""}`);
+
+        textos.forEach((t, i) => setTimeout(() => mostrarToast(t), 1200 + i * 3200));
+
+        api("sugerenciasVistas", { ids: nuevas.map((x) => x.id) }).catch(() => {});
+
+    }
+
+    // ---------- Panel de admin ----------
+
+    function adminItemHTML(x, estados) {
+
+        return `<div class="admin-sug" data-sug="${esc(x.id)}">
+            <div class="admin-sug-cab">
+                <strong>${TIPO_ICO[x.tipo] || "💡"} ${esc(x.nombre || x.usuario)}</strong>
+                <span>@${esc(x.usuario)} · ${esc(x.fecha)}</span>
+            </div>
+            <p class="admin-sug-texto">${esc(x.texto)}</p>
+            <p class="admin-sug-meta">📍 ${esc(x.pantalla || "—")} · 🎨 ${esc(x.estilo || "—")} · 📱 ${esc(x.dispositivo || "—")}</p>
+            <div class="admin-sug-acciones">
+                <select aria-label="Estado">${estados.map((e) => `<option${e === x.estado ? " selected" : ""}>${esc(e)}</option>`).join("")}</select>
+                <input type="text" maxlength="300" placeholder="Respuesta (opcional)" value="${esc(x.respuesta)}" aria-label="Respuesta">
+                <button class="mov-btn" type="button" data-sug-guardar>Guardar</button>
+            </div>
+        </div>`;
+
+    }
+
+    async function cargarAdmin() {
+
+        const caja = $("adminBuzon");
+
+        try {
+
+            const r = await api("admin_sugerencias");
+
+            const lista = r.sugerencias || [];
+
+            const nuevas = lista.filter((x) => x.estado === "Recibida").length;
+
+            $("adminBuzonNuevas").hidden = !nuevas;
+
+            $("adminBuzonNuevas").textContent = nuevas + (nuevas === 1 ? " nueva" : " nuevas");
+
+            caja.innerHTML = lista.length
+                ? lista.map((x) => adminItemHTML(x, r.estados || Object.keys(ESTADO_UI))).join("")
+                : '<p class="vacio">Todavía no llegan sugerencias. Cuando tus amigas escriban, aparecen aquí.</p>';
+
+        } catch (e) {
+
+            if (e instanceof ErrorPin) { manejarError(e); return; }
+
+            caja.innerHTML = '<p class="vacio">No se pudo cargar el buzón.</p>';
+
+        }
+
+    }
+
+    async function guardarAdmin(boton) {
+
+        const item = boton.closest("[data-sug]");
+
+        boton.disabled = true;
+
+        try {
+
+            await api("admin_sugerencia", {
+                id: item.dataset.sug,
+                estado: item.querySelector("select").value,
+                respuesta: item.querySelector("input").value.trim()
+            });
+
+            mostrarToast("✅ Sugerencia actualizada · se le avisará al entrar");
+
+            cargarAdmin();
+
+        } catch (e) {
+
+            errorDeAccion(e);
+
+        } finally {
+
+            boton.disabled = false;
+
+        }
+
+    }
+
+    function iniciar() {
+
+        $("btnBuzon").addEventListener("click", abrir);
+
+        $("buzonAbrir").addEventListener("click", abrir);
+
+        $("buzonCerrar").addEventListener("click", cerrar);
+
+        $("buzonForm").addEventListener("submit", enviar);
+
+        $("buzonOverlay").addEventListener("click", (e) => { if (e.target === $("buzonOverlay")) cerrar(); });
+
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("buzonOverlay").hidden) cerrar(); });
+
+        document.querySelectorAll(".buzon-tipo").forEach((b) => b.addEventListener("click", () => elegir(b.dataset.tipo)));
+
+        $("adminBuzon").addEventListener("click", (e) => {
+
+            const b = e.target.closest("[data-sug-guardar]");
+
+            if (b) guardarAdmin(b);
+
+        });
+
+    }
+
+    return { iniciar, avisar, cargarAdmin };
+
+})();
+
+// =========================
 // REGISTRAR CON AUDIO O FOTO
 // =========================
 
@@ -5238,6 +5529,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     medios.iniciar();
 
+    buzon.iniciar();
+
     // Ejemplos tocables: llenan el cuadro de registro y llevan al usuario hasta él
     document.addEventListener("click", (e) => {
 
@@ -5824,11 +6117,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const presupuesto = Number($("tarjPresupuesto").value);
 
-        const dia = $("tarjDia").value === "" ? 0 : Number($("tarjDia").value);
+        // Del calendario sale la fecha exacta y el día que se repite cada mes
+        const proximo = $("tarjFecha").value;
 
-        if (!nombre || !(presupuesto >= 0) || !Number.isInteger(dia) || dia < 0 || dia > 31) {
+        const dia = proximo ? Number(proximo.slice(8, 10)) : 0;
 
-            mostrarToast("💳 Revisa el nombre, el límite y el día de pago (1 al 31)");
+        if (!nombre || !(presupuesto >= 0) || (proximo && !(dia >= 1 && dia <= 31))) {
+
+            mostrarToast("💳 Revisa el nombre, el límite y la fecha de pago");
 
             return;
 
@@ -5844,7 +6140,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         try {
 
-            await guardarTarjeta(nombre, presupuesto, dia);
+            await guardarTarjeta(nombre, presupuesto, dia, proximo);
 
             $("tarjForm").reset(); cerrarForm("tarjForm");
 
@@ -5928,7 +6224,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("tarjPresupuesto").value = Number(item.dataset.presupuesto) || "";
 
-            $("tarjDia").value = item.dataset.dia || "";
+            $("tarjFecha").value = item.dataset.fecha || "";
 
             abrirForm("tarjForm");
 
