@@ -26,7 +26,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=54">
+    <link rel="stylesheet" href="style.css?v=55">
 
 </head>
 
@@ -44,20 +44,88 @@
 
         <h2>Finanzas IA</h2>
 
-        <p>Ingresa tu código para ver tus datos.</p>
+        <p>Entra con tu usuario y tu contraseña.</p>
+
+        <input
+            id="pinUsuario"
+            name="username"
+            type="text"
+            autocomplete="username"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            maxlength="30"
+            placeholder="Usuario"
+            aria-label="Usuario"
+            required>
 
         <input
             id="pinInput"
-            name="pin"
+            name="password"
             type="password"
             autocomplete="current-password"
-            placeholder="Código"
-            aria-label="Código"
+            maxlength="60"
+            placeholder="Contraseña"
+            aria-label="Contraseña"
             required>
 
         <div id="pinError" class="pin-error" role="alert"></div>
 
         <button id="pinBoton" type="submit">Entrar</button>
+
+        <p class="pin-ayuda">¿Olvidaste tu contraseña? Escríbele a Diego y te da una nueva.</p>
+
+    </form>
+
+</div>
+
+<!-- ===========================
+        CAMBIAR CONTRASEÑA
+=========================== -->
+
+<div id="claveOverlay" class="pin-overlay" hidden>
+
+    <form id="claveForm" class="card pin-box" autocomplete="off">
+
+        <div class="logo-icon">🔑</div>
+
+        <h2 id="claveTitulo">Crea tu contraseña</h2>
+
+        <p id="claveTexto">Diego te dio una contraseña temporal. Elige una nueva que solo tú sepas.</p>
+
+        <input type="text" name="username" autocomplete="username" id="claveUsuario" hidden>
+
+        <input
+            id="claveActual"
+            type="password"
+            autocomplete="current-password"
+            maxlength="60"
+            placeholder="Contraseña actual"
+            aria-label="Contraseña actual">
+
+        <input
+            id="claveNueva"
+            type="password"
+            autocomplete="new-password"
+            maxlength="60"
+            placeholder="Contraseña nueva (mínimo 6)"
+            aria-label="Contraseña nueva"
+            required>
+
+        <input
+            id="claveRepetir"
+            type="password"
+            autocomplete="new-password"
+            maxlength="60"
+            placeholder="Repite la contraseña nueva"
+            aria-label="Repite la contraseña nueva"
+            required>
+
+        <div id="claveError" class="pin-error" role="alert"></div>
+
+        <button id="claveBoton" type="submit">Guardar contraseña</button>
+
+        <button id="claveCancelar" class="pin-secundario" type="button">Cancelar</button>
 
     </form>
 
@@ -890,6 +958,20 @@
 
             </div>
 
+            <div id="cuentaBloque" class="config-bloque" hidden>
+
+                <div>
+
+                    <h3>👤 Mi cuenta</h3>
+
+                    <p>Entras como <strong id="cuentaUsuario">—</strong>. Tu contraseña es solo tuya: nadie más la puede ver.</p>
+
+                </div>
+
+                <button id="cuentaClave" class="mov-btn" type="button">🔑 Cambiar contraseña</button>
+
+            </div>
+
             <div class="config-bloque">
 
                 <div>
@@ -938,9 +1020,13 @@
                         <input id="adminNombre" type="text" maxlength="40" placeholder="Ej: María" required>
                     </label>
 
-                    <label>Código
+                    <label>Usuario
+                        <input id="adminUsuario" type="text" maxlength="30" placeholder="Ej: maria.lopez" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+                    </label>
+
+                    <label>Contraseña temporal
                         <span class="campo-con-boton">
-                            <input id="adminCodigo" type="text" maxlength="60" placeholder="Escríbelo tú" required>
+                            <input id="adminClave" type="text" maxlength="60" minlength="6" placeholder="Mínimo 6" required>
                             <button id="adminSugerir" class="mov-btn" type="button">Sugerir</button>
                         </span>
                     </label>
@@ -991,7 +1077,7 @@
 
 <script src="demo.js?v=54"></script>
 
-<script src="script.js?v=54"></script>
+<script src="script.js?v=55"></script>
 
 </body>
 
