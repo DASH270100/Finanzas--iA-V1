@@ -461,7 +461,12 @@ const TEMAS = {
     atardecer: "#14103A",
     vidrio: "#0A0A14",
     // Especiales: su CSS lo entrega el Apps Script solo a quien los tiene
-    neon: "#04050D"
+    neon: "#04050D",
+    orbita: "#04050D",
+    blackcard: "#0A0A0A",
+    matcha: "#F3F0E6",
+    cherry: "#FFE9EE",
+    beige: "#F5F1EA"
 };
 
 // Los que tiene todo el mundo (su CSS está en la web)
@@ -578,7 +583,7 @@ function renderTemasEspeciales(catalogo) {
 
     caja.innerHTML = lista.map((t) => {
 
-        const muestra = `<span class="tema-muestra ${["neon"].includes(t.id) ? "m-" + t.id : "m-especial"}"></span>`;
+        const muestra = `<span class="tema-muestra ${TEMAS[t.id] ? "m-" + t.id : "m-especial"}"></span>`;
 
         if (t.tiene) {
 
