@@ -224,6 +224,11 @@ function borrarPin() {
     try {
         localStorage.removeItem(PIN_KEY);
         localStorage.removeItem(CACHE_KEY); // al bloquear no queda ningún dato guardado
+
+        // Los estilos especiales son de la cuenta, no del dispositivo
+        Object.keys(TEMAS).filter(esEspecial).forEach((t) => localStorage.removeItem(cssKey(t)));
+
+        if (esEspecial(localStorage.getItem(TEMA_KEY))) localStorage.setItem(TEMA_KEY, "noche");
     } catch (e) { /* sin almacenamiento */ }
 }
 
@@ -407,6 +412,8 @@ function aplicarDatos(data) {
 
     estado.usuario = data.usuario || null;
 
+    revisarTemas(data.catalogo);
+
     // Entró con una contraseña temporal: tiene que crear la suya antes de seguir
     if (estado.usuario && estado.usuario.cambiarClave && !modoDemo && $("claveOverlay") && $("claveOverlay").hidden) abrirCambioClave(true);
 
@@ -451,8 +458,139 @@ const TEMA_KEY = "finanzas_tema";
 const TEMAS = {
     noche: "#09111F",
     iridiscente: "#E9ECF3",
-    atardecer: "#14103A"
+    atardecer: "#14103A",
+    vidrio: "#0A0A14",
+    // Especiales: su CSS lo entrega el Apps Script solo a quien los tiene
+    neon: "#04050D"
 };
+
+// Los que tiene todo el mundo (su CSS está en la web)
+const TEMAS_BASE = ["noche", "iridiscente", "atardecer", "vidrio"];
+
+const WHATSAPP_DIEGO = "51987887558";
+
+const cssKey = (t) => "finanzas_css_" + t;
+
+const esEspecial = (t) => !!TEMAS[t] && !TEMAS_BASE.includes(t);
+
+function puedeUsarTema(t) {
+
+    if (TEMAS_BASE.includes(t)) return true;
+
+    // Aún no se sabe quién es: vale si este dispositivo ya lo tenía descargado
+    if (!estado.usuario) {
+        try { return !!localStorage.getItem(cssKey(t)); } catch (e) { return false; }
+    }
+
+    return (estado.usuario.templates || []).includes(t);
+
+}
+
+function ponerCssEspecial(css) {
+
+    let st = document.getElementById("estiloEspecial");
+
+    if (!css) { if (st) st.remove(); return; }
+
+    if (!st) {
+        st = document.createElement("style");
+        st.id = "estiloEspecial";
+        document.head.appendChild(st);
+    }
+
+    if (st.textContent !== css) st.textContent = css;
+
+}
+
+// Descarga (o refresca) el CSS de un estilo especial desde el Apps Script
+const estilosRefrescados = new Set();
+
+async function descargarEstilo(tema) {
+
+    if (modoDemo || !leerPin() || estilosRefrescados.has(tema)) return;
+
+    estilosRefrescados.add(tema);
+
+    try {
+
+        const data = await api("estilo", { tema });
+
+        try { localStorage.setItem(cssKey(tema), data.css); } catch (e) { /* sin almacenamiento */ }
+
+        if (temaGuardado() === tema) ponerCssEspecial(data.css);
+
+    } catch (e) {
+
+        estilosRefrescados.delete(tema);
+
+        if (e && e.message === "BLOQUEADO") {
+
+            try { localStorage.removeItem(cssKey(tema)); } catch (e2) { /* sin almacenamiento */ }
+
+            if (temaGuardado() === tema) aplicarTema("noche", true);
+
+        }
+
+    }
+
+}
+
+// Con los datos de la persona ya cargados: revisa su estilo y arma la lista de especiales
+function revisarTemas(catalogo) {
+
+    if (modoDemo) { $("temasEspecialesBloque").hidden = true; return; }
+
+    const actual = temaGuardado();
+
+    if (esEspecial(actual)) {
+
+        if (puedeUsarTema(actual)) descargarEstilo(actual);
+
+        else {
+            try { localStorage.removeItem(cssKey(actual)); } catch (e) { /* sin almacenamiento */ }
+            aplicarTema("noche", true);
+        }
+
+    }
+
+    renderTemasEspeciales(catalogo || []);
+
+}
+
+function renderTemasEspeciales(catalogo) {
+
+    const caja = $("temasEspeciales");
+
+    const lista = catalogo.filter((t) => TEMAS[t.id] || !t.tiene);
+
+    $("temasEspecialesBloque").hidden = lista.length === 0;
+
+    const usuario = (estado.usuario && estado.usuario.usuario) || "";
+
+    caja.innerHTML = lista.map((t) => {
+
+        const muestra = `<span class="tema-muestra ${["neon"].includes(t.id) ? "m-" + t.id : "m-especial"}"></span>`;
+
+        if (t.tiene) {
+
+            return `<button type="button" class="tema-opcion" role="radio" aria-checked="${temaGuardado() === t.id}" data-tema="${esc(t.id)}">
+                ${muestra}
+                <span>${esc(t.nombre)}<small>${esc(t.descripcion || "Tuyo ✨")}</small></span>
+            </button>`;
+
+        }
+
+        const mensaje = `Hola Diego, quiero desbloquear el estilo ${t.nombre} en Finanzas IA.${usuario ? " Mi usuario es " + usuario + "." : ""}`;
+
+        return `<a class="tema-candado" href="https://wa.me/${WHATSAPP_DIEGO}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">
+            ${muestra}
+            <span class="candado-badge">🔒 ${esc(t.precio || "De pago")}</span>
+            <span>${esc(t.nombre)}<small>Desbloquéalo escribiéndole a Diego</small></span>
+        </a>`;
+
+    }).join("");
+
+}
 
 function temaGuardado() {
     try {
@@ -464,6 +602,31 @@ function temaGuardado() {
 function aplicarTema(tema, guardar) {
 
     if (!TEMAS[tema]) tema = "noche";
+
+    // Un estilo especial solo se usa si la persona lo tiene
+    if (esEspecial(tema) && !puedeUsarTema(tema)) {
+
+        if (guardar) mostrarToast("🔒 Ese estilo no está desbloqueado en tu cuenta");
+
+        tema = "noche";
+
+    }
+
+    if (esEspecial(tema)) {
+
+        let css = "";
+
+        try { css = localStorage.getItem(cssKey(tema)) || ""; } catch (e) { /* sin almacenamiento */ }
+
+        ponerCssEspecial(css);
+
+        if (!css || guardar) descargarEstilo(tema);
+
+    } else {
+
+        ponerCssEspecial("");
+
+    }
 
     if (tema === "noche") document.documentElement.removeAttribute("data-tema");
     else document.documentElement.setAttribute("data-tema", tema);
@@ -4574,7 +4737,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("click", (e) => {
 
-        const op = e.target.closest(".tema-opcion");
+        const op = e.target.closest(".tema-opcion[data-tema]");
 
         if (op) aplicarTema(op.dataset.tema, true);
 
