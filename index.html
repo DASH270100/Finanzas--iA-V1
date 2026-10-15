@@ -41,7 +41,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=61">
+    <link rel="stylesheet" href="style.css?v=63">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -98,6 +98,30 @@
 <!-- ===========================
         CAMBIAR CONTRASEÑA
 =========================== -->
+
+<div id="resumenOverlay" class="pin-overlay" hidden>
+
+    <div class="card pin-box buzon-box resumen-box" role="dialog" aria-modal="true" aria-labelledby="resumenTitulo">
+
+        <button id="resumenCerrar" class="buzon-x" type="button" aria-label="Cerrar">✕</button>
+
+        <h2 id="resumenTitulo">📄 Descargar resumen</h2>
+
+        <p class="buzon-intro">Un PDF con cuánto entró, cuánto salió, en qué se fue tu plata y cómo están tus tarjetas, deudas y metas.</p>
+
+        <label class="resumen-campo">¿De qué periodo?
+            <select id="resumenPeriodo"></select>
+        </label>
+
+        <div id="resumenError" class="pin-error" role="alert"></div>
+
+        <button id="resumenPDF" type="submit">📄 Descargar PDF</button>
+
+        <button id="resumenCSV" class="mov-btn resumen-csv" type="button">📊 Descargar movimientos para Excel</button>
+
+    </div>
+
+</div>
 
 <div id="buzonOverlay" class="pin-overlay buzon-overlay" hidden>
 
@@ -603,7 +627,13 @@
 
                 </div>
 
-                <select id="filtroMesStats" class="filtro-mes" aria-label="Periodo de las estadísticas"></select>
+                <div class="stats-acciones">
+
+                    <select id="filtroMesStats" class="filtro-mes" aria-label="Periodo de las estadísticas"></select>
+
+                    <button id="btnResumen" class="mov-btn btn-resumen" type="button">📄 Descargar resumen</button>
+
+                </div>
 
             </div>
 
@@ -1184,6 +1214,7 @@
 <script src="demo.js?v=54"></script>
 
 <script src="script.js?v=61"></script>
+<script src="resumen.js?v=1"></script>
 <script src="fluidez.js?v=1"></script>
 
 </body>

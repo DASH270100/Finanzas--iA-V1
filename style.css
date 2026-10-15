@@ -4826,3 +4826,31 @@ html #buzonForm .buzon-tipos.buzon-tipos > button.buzon-tipo[aria-checked="true"
     color:var(--text);
     box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent);
 }
+
+/*==================================================
+        DESCARGAR RESUMEN (PDF / Excel)
+====================================================*/
+.stats-acciones{ display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; }
+.stats-acciones .filtro-mes{ margin:0; }
+.card button.btn-resumen{ width:auto; margin:0; white-space:nowrap; }
+.resumen-campo{ display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--text-soft); }
+.resumen-campo select{ margin:0; min-height:46px; }
+.resumen-box #resumenPDF{ margin-top:0; }
+.resumen-box button.resumen-csv{ width:100%; margin:0; }
+@media (max-width:520px){
+    .stats-acciones{ width:100%; justify-content:space-between; }
+}
+.resumen-campo select{
+    width:100%;
+    padding:0 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text);
+    font:inherit;
+    font-size:15px;
+    font-weight:600;
+}
+
+/* Black card: botones dorados con texto oscuro para que se lean */
+html[data-tema="blackcard"] button[type="submit"]{ color:#0A0A0A; }
