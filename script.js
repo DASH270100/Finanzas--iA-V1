@@ -11,6 +11,9 @@ const API_URL =
 
 const PIN_KEY = "finanzasia_pin";
 
+// Último usuario que entró en este dispositivo (solo el nombre de usuario, nunca la contraseña)
+const USUARIO_KEY = "finanzasia_usuario";
+
 const CACHE_KEY = "finanzasia_cache";
 
 const MAX_CARACTERES = 500;
@@ -245,7 +248,13 @@ function pedirPin(mensaje = "") {
 
     $("pinInput").value = "";
 
-    setTimeout(() => $("pinInput").focus(), 50);
+    let ultimo = "";
+
+    try { ultimo = localStorage.getItem(USUARIO_KEY) || ""; } catch (e) { /* sin almacenamiento */ }
+
+    if (ultimo && !$("pinUsuario").value) $("pinUsuario").value = ultimo;
+
+    setTimeout(() => ($("pinUsuario").value ? $("pinInput") : $("pinUsuario")).focus(), 50);
 
 }
 
@@ -253,6 +262,9 @@ class ErrorPin extends Error {}
 
 // El administrador pausó el acceso de esta persona
 class ErrorPausa extends ErrorPin {}
+
+// La persona entró con una contraseña temporal y tiene que crear la suya
+class ErrorCambiarClave extends Error {}
 
 const MENSAJE_PAUSA = "Tu acceso está pausado. Escríbele a Diego para reactivarlo.";
 
@@ -291,6 +303,8 @@ async function api(accion, extra = {}, pin = leerPin()) {
         if (data.error === "ACCESO_PAUSADO") throw new ErrorPausa(data.error);
 
         if (data.error === "PIN incorrecto") throw new ErrorPin(data.error);
+
+        if (data.error === "CAMBIAR_CLAVE") throw new ErrorCambiarClave(data.error);
 
         throw new Error(data.error || "Error desconocido");
 
@@ -392,6 +406,9 @@ function normalizarDatos(data) {
 function aplicarDatos(data) {
 
     estado.usuario = data.usuario || null;
+
+    // Entró con una contraseña temporal: tiene que crear la suya antes de seguir
+    if (estado.usuario && estado.usuario.cambiarClave && !modoDemo && $("claveOverlay") && $("claveOverlay").hidden) abrirCambioClave(true);
 
     const n = normalizarDatos(data);
 
@@ -503,6 +520,96 @@ function renderConfig() {
 
     if (visible) cargarPersonas();
 
+    // "Mi cuenta": solo para personas con usuario (el admin cambia su clave en el Apps Script)
+    const u = estado.usuario;
+
+    const conCuenta = !modoDemo && !!u && u.rol !== "admin" && !!u.usuario;
+
+    $("cuentaBloque").hidden = !conCuenta;
+
+    if (conCuenta) $("cuentaUsuario").textContent = "@" + u.usuario;
+
+}
+
+// =========================
+// CAMBIAR CONTRASEÑA
+// =========================
+
+// forzado = entró con una contraseña temporal y no puede seguir sin cambiarla
+function abrirCambioClave(forzado) {
+
+    estado.claveForzada = !!forzado;
+
+    $("claveTitulo").textContent = forzado ? "Crea tu contraseña" : "Cambiar contraseña";
+
+    $("claveTexto").textContent = forzado
+        ? "Diego te dio una contraseña temporal. Elige una nueva que solo tú sepas."
+        : "Escribe tu contraseña actual y la nueva.";
+
+    $("claveActual").hidden = forzado;
+
+    $("claveActual").required = !forzado;
+
+    $("claveCancelar").hidden = forzado;
+
+    $("claveUsuario").value = (estado.usuario && estado.usuario.usuario) || "";
+
+    ["claveActual", "claveNueva", "claveRepetir"].forEach((id) => { $(id).value = ""; });
+
+    $("claveError").textContent = "";
+
+    $("claveOverlay").hidden = false;
+
+    setTimeout(() => (forzado ? $("claveNueva") : $("claveActual")).focus(), 50);
+
+}
+
+async function guardarCambioClave(e) {
+
+    e.preventDefault();
+
+    const actual = $("claveActual").value;
+
+    const nueva = $("claveNueva").value;
+
+    if (nueva.trim().length < 6) { $("claveError").textContent = "La contraseña nueva debe tener al menos 6 caracteres."; return; }
+
+    if (nueva !== $("claveRepetir").value) { $("claveError").textContent = "Las dos contraseñas nuevas no coinciden."; return; }
+
+    const avisos = avisosCodigo(nueva, estado.usuario ? estado.usuario.nombre : "");
+
+    const boton = $("claveBoton");
+
+    boton.disabled = true;
+
+    boton.textContent = "Guardando…";
+
+    try {
+
+        await api("cambiarClave", { actual, nueva });
+
+        if (estado.usuario) estado.usuario.cambiarClave = false;
+
+        $("claveOverlay").hidden = true;
+
+        mostrarToast(avisos.length ? "✅ Contraseña guardada (es algo débil: " + avisos[0] + ")" : "✅ Contraseña guardada");
+
+        if (estado.claveForzada) actualizarTodo();
+
+    } catch (err) {
+
+        if (err instanceof ErrorPin) { $("claveOverlay").hidden = true; manejarError(err); return; }
+
+        $("claveError").textContent = err.message || "No se pudo guardar. Inténtalo otra vez.";
+
+    } finally {
+
+        boton.disabled = false;
+
+        boton.textContent = "Guardar contraseña";
+
+    }
+
 }
 
 const PALABRAS_CODIGO = [
@@ -586,11 +693,15 @@ function urlApp() {
 
 }
 
-function mensajeAcceso(nombre, codigo) {
+function mensajeAcceso(nombre, usuario, clave) {
 
-    return `Hola ${nombre} 👋\nAquí está tu acceso a Finanzas IA:\n${urlApp()}\nTu código: ${codigo}\n(Guárdalo, es solo tuyo)`;
+    return clave
+        ? `Hola ${nombre} 👋\nAquí está tu acceso a Finanzas IA:\n${urlApp()}\nUsuario: ${usuario}\nContraseña temporal: ${clave}\nAl entrar te pedirá crear tu propia contraseña 🔑`
+        : `Hola ${nombre} 👋\nAquí está tu acceso a Finanzas IA:\n${urlApp()}\nTu usuario: ${usuario}\nTu contraseña es la que tú creaste.`;
 
 }
+
+const NOMBRES_TEMPLATES = { noche: "Noche", iridiscente: "Iridiscente", atardecer: "Atardecer", vidrio: "Vidrio", neon: "Neón" };
 
 async function copiarTexto(texto) {
 
@@ -636,18 +747,42 @@ function htmlPersona(p) {
 
     const ed = estado.adminEdicion && estado.adminEdicion.hoja === p.hoja ? estado.adminEdicion : null;
 
+    const base = estado.templatesBase || [];
+
     let editor = "";
 
-    if (ed && ed.campo === "codigo") {
+    if (ed && ed.campo === "usuario") {
 
         editor = `
             <div class="persona-edit">
-                <input type="text" data-campo="codigo" maxlength="60" value="${esc(p.codigo)}" aria-label="Código nuevo">
+                <input type="text" data-campo="usuario" maxlength="30" value="${esc(p.usuario)}" placeholder="Ej: maria.lopez" autocapitalize="none" aria-label="Usuario">
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-usuario">Guardar</button>
+                <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
+            </div>`;
+
+    } else if (ed && ed.campo === "clave") {
+
+        editor = `
+            <div class="persona-edit">
+                <input type="text" data-campo="clave" maxlength="60" placeholder="Contraseña temporal (mín. 6)" aria-label="Contraseña temporal">
                 <button type="button" class="mov-btn" data-persona-accion="sugerir">Sugerir</button>
-                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-codigo">Guardar</button>
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-clave">Guardar</button>
                 <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
             </div>
-            <p class="admin-aviso" data-aviso-persona></p>`;
+            <p class="admin-aviso" data-aviso-persona>Al guardarla se cierra su sesión y al entrar tendrá que crear su propia contraseña.</p>`;
+
+    } else if (ed && ed.campo === "templates") {
+
+        const extra = (estado.templatesTodos || []).filter((t) => !base.includes(t));
+
+        editor = `
+            <div class="persona-edit">
+                <div class="tpl-chips">
+                    ${extra.map((t) => `<label class="tpl-chip"><input type="checkbox" data-tpl="${esc(t)}" ${p.templates.includes(t) ? "checked" : ""}> ${esc(NOMBRES_TEMPLATES[t] || t)}</label>`).join("") || "<span>No hay estilos de pago todavía.</span>"}
+                </div>
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-templates">Guardar</button>
+                <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
+            </div>`;
 
     } else if (ed && ed.campo === "fecha") {
 
@@ -664,6 +799,12 @@ function htmlPersona(p) {
 
     }
 
+    const acceso = p.usuario
+        ? `<span>Usuario: <span class="persona-usuario">@${esc(p.usuario)}</span>${p.cambiarClave ? ' · <span class="persona-aviso">aún no crea su contraseña</span>' : (p.tieneClave ? "" : ' · <span class="persona-aviso">entra con su código hasta su primer ingreso</span>')}</span>`
+        : `<span class="persona-aviso">Sin usuario · entra con el código <code>${esc(p.codigo)}</code></span>`;
+
+    const premium = p.templates.filter((t) => !base.includes(t));
+
     return `
         <div class="persona ${bloqueada ? "persona-bloqueada" : ""}" data-hoja="${esc(p.hoja)}">
 
@@ -673,16 +814,19 @@ function htmlPersona(p) {
             </div>
 
             <div class="persona-datos">
-                <span>Código: <code>${esc(p.codigo)}</code></span>
+                ${acceso}
                 <span class="${v.clase}">${esc(v.texto)}</span>
+                <span>Estilos de pago: ${premium.length ? `<span class="tpl-lista">${premium.map((t) => `<span class="tpl-tag premium">${esc(NOMBRES_TEMPLATES[t] || t)}</span>`).join("")}</span>` : "ninguno"}</span>
             </div>
 
             ${editor}
 
             <div class="persona-acciones">
-                <button type="button" class="mov-btn" data-persona-accion="copiar">📋 Copiar mensaje</button>
+                ${p.usuario ? '<button type="button" class="mov-btn" data-persona-accion="copiar">📋 Copiar mensaje</button>' : ""}
                 <button type="button" class="mov-btn ${bloqueada ? "" : "mov-btn-borrar"}" data-persona-accion="estado">${bloqueada ? "Activar" : "Bloquear"}</button>
-                <button type="button" class="mov-btn" data-persona-accion="codigo">Cambiar código</button>
+                <button type="button" class="mov-btn" data-persona-accion="usuario">${p.usuario ? "Cambiar usuario" : "Ponerle usuario"}</button>
+                ${p.usuario ? '<button type="button" class="mov-btn" data-persona-accion="clave">Nueva contraseña</button>' : ""}
+                <button type="button" class="mov-btn" data-persona-accion="templates">Estilos</button>
                 <button type="button" class="mov-btn" data-persona-accion="fecha">Pagado hasta</button>
                 <a class="mov-btn" href="${esc(p.enlace)}" target="_blank" rel="noopener">Abrir hoja</a>
             </div>
@@ -713,7 +857,11 @@ async function cargarPersonas() {
 
         const data = await api("admin_listar");
 
-        estado.personas = data.personas || [];
+        estado.personas = (data.personas || []).map((p) => ({ ...p, templates: p.templates || [] }));
+
+        estado.templatesTodos = data.templates || [];
+
+        estado.templatesBase = data.base || [];
 
         renderPersonas();
 
@@ -731,10 +879,10 @@ async function cargarPersonas() {
 
 function actualizarAvisoCodigo() {
 
-    const avisos = avisosCodigo($("adminCodigo").value, $("adminNombre").value);
+    const avisos = avisosCodigo($("adminClave").value, $("adminNombre").value);
 
     $("adminAviso").textContent = avisos.length
-        ? "⚠️ Código débil: " + avisos.join(", ") + ". Se puede usar igual, pero es más fácil de adivinar."
+        ? "⚠️ Contraseña débil: " + avisos.join(", ") + ". Igual es temporal: al entrar creará la suya."
         : "";
 
 }
@@ -745,9 +893,11 @@ async function crearPersona(e) {
 
     const nombre = $("adminNombre").value.trim();
 
-    const codigo = $("adminCodigo").value.trim();
+    const usuario = $("adminUsuario").value.trim().toLowerCase();
 
-    if (!nombre || !codigo) return;
+    const clave = $("adminClave").value.trim();
+
+    if (!nombre || !usuario || !clave) return;
 
     const boton = $("adminCrear");
 
@@ -757,11 +907,11 @@ async function crearPersona(e) {
 
     try {
 
-        await api("admin_crear", { nombre, codigo, pagado: $("adminPagado").value });
+        await api("admin_crear", { nombre, usuario, clave, pagado: $("adminPagado").value });
 
         $("adminListoTitulo").textContent = "✅ Acceso creado para " + nombre;
 
-        $("adminListoTexto").value = mensajeAcceso(nombre, codigo);
+        $("adminListoTexto").value = mensajeAcceso(nombre, usuario, clave);
 
         $("adminListo").hidden = false;
 
@@ -805,7 +955,7 @@ async function accionPersona(boton) {
 
         if (accion === "copiar") {
 
-            const ok = await copiarTexto(mensajeAcceso(persona.nombre, persona.codigo));
+            const ok = await copiarTexto(mensajeAcceso(persona.nombre, persona.usuario, ""));
 
             mostrarToast(ok ? "📋 Mensaje copiado" : "No se pudo copiar");
 
@@ -840,7 +990,7 @@ async function accionPersona(boton) {
 
         }
 
-        if (accion === "codigo" || accion === "fecha") {
+        if (accion === "usuario" || accion === "clave" || accion === "templates" || accion === "fecha") {
 
             estado.adminEdicion = { hoja, campo: accion };
 
@@ -862,7 +1012,7 @@ async function accionPersona(boton) {
 
         if (accion === "sugerir") {
 
-            const campo = tarjeta.querySelector("[data-campo=codigo]");
+            const campo = tarjeta.querySelector("[data-campo=clave]");
 
             campo.value = sugerirCodigo();
 
@@ -872,15 +1022,55 @@ async function accionPersona(boton) {
 
         }
 
-        if (accion === "guardar-codigo") {
+        if (accion === "guardar-usuario") {
 
-            const codigo = tarjeta.querySelector("[data-campo=codigo]").value.trim();
+            const usuario = tarjeta.querySelector("[data-campo=usuario]").value.trim().toLowerCase();
 
-            await api("admin_codigo", { hoja, codigo });
+            await api("admin_usuario", { hoja, usuario });
 
             estado.adminEdicion = null;
 
-            mostrarToast("✅ Código cambiado");
+            mostrarToast(persona.tieneClave || persona.usuario
+                ? "✅ Usuario cambiado"
+                : "✅ Listo: " + persona.nombre + " entra con @" + usuario + " y su código de siempre");
+
+            await cargarPersonas();
+
+            return;
+
+        }
+
+        if (accion === "guardar-clave") {
+
+            const clave = tarjeta.querySelector("[data-campo=clave]").value.trim();
+
+            await api("admin_clave", { hoja, clave });
+
+            estado.adminEdicion = null;
+
+            $("adminListoTitulo").textContent = "🔑 Contraseña temporal para " + persona.nombre;
+
+            $("adminListoTexto").value = mensajeAcceso(persona.nombre, persona.usuario, clave);
+
+            $("adminListo").hidden = false;
+
+            mostrarToast("✅ Contraseña temporal guardada");
+
+            await cargarPersonas();
+
+            return;
+
+        }
+
+        if (accion === "guardar-templates") {
+
+            const templates = [...tarjeta.querySelectorAll("[data-tpl]")].filter((c) => c.checked).map((c) => c.dataset.tpl);
+
+            await api("admin_templates", { hoja, templates });
+
+            estado.adminEdicion = null;
+
+            mostrarToast("✅ Estilos de " + persona.nombre + " actualizados");
 
             await cargarPersonas();
 
@@ -2755,7 +2945,15 @@ function manejarError(e) {
 
         borrarPin();
 
-        pedirPin("Código incorrecto. Inténtalo de nuevo.");
+        pedirPin("Tu sesión terminó. Vuelve a entrar.");
+
+        return;
+
+    }
+
+    if (e instanceof ErrorCambiarClave) {
+
+        abrirCambioClave(true);
 
         return;
 
@@ -3664,6 +3862,8 @@ async function registrarMovimiento() {
 
         mostrarRegistrados(nuevos);
 
+        if (nuevos && nuevos.length) agregarDeshacerVarios(nuevos);
+
         mostrarToast(nuevos === null ? "⏳ Enviado, aún procesando" : "✅ Movimiento registrado");
 
         if (nuevos) avisarCambioTarjetas(nivelesAntes, nuevos.map((m) => m.medio));
@@ -4306,6 +4506,66 @@ function agregarDeshacer(temporal, esperarGuardado) {
 
 }
 
+// Deshacer lo que registró la IA (puede ser más de un movimiento)
+function agregarDeshacerVarios(movs) {
+
+    const caja = $("respuesta");
+
+    const b = document.createElement("button");
+
+    b.type = "button";
+
+    b.className = "btn-deshacer";
+
+    b.textContent = movs.length > 1 ? `↩ Deshacer los ${movs.length}` : "↩ Deshacer";
+
+    b.addEventListener("click", async () => {
+
+        b.disabled = true;
+
+        b.textContent = "⏳ Deshaciendo…";
+
+        try {
+
+            // De abajo hacia arriba para que no se muevan las filas
+            const orden = [...movs].sort((a, c) => c.fila - a.fila);
+
+            for (const m of orden) {
+
+                const real = estado.movimientos.find((x) => x.fila === m.fila && x.monto === m.monto && x.descripcion === m.descripcion)
+                    || estado.movimientos.filter((x) => x.tipo === m.tipo && x.monto === m.monto && x.descripcion === m.descripcion && x.categoria === m.categoria)
+                        .sort((a, c) => c.fila - a.fila)[0];
+
+                if (real) await eliminarMovimiento(real.fila);
+
+            }
+
+            caja.textContent = movs.length > 1 ? `↩ Deshecho: se quitaron los ${movs.length} movimientos.` : "↩ Deshecho: el movimiento se quitó.";
+
+            mostrarToast("↩ Deshecho");
+
+        } catch (e) {
+
+            b.disabled = false;
+
+            b.textContent = "↩ Deshacer";
+
+            errorDeAccion(e);
+
+        }
+
+    });
+
+    const fila = document.createElement("div");
+
+    fila.className = "deshacer-fila";
+
+    fila.appendChild(b);
+
+    caja.appendChild(fila);
+
+}
+
 window.addEventListener("DOMContentLoaded", () => {
 
     iniciarPlegables();
@@ -4324,13 +4584,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
     $("adminForm").addEventListener("submit", crearPersona);
 
-    $("adminCodigo").addEventListener("input", actualizarAvisoCodigo);
+    $("adminClave").addEventListener("input", actualizarAvisoCodigo);
+
+    $("claveForm").addEventListener("submit", guardarCambioClave);
+
+    $("claveCancelar").addEventListener("click", () => { $("claveOverlay").hidden = true; });
+
+    $("cuentaClave").addEventListener("click", () => abrirCambioClave(false));
 
     $("adminNombre").addEventListener("input", actualizarAvisoCodigo);
 
     $("adminSugerir").addEventListener("click", () => {
 
-        $("adminCodigo").value = sugerirCodigo();
+        $("adminClave").value = sugerirCodigo();
 
         actualizarAvisoCodigo();
 
@@ -4354,7 +4620,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     $("adminLista").addEventListener("input", (e) => {
 
-        const campo = e.target.closest("[data-campo=codigo]");
+        const campo = e.target.closest("[data-campo=clave]");
 
         if (!campo) return;
 
@@ -4366,7 +4632,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const aviso = tarjeta.querySelector("[data-aviso-persona]");
 
-        if (aviso) aviso.textContent = avisos.length ? "⚠️ Código débil: " + avisos.join(", ") + ". Se puede usar igual." : "";
+        if (aviso) aviso.textContent = avisos.length
+            ? "⚠️ Contraseña débil: " + avisos.join(", ") + ". Igual es temporal."
+            : "Al guardarla se cierra su sesión y al entrar tendrá que crear su propia contraseña.";
 
     });
 
@@ -5335,7 +5603,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    $("bloquear").addEventListener("click", () => {
+    $("bloquear").addEventListener("click", async () => {
+
+        // Cierra la sesión también en el servidor (sin esperar más de 1.5 s)
+        if (!modoDemo && leerPin()) await Promise.race([api("salir").catch(() => {}), dormir(1500)]);
 
         borrarPin();
 
@@ -5349,9 +5620,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
         e.preventDefault();
 
-        const pin = $("pinInput").value.trim();
+        const usuario = $("pinUsuario").value.trim().toLowerCase();
 
-        if (!pin) return;
+        const clave = $("pinInput").value;
+
+        if (!usuario || !clave) return;
 
         const boton = $("pinBoton");
 
@@ -5359,11 +5632,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
         boton.textContent = "Verificando...";
 
+        $("pinError").textContent = "";
+
         try {
 
-            const data = await api("leer", {}, pin);
+            const sesion = await api("login", { usuario, clave }, "");
 
-            guardarPin(pin);
+            guardarPin(sesion.token);
+
+            try { localStorage.setItem(USUARIO_KEY, usuario); } catch (e2) { /* sin almacenamiento */ }
+
+            const data = await api("leer");
 
             aplicarDatos(data);
 
@@ -5371,16 +5650,22 @@ window.addEventListener("DOMContentLoaded", () => {
 
             $("pinOverlay").hidden = true;
 
+            $("pinInput").value = "";
+
             mostrarErrorCarga(false);
 
             renderTodo();
+
+            if (sesion.cambiarClave || (data.usuario && data.usuario.cambiarClave)) abrirCambioClave(true);
 
         } catch (err) {
 
             $("pinError").textContent = err instanceof ErrorPausa
                 ? MENSAJE_PAUSA
                 : err instanceof ErrorPin
-                ? "Código incorrecto."
+                ? "Usuario o contraseña incorrectos."
+                : err && err.message && !/fetch|network|red \(/i.test(err.message)
+                ? err.message
                 : "No se pudo conectar. Revisa tu internet.";
 
         } finally {

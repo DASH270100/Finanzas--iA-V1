@@ -4220,3 +4220,78 @@ html[data-tema="iridiscente"] .cuota-tea,html[data-tema="atardecer"] .cuota-tea{
 .check-interes{display:flex !important;flex-direction:row !important;align-items:center;gap:10px;padding:10px 0;font-weight:600;cursor:pointer}
 .check-interes input{width:20px;height:20px;min-height:0;accent-color:#7C5CFC;flex:0 0 auto}
 #cuotaTeaCampo[hidden]{display:none}
+
+
+/*==================================================
+        ACCESO CON USUARIO Y CONTRASEÑA
+====================================================*/
+
+.pin-box input + input{ margin-top:10px; }
+
+.pin-box .pin-ayuda{
+    margin:16px 0 0;
+    font-size:13px;
+}
+
+.pin-box .pin-secundario{
+    margin-top:10px;
+    background:transparent;
+    color:var(--text-muted);
+    box-shadow:none;
+    border:1px solid var(--border);
+}
+
+.pin-box .pin-secundario:hover{
+    background:var(--surface-hover);
+    color:var(--text);
+    transform:none;
+}
+
+.pin-box input[hidden]{ display:none; }
+
+/* Panel de administración: usuario, estado de la contraseña y estilos */
+.persona-usuario{ font-weight:700; color:var(--text); }
+
+.persona-aviso{ color:var(--yellow); }
+
+.tpl-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    width:100%;
+}
+
+.tpl-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    min-height:36px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    font-size:13px;
+    cursor:pointer;
+}
+
+.tpl-chip input{ width:auto; margin:0; }
+
+.tpl-lista{
+    display:inline-flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.tpl-tag{
+    padding:2px 9px;
+    border-radius:999px;
+    font-size:12px;
+    background:var(--surface-hover);
+}
+
+.tpl-tag.premium{
+    background:var(--primary);
+    color:#fff;
+}
+
+.config-bloque[hidden]{ display:none; }
