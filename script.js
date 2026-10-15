@@ -529,7 +529,16 @@ async function descargarEstilo(tema) {
 
             if (temaGuardado() === tema) aplicarTema("noche", true);
 
+            return;
+
         }
+
+        // Sin copia guardada no hay cómo mostrarlo: se avisa el motivo
+        let guardado = "";
+
+        try { guardado = localStorage.getItem(cssKey(tema)) || ""; } catch (e2) { /* sin almacenamiento */ }
+
+        if (!guardado) mostrarToast("⚠️ No se pudo cargar el estilo: " + ((e && e.message) || "sin conexión"));
 
     }
 
