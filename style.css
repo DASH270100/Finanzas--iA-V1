@@ -4295,3 +4295,73 @@ html[data-tema="iridiscente"] .cuota-tea,html[data-tema="atardecer"] .cuota-tea{
 }
 
 .config-bloque[hidden]{ display:none; }
+
+
+/*==================================================
+        ESTILOS ESPECIALES (de pago o privados)
+        Su CSS lo entrega el Apps Script solo a quien los tiene
+====================================================*/
+
+.cinta-neon{ display:none; }
+
+.temas-especiales{ margin-top:22px; }
+
+.temas-especiales h4{
+    margin:0;
+    font-size:14px;
+    color:var(--text-soft);
+}
+
+.tema-muestra.m-neon{
+    background:
+        radial-gradient(circle at 25% 30%, #2E5BFF 0, transparent 55%),
+        radial-gradient(circle at 85% 70%, #00C8FF 0, transparent 50%),
+        #04050D;
+}
+
+.tema-muestra.m-especial{
+    background:
+        radial-gradient(circle at 30% 30%, rgba(124,92,252,.8) 0, transparent 55%),
+        radial-gradient(circle at 80% 75%, rgba(0,200,255,.6) 0, transparent 50%),
+        #0B0E1A;
+}
+
+a.tema-candado{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:10px 10px 12px;
+    border-radius:18px;
+    border:2px dashed var(--border);
+    background:var(--surface-light);
+    color:var(--text);
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    transition:transform .18s, background-color .2s;
+}
+
+a.tema-candado:hover{ transform:translateY(-2px); background:var(--surface-hover); }
+
+a.tema-candado .tema-muestra{ filter:saturate(.6) brightness(.8); }
+
+a.tema-candado small{
+    display:block;
+    margin-top:2px;
+    color:var(--text-muted);
+    font-size:12px;
+    font-weight:500;
+}
+
+.candado-badge{
+    position:absolute;
+    top:16px;
+    right:16px;
+    padding:4px 10px;
+    border-radius:999px;
+    background:rgba(0,0,0,.65);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+}

@@ -15,18 +15,30 @@
     <!-- Tipografía -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Outfit:wght@200;300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Estilo elegido (se aplica antes de pintar para que no parpadee) -->
     <script>
         try {
             var t = localStorage.getItem("finanzas_tema");
-            if (t === "iridiscente" || t === "atardecer") document.documentElement.setAttribute("data-tema", t);
+            if (t === "iridiscente" || t === "atardecer" || t === "vidrio") document.documentElement.setAttribute("data-tema", t);
+            else if (t && /^[a-z]+$/.test(t) && t !== "noche") {
+                // Estilo especial: se usa la copia guardada en este dispositivo
+                var css = localStorage.getItem("finanzas_css_" + t);
+                if (css) {
+                    document.documentElement.setAttribute("data-tema", t);
+                    var st = document.createElement("style");
+                    st.id = "estiloEspecial";
+                    st.textContent = css;
+                    document.head.appendChild(st);
+                }
+            }
         } catch (e) {}
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=55">
+    <link rel="stylesheet" href="style.css?v=56">
+    <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
 
@@ -954,6 +966,19 @@
                         <span>Atardecer<small>Noche azul y sol naranja</small></span>
                     </button>
 
+                    <button type="button" class="tema-opcion" role="radio" aria-checked="false" data-tema="vidrio">
+                        <span class="tema-muestra m-vidrio"></span>
+                        <span>Vidrio<small>Oscuro, translúcido y fluido</small></span>
+                    </button>
+
+                </div>
+
+                <div id="temasEspecialesBloque" class="temas-especiales" hidden>
+
+                    <h4>✨ Estilos especiales</h4>
+
+                    <div id="temasEspeciales" class="temas"></div>
+
                 </div>
 
             </div>
@@ -1073,11 +1098,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
 
-<script src="graficos.js?v=54"></script>
+<script src="graficos.js?v=55"></script>
 
 <script src="demo.js?v=54"></script>
 
-<script src="script.js?v=55"></script>
+<script src="script.js?v=56"></script>
+<script src="fluidez.js?v=1"></script>
 
 </body>
 
