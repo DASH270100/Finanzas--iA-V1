@@ -4087,9 +4087,88 @@ async function registrarMovimiento() {
 
 }
 
+// =========================
+// PASOS VISIBLES MIENTRAS SE REGISTRA
+// Muestra qué está haciendo la app (leer, IA, guardar, actualizar) en vez de un "Registrando..." fijo
+// =========================
+
+const pasos = (() => {
+
+    const TEXTOS = {
+        leer: "Leyendo tu mensaje",
+        audio: "Escuchando tu audio",
+        voz: "Pasando tu voz a texto",
+        foto: "Preparando la foto",
+        ia: "La IA identifica montos y categorías",
+        fotoIA: "La IA lee tu boleta",
+        guardar: "Guardando en tu hoja de Google",
+        actualizar: "Actualizando tus números"
+    };
+
+    let reloj = null;
+
+    const caja = () => $("respuesta");
+
+    const items = () => [...caja().querySelectorAll(".pasos li")];
+
+    function mostrar(claves) {
+
+        clearTimeout(reloj);
+
+        caja().innerHTML = `<ol class="pasos">${claves.map((k) =>
+            `<li data-k="${k}"><span class="paso-ico" aria-hidden="true"></span><span class="paso-txt">${TEXTOS[k] || k}</span></li>`).join("")}</ol>`;
+
+    }
+
+    const tiene = (k) => !!caja().querySelector(`.pasos li[data-k="${k}"]`);
+
+    // Marca como hechos los anteriores y deja "k" en curso
+    function ir(k) {
+
+        const lista = items();
+
+        const i = lista.findIndex((li) => li.dataset.k === k);
+
+        if (i < 0) return;
+
+        lista.forEach((li, j) => {
+
+            li.classList.toggle("hecho", j < i);
+
+            li.classList.toggle("activo", j === i);
+
+        });
+
+    }
+
+    // Mientras se espera una sola llamada, pasa al siguiente paso después de un rato
+    function despues(k, ms) {
+
+        clearTimeout(reloj);
+
+        reloj = setTimeout(() => ir(k), ms);
+
+    }
+
+    async function fin() {
+
+        clearTimeout(reloj);
+
+        items().forEach((li) => { li.classList.remove("activo"); li.classList.add("hecho"); });
+
+        await dormir(450);
+
+    }
+
+    function cancelar() { clearTimeout(reloj); }
+
+    return { mostrar, tiene, ir, despues, fin, cancelar };
+
+})();
+
 // Registro con la IA: texto, texto dictado o foto de una boleta.
 // «envio» es lo que va al servidor: { mensaje } o { mensaje, imagen }.
-async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
+async function registrarConIA(envio) {
 
     const texto = envio.mensaje || "";
 
@@ -4103,7 +4182,10 @@ async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
 
     textoBoton.textContent = "⏳ Registrando...";
 
-    $("respuesta").textContent = aviso;
+    // Si ya hay pasos en pantalla (audio o foto) se continúa; si no, se empieza desde "Leyendo tu mensaje"
+    const pasoIA = pasos.tiene("fotoIA") ? "fotoIA" : "ia";
+
+    if (!pasos.tiene(pasoIA)) { pasos.mostrar(["leer", "ia", "guardar", "actualizar"]); pasos.ir("leer"); }
 
     try {
 
@@ -4117,13 +4199,22 @@ async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
 
         const nivelesAntes = nivelesTarjetas();
 
+        pasos.ir(pasoIA);
+
+        // La IA entiende el mensaje y luego escribe en la hoja dentro de la misma llamada
+        pasos.despues("guardar", envio.imagen ? 4500 : 2600);
+
         await api("registrar", envio);
+
+        pasos.ir("guardar");
 
         $("mensaje").value = "";
 
-        $("respuesta").textContent = "📊 Guardando en la hoja...";
+        pasos.ir("actualizar");
 
         const nuevos = await esperarNuevos(cantidadAntes);
+
+        await pasos.fin();
 
         estado.mes = null; // vuelve al mes más reciente con gastos
 
@@ -4140,6 +4231,8 @@ async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
         if (nuevos) avisarCambioTarjetas(nivelesAntes, nuevos.map((m) => m.medio));
 
     } catch (e) {
+
+        pasos.cancelar();
 
         if (e instanceof ErrorPin) {
 
@@ -4629,13 +4722,19 @@ const medios = (() => {
 
         ocupado(true);
 
-        $("respuesta").textContent = "🎧 Escuchando tu audio...";
+        pasos.mostrar(["audio", "voz", "ia", "guardar", "actualizar"]);
+
+        pasos.ir("audio");
 
         let texto = "";
 
         try {
 
-            const r = await api("transcribir", { audio: await aBase64(blob), tipo });
+            const audio = await aBase64(blob);
+
+            pasos.ir("voz");
+
+            const r = await api("transcribir", { audio, tipo });
 
             texto = String(r.texto || "").trim();
 
@@ -4737,7 +4836,9 @@ const medios = (() => {
 
         try {
 
-            $("respuesta").textContent = "📷 Preparando la foto...";
+            pasos.mostrar(["foto", "fotoIA", "guardar", "actualizar"]);
+
+            pasos.ir("foto");
 
             imagen = await achicar(archivo);
 
@@ -4754,7 +4855,7 @@ const medios = (() => {
         // Lo escrito en la barra viaja como pista («fue con la BCP», «dividido entre 2»...)
         const pista = $("mensaje").value.trim().slice(0, MAX_CARACTERES);
 
-        await registrarConIA({ mensaje: pista, imagen }, "🧾 Leyendo la foto...");
+        await registrarConIA({ mensaje: pista, imagen });
 
     }
 

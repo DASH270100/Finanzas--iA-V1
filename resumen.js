@@ -148,7 +148,100 @@
             gastosFijos: (estado.fijos || []).slice(0, 15).map((f) => ({ nombre: limpio(f.nombre).slice(0, 30), tipo: f.tipo, monto: r2(f.monto) })),
             tarjetas: d.tarjetas.map((t) => ({ nombre: limpio(t.nombre), deuda: r2(t.deuda), limite: r2(t.presupuesto), usoPorcentaje: t.presupuesto > 0 ? Math.round((t.deuda / t.presupuesto) * 100) : null })),
             teDebenEnTotal: r2(d.teDeben.reduce((s, x) => s + x.monto, 0)),
-            metas: d.metas.map((m) => ({ nombre: limpio(m.nombre).slice(0, 30), objetivo: r2(m.objetivo), ahorrado: r2(m.ahorrado) }))
+            metas: d.metas.map((m) => ({ nombre: limpio(m.nombre).slice(0, 30), objetivo: r2(m.objetivo), ahorrado: r2(m.ahorrado) })),
+            ...patrones(d)
+        };
+
+    }
+
+    // Patrones para que la IA encuentre cosas que no son obvias
+    function patrones(d) {
+
+        const r2 = (n) => Math.round(n * 100) / 100;
+
+        const conFecha = estado.movimientos.filter((m) => m.fecha);
+
+        const enPeriodo = d.periodo === "todo" ? conFecha : conFecha.filter((m) => claveMes(m.fecha) === d.periodo);
+
+        const gastos = enPeriodo.filter(esGastoReal);
+
+        const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+        // Cada categoría: veces, ticket promedio, % en fin de semana y cómo venía los 3 meses anteriores
+        const ref = d.periodo === "todo" ? claveMes(new Date()) : d.periodo;
+
+        const [ry, rm] = ref.split("-").map(Number);
+
+        const previos = [1, 2, 3].map((k) => claveMes(new Date(ry, rm - 1 - k, 1)));
+
+        const detalleCategorias = d.categorias.slice(0, 8).map((c) => {
+
+            const lista = gastos.filter((m) => nombreCategoria(m.categoria) === c.nombre);
+
+            const finde = lista.filter((m) => [0, 5, 6].includes(m.fecha.getDay())).reduce((s, m) => s + m.monto, 0);
+
+            const porMes = previos.map((k) => r2(sumar(conFecha.filter((m) => esGastoReal(m) && claveMes(m.fecha) === k && nombreCategoria(m.categoria) === c.nombre))));
+
+            return {
+                categoria: limpio(c.nombre),
+                total: r2(c.total),
+                veces: lista.length,
+                ticketPromedio: lista.length ? r2(c.total / lista.length) : 0,
+                porcentajeEnFinDeSemana: c.total ? Math.round((finde / c.total) * 100) : 0,
+                mesesAnteriores: d.periodo === "todo" ? undefined : porMes
+            };
+
+        });
+
+        // Dónde se repite el gasto (mismo comercio o descripción)
+        const mapa = new Map();
+
+        gastos.forEach((m) => {
+
+            const k = limpio(m.descripcion || m.categoria).toLowerCase().slice(0, 30);
+
+            if (!k) return;
+
+            const x = mapa.get(k) || { lugar: limpio(m.descripcion || m.categoria).slice(0, 30), veces: 0, total: 0 };
+
+            x.veces++;
+
+            x.total += m.monto;
+
+            mapa.set(k, x);
+
+        });
+
+        const repetidos = [...mapa.values()].filter((x) => x.veces >= 3).sort((a, b) => b.total - a.total).slice(0, 8)
+            .map((x) => ({ ...x, total: r2(x.total), promedio: r2(x.total / x.veces) }));
+
+        // Gastos hormiga: chiquitos pero muchos
+        const hormiga = gastos.filter((m) => m.monto < 15);
+
+        // Por día de la semana
+        const porDia = DIAS.map((n, i) => ({ dia: n, total: r2(gastos.filter((m) => m.fecha.getDay() === i).reduce((s, m) => s + m.monto, 0)) }));
+
+        // Ritmo del mes en curso
+        let ritmo;
+
+        if (d.periodo === claveMes(new Date())) {
+
+            const hoy = new Date();
+
+            const diasMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
+
+            const diario = d.totalG / Math.max(1, hoy.getDate());
+
+            ritmo = { diasTranscurridos: hoy.getDate(), diasQueFaltan: diasMes - hoy.getDate(), gastoDiarioPromedio: r2(diario), proyeccionGastoFinDeMes: r2(diario * diasMes) };
+
+        }
+
+        return {
+            detalleCategorias,
+            seRepiteEn: repetidos,
+            gastosHormiga: { veces: hormiga.length, total: r2(sumar(hormiga)) },
+            gastoPorDiaDeSemana: porDia,
+            ritmoDelMes: ritmo
         };
 
     }
@@ -204,7 +297,7 @@
     };
 
     // jsPDF con Helvetica no tiene emojis: se limpian
-    const limpio = (t) => String(t || "").replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").replace(/\s+/g, " ").trim();
+    const limpio = (t) => String(t || "").replace(/\s*[→⇒➜➔⟶]\s*/g, " a ").replace(/≈/g, "~").replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "").replace(/\s+/g, " ").trim();
 
     // ---------- PDF ----------
 
@@ -447,29 +540,103 @@
 
             ia.recomendaciones.forEach((r, i) => {
 
-                fuente(9.5);
+                const ancho = ANCHO - 22;
 
-                const ls = doc.splitTextToSize(limpio(r.detalle), ANCHO - 22);
+                fuente(9.3);
 
-                const alto = 12 + ls.length * 4.3 + (r.ahorro > 0 ? 6 : 0);
+                const lh = doc.splitTextToSize(limpio(r.hallazgo || r.detalle || ""), ancho);
+
+                fuente(9.3, "bold");
+
+                const la = r.accion ? doc.splitTextToSize(limpio(r.accion), ancho) : [];
+
+                const alto = 13 + 4 + lh.length * 4.2 + (la.length ? 6 + la.length * 4.2 : 0) + (r.ahorro > 0 ? 7 : 0) + 2;
 
                 espacio(alto + 4);
 
                 relleno(FONDO); doc.roundedRect(M, y, ANCHO, alto, 3, 3, "F");
 
-                relleno(A); doc.circle(M + 7, y + 7, 3.6, "F");
+                relleno(A); doc.circle(M + 7, y + 7.5, 3.6, "F");
 
-                fuente(9.5, "bold"); doc.setTextColor(255, 255, 255); texto(String(i + 1), M + 7, y + 8.3, { align: "center" });
+                fuente(9.5, "bold"); doc.setTextColor(255, 255, 255); texto(String(i + 1), M + 7, y + 8.8, { align: "center" });
 
-                fuente(10.5, "bold"); color(TINTA); texto(limpio(r.titulo), M + 14, y + 8.3);
+                fuente(11, "bold"); color(TINTA); texto(limpio(r.titulo), M + 14, y + 8.8);
 
-                fuente(9.5); color(TINTA); doc.text(ls, M + 14, y + 14);
+                let yy = y + 15;
 
-                if (r.ahorro > 0) { fuente(8.5, "bold"); color(VERDE); texto("Podrías ahorrar unos " + fmt(r.ahorro) + " al mes", M + 14, y + 14 + ls.length * 4.3 + 1.5); }
+                fuente(7, "bold"); color(GRIS); doc.setCharSpace(0.5); texto("LO QUE VI", M + 14, yy); doc.setCharSpace(0);
+
+                yy += 4;
+
+                fuente(9.3); color(TINTA); doc.text(lh, M + 14, yy);
+
+                yy += lh.length * 4.2 + 2;
+
+                if (la.length) {
+
+                    fuente(7, "bold"); color(A); doc.setCharSpace(0.5); texto("QUÉ HACER", M + 14, yy); doc.setCharSpace(0);
+
+                    yy += 4;
+
+                    fuente(9.3, "bold"); color(TINTA); doc.text(la, M + 14, yy);
+
+                    yy += la.length * 4.2 + 2;
+
+                }
+
+                if (r.ahorro > 0) {
+
+                    const t = "Ahorro estimado: " + fmt(r.ahorro) + " al mes";
+
+                    fuente(8.5, "bold");
+
+                    const w = doc.getTextWidth(t) + 8;
+
+                    relleno([222, 245, 233]); doc.roundedRect(M + 14, yy - 2.6, w, 6, 3, 3, "F");
+
+                    color(VERDE); texto(t, M + 18, yy + 1.6);
+
+                }
 
                 y += alto + 4;
 
             });
+
+            // Total que podrías liberar
+            const totalAhorro = ia.recomendaciones.reduce((s, r) => s + (r.ahorro || 0), 0);
+
+            if (totalAhorro > 0) {
+
+                espacio(10);
+
+                fuente(10, "bold"); color(TINTA); texto("Si aplicas las 3, podrías liberar unos " + fmt(totalAhorro) + " al mes (" + fmt(totalAhorro * 12) + " al año).", M, y + 2);
+
+                y += 9;
+
+            }
+
+            // Reto de 7 días
+            if (ia.reto && (ia.reto.titulo || ia.reto.detalle)) {
+
+                fuente(9.5);
+
+                const ld = doc.splitTextToSize(limpio(ia.reto.detalle), ANCHO - 16);
+
+                const alto = 14 + ld.length * 4.3;
+
+                espacio(alto + 4);
+
+                relleno(TINTA); doc.roundedRect(M, y, ANCHO, alto, 3, 3, "F");
+
+                fuente(7.5, "bold"); color(A.map((v) => Math.round(v + (255 - v) * 0.45))); doc.setCharSpace(0.8); texto("TU RETO DE 7 DÍAS", M + 8, y + 7); doc.setCharSpace(0);
+
+                fuente(11, "bold"); doc.setTextColor(255, 255, 255); texto(limpio(ia.reto.titulo), M + 52, y + 7.2);
+
+                fuente(9.5); doc.setTextColor(225, 226, 235); doc.text(ld, M + 8, y + 13);
+
+                y += alto + 6;
+
+            }
 
         }
 
