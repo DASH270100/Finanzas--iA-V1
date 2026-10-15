@@ -1,0 +1,522 @@
+/*==================================================
+   ESTILO VIDRIO + FLUIDEZ
+   Base: copia de la estructura de Atardecer (generada)
+====================================================*/
+
+html[data-tema="vidrio"]{--bg:#14103A;
+    --surface:#FFFFFF;
+    --surface-light:#F4F3FB;
+    --surface-hover:#E9E7F6;
+    --border:#E4E1F3;
+
+    --primary:#FF6B3D;
+    --primary-hover:#FF8458;
+    --acento:#FF6B3D;
+
+    --green:#12A15B;
+    --red:#E5484D;
+
+    --text:#1B1740;
+    --text-soft:#3D3868;
+    --text-muted:#757092;
+
+    --radius-lg:26px;
+
+    --primary-2:#FF5A3C;
+    --boton-radio:20px;
+    --boton-sombra:rgba(255,90,60,.30);
+    --boton-sombra-hover:rgba(255,90,60,.38);
+
+    --shadow-sm:0 8px 24px rgba(8,5,30,.28);
+    --shadow-md:0 16px 40px rgba(8,5,30,.38);
+    --shadow-lg:0 26px 60px rgba(8,5,30,.5);
+
+    --fuente:"Nunito","Montserrat",sans-serif;}
+html[data-tema="vidrio"] body{font-family:var(--fuente);
+    background:
+        radial-gradient(800px 420px at 90% -5%,rgba(255,107,61,.20),transparent 60%),
+        linear-gradient(180deg,#1A1250 0%,#14103A 38%,#100C2E 100%);}
+html[data-tema="vidrio"] .card{border:none;
+    box-shadow:var(--shadow-sm);}
+html[data-tema="vidrio"] .card::before{opacity:0;}
+html[data-tema="vidrio"] .card:hover{box-shadow:var(--shadow-md);}
+html[data-tema="vidrio"] .sidebar{background:rgba(10,7,36,.55);
+    border-right:1px solid rgba(255,255,255,.07);}
+html[data-tema="vidrio"] .logo h2,
+html[data-tema="vidrio"] .sidebar nav a:hover{color:#fff;}
+html[data-tema="vidrio"] .logo span{color:#A9A4D4;}
+html[data-tema="vidrio"] .sidebar nav a{color:#C9C5EC;}
+html[data-tema="vidrio"] .sidebar nav a:hover{background:rgba(255,255,255,.08);}
+html[data-tema="vidrio"] .sidebar nav .active{background:var(--primary);
+    border-color:var(--primary);
+    color:#fff;
+    box-shadow:0 10px 24px rgba(255,107,61,.35);}
+html[data-tema="vidrio"] .logo-icon{background:linear-gradient(135deg,#FFB35C,#FF6B3D);}
+html[data-tema="vidrio"] .header{position:relative;
+    overflow:hidden;
+    min-height:190px;
+    padding:30px 32px 74px;
+    border-radius:var(--radius-xl);
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 466 120' preserveAspectRatio='none'%3E%3Cpath fill='%23251A5C' d='M0 120V74h30V52h24v22h14V36h28v38h18V60h22v-8h20v30h16V46h26v28h20V64h24V32h30v42h14V56h26v24h20V50h24v30h18V62h28V42h26v32h16V60h22v60z'/%3E%3C/svg%3E") bottom/100% 64px no-repeat,
+        radial-gradient(circle at 78% 100%,#FFD98A 0 42px,transparent 43px),
+        radial-gradient(circle at 78% 100%,rgba(255,150,90,.55) 0,transparent 230px),
+        linear-gradient(180deg,#2A1D63 0%,#5B2F86 42%,#C2506F 78%,#FF8A5B 100%);
+    box-shadow:var(--shadow-md);}
+html[data-tema="vidrio"] .header h1,
+html[data-tema="vidrio"] .header p{color:#fff;}
+html[data-tema="vidrio"] .header p{color:rgba(255,255,255,.82);}
+html[data-tema="vidrio"] .saludo{color:#FFD98A;}
+html[data-tema="vidrio"] .btn-bloquear{background:rgba(20,16,58,.55);
+    box-shadow:none;
+    color:#fff;
+    border:1px solid rgba(255,255,255,.22);}
+html[data-tema="vidrio"] .pill{background:rgba(255,107,61,.12);
+    border-color:rgba(255,107,61,.28);
+    color:var(--primary);}
+html[data-tema="vidrio"] .card-icon{background:rgba(255,107,61,.10);
+    border-color:rgba(255,107,61,.20);}
+html[data-tema="vidrio"] #ingresos{color:var(--green);}
+html[data-tema="vidrio"] .deuda-card{background:linear-gradient(180deg,#2A1D63 0%,#1B1340 100%);
+    border-color:rgba(255,255,255,.1);
+    color:#fff;}
+html[data-tema="vidrio"] .toast{background:#1B1340;
+    color:#fff;}
+html[data-tema="vidrio"] .pin-overlay{background:rgba(16,12,46,.92);}
+html[data-tema="vidrio"] .banner-demo,
+html[data-tema="vidrio"] .aviso-error{color:#fff;}
+@media(max-width:640px){
+    html[data-tema="vidrio"] .header{padding:24px 22px 66px;
+        min-height:170px;}
+    html[data-tema="vidrio"] .sidebar{left:14px;
+        right:14px;
+        bottom:14px;
+        padding:8px;
+        border:none;
+        border-radius:999px;
+        background:#1B1340;
+        box-shadow:0 18px 40px rgba(5,3,22,.6);}
+    html[data-tema="vidrio"] .sidebar nav a{padding:12px 0;
+        flex:1;
+        justify-content:center;
+        border-radius:999px;}
+    html[data-tema="vidrio"] .sidebar nav .nav-text{display:none;}
+}
+html[data-tema="vidrio"] .respuesta{background:var(--surface);
+    border:none;
+    color:var(--text-soft);
+    box-shadow:var(--shadow-sm);}
+html[data-tema="vidrio"] .card-info h2{font-size:clamp(22px,2.3vw,30px);
+    white-space:nowrap;}
+html[data-tema="vidrio"]{background:var(--bg);}
+html[data-tema="vidrio"] body{min-height:100vh;}
+html[data-tema="vidrio"] .sidebar nav a.active:hover{background:var(--primary);
+    color:#fff;}
+html[data-tema="vidrio"] .hero-saldo{display:block;}
+html[data-tema="vidrio"] .cat-tiles:not([hidden]){display:flex;}
+html[data-tema="vidrio"] .dashboard{display:none;}
+html[data-tema="vidrio"] .header{gap:16px;}
+html[data-tema="vidrio"] .header > div:first-child{flex:1; min-width:0;}
+html[data-tema="vidrio"] .header > div > p{display:none;}
+html[data-tema="vidrio"] .header h1{font-size:clamp(26px,4vw,34px);
+    margin-bottom:18px;}
+html[data-tema="vidrio"] #vista-dashboard{display:flex;
+    flex-direction:column;
+    gap:18px;
+    max-width:820px;
+    margin:0 auto;}
+html[data-tema="vidrio"] #vista-dashboard[hidden]{display:none;}
+html[data-tema="vidrio"] .header{max-width:820px; margin-left:auto; margin-right:auto;}
+html[data-tema="vidrio"] .grid-principal{display:contents;}
+html[data-tema="vidrio"] #vista-dashboard > *,
+html[data-tema="vidrio"] .grid-principal > *{margin-bottom:0;}
+html[data-tema="vidrio"] .cat-tiles{order:1;}
+html[data-tema="vidrio"] .aviso-fijos{order:2; margin:0;}
+html[data-tema="vidrio"] .registro{order:3;}
+html[data-tema="vidrio"] .respuesta{order:4; padding:14px 22px; font-size:14px;}
+html[data-tema="vidrio"] .bienvenida{order:5;}
+html[data-tema="vidrio"] .actividad-card{order:6;}
+html[data-tema="vidrio"] .grafico{order:7;}
+html[data-tema="vidrio"] .deudas-card{order:8;}
+html[data-tema="vidrio"] .registro{display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    border-radius:999px;}
+html[data-tema="vidrio"] .registro .card-title{display:none;}
+html[data-tema="vidrio"] .registro textarea{flex:1;
+    height:52px;
+    min-height:52px;
+    margin:0;
+    padding:15px 22px;
+    resize:none;
+    border-radius:999px;
+    border:none;
+    overflow:hidden;
+    line-height:1.3;}
+html[data-tema="vidrio"] #registrar{flex:0 0 52px;
+    width:52px;
+    height:52px;
+    margin:0;
+    padding:0;
+    border-radius:50%;
+    font-size:0;}
+html[data-tema="vidrio"] #registrar #textoBoton::after{content:"→";
+    font-size:22px;
+    line-height:1;}
+html[data-tema="vidrio"] .actividad-card .card-title p{display:none;}
+html[data-tema="vidrio"] .movimiento{background:transparent;
+    border:none;
+    border-bottom:1px solid var(--border);
+    border-radius:0;
+    padding:14px 2px;}
+html[data-tema="vidrio"] .movimiento:last-child{border-bottom:none;}
+html[data-tema="vidrio"] .header{padding:26px 28px 78px;
+    min-height:0;}
+html[data-tema="vidrio"] .hero-saldo{color:#fff;}
+html[data-tema="vidrio"] .hs-label{display:block;
+    margin-bottom:4px;
+    font-size:13px;
+    font-weight:700;
+    color:rgba(255,255,255,.8);}
+html[data-tema="vidrio"] .hs-saldo{display:block;
+    font-size:clamp(34px,7vw,50px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    line-height:1.05;
+    text-shadow:0 2px 18px rgba(20,16,58,.35);}
+html[data-tema="vidrio"] .hs-chips{display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;}
+html[data-tema="vidrio"] .hs-chip{padding:6px 13px;
+    border-radius:999px;
+    background:rgba(20,16,58,.38);
+    border:1px solid rgba(255,255,255,.18);
+    font-size:12px;
+    font-weight:700;
+    color:rgba(255,255,255,.85);}
+html[data-tema="vidrio"] .hs-chip b{color:#fff; font-weight:800;}
+html[data-tema="vidrio"] .cat-tiles{display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    overflow:visible;
+    padding:0;}
+html[data-tema="vidrio"] .cat-tiles:not([hidden]){display:grid;}
+html[data-tema="vidrio"] .cat-tile:nth-child(n+4){display:none;}
+html[data-tema="vidrio"] .cat-tile{padding:16px 10px 14px;
+    border-radius:22px;
+    background:var(--surface);
+    box-shadow:var(--shadow-sm);}
+html[data-tema="vidrio"] .cat-tile .ct-ico{width:46px;
+    height:46px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:14px;
+    background:var(--cat,#FFB16B);
+    margin-bottom:6px;}
+html[data-tema="vidrio"] .cat-tile.c0{--cat:#FFB16B;}
+html[data-tema="vidrio"] .cat-tile.c1{--cat:#7FB6FF;}
+html[data-tema="vidrio"] .cat-tile.c2{--cat:#FF9DB8;}
+html[data-tema="vidrio"] .cat-tile strong{color:var(--text);}
+html[data-tema="vidrio"] .registro{background:var(--surface);}
+html[data-tema="vidrio"] .registro textarea{background:var(--surface-light);}
+@media(max-width:640px){
+    html[data-tema="vidrio"] .header{padding:22px 20px 70px;}
+    html[data-tema="vidrio"] .cat-tiles{gap:10px;}
+}
+html[data-tema="vidrio"] .header{position:relative;}
+html[data-tema="vidrio"] .btn-bloquear{position:absolute;
+    top:14px;
+    right:14px;
+    padding:8px 14px;
+    font-size:12px;}
+html[data-tema="vidrio"] .header h1{padding-right:90px;}
+html[data-tema="vidrio"] .header .saludo{margin-bottom:4px;}
+@media(max-width:640px){
+    html[data-tema="vidrio"] .hs-txt{display:none;}
+    html[data-tema="vidrio"] .hs-chips{flex-wrap:nowrap;}
+    html[data-tema="vidrio"] .btn-bloquear{top:10px; right:10px;}
+}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .titulo-vista{display:block;
+    margin:2px 0 0;
+    font-size:clamp(26px,4vw,34px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    padding-right:90px;}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .titulo-vista{color:#fff;}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .header h1,
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .hero-saldo{display:none;}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .header{padding:22px 28px 66px;}
+html[data-tema="vidrio"] .vista:not(#vista-dashboard){max-width:820px;
+    margin-left:auto;
+    margin-right:auto;}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .header .saludo{display:none;}
+html[data-tema="vidrio"] .aviso-tarjetas.exceso{color:#FFD6D6;}
+html[data-tema="vidrio"] .aviso-tarjetas{order:2; margin:0;}
+html[data-tema="vidrio"] .tarjetas-resumen{order:5;}
+html[data-tema="vidrio"] .tarjeta-vencida{color:#9a5200;background:rgba(255,170,60,.16)}
+html[data-tema="vidrio"] .cuota-tea{color:#5B3FD6}
+
+/*==================================================
+   VIDRIO: lo propio del estilo (va después de la base)
+   Tarjetas translúcidas sobre manchas de color
+====================================================*/
+
+html[data-tema="vidrio"]{
+    --bg:#0A0A14;
+    --surface:rgba(255,255,255,.075);
+    --surface-light:rgba(255,255,255,.07);
+    --surface-hover:rgba(255,255,255,.12);
+    --border:rgba(255,255,255,.14);
+
+    --primary:#7B5CFF;
+    --primary-2:#6A4BF0;
+    --primary-hover:#8E74FF;
+    --acento:#B9A6FF;
+
+    --green:#7CF5C4;
+    --red:#FF8FA3;
+    --yellow:#FFD98A;
+
+    --text:#FFFFFF;
+    --text-soft:rgba(255,255,255,.84);
+    --text-muted:rgba(255,255,255,.64);
+
+    --radius-lg:28px;
+    --radius-md:22px;
+    --boton-radio:999px;
+    --boton-sombra:rgba(0,0,0,.25);
+    --boton-sombra-hover:rgba(0,0,0,.32);
+
+    --shadow-sm:0 10px 30px rgba(0,0,0,.18);
+    --shadow-md:0 18px 44px rgba(0,0,0,.28);
+    --shadow-lg:0 28px 64px rgba(0,0,0,.4);
+
+    --vidrio-blur:blur(26px) saturate(150%);
+    --fuente:"Outfit","Plus Jakarta Sans","Montserrat",sans-serif;
+    color-scheme:dark;
+}
+
+/* Fondo: tres manchas de color fijas detrás de todo */
+html[data-tema="vidrio"] body{
+    color:var(--text);
+    background:transparent;
+}
+html[data-tema="vidrio"] body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    background:
+        radial-gradient(60% 42% at 8% 10%, rgba(108,75,255,.9), transparent 72%),
+        radial-gradient(55% 40% at 100% 52%, rgba(255,77,141,.7), transparent 72%),
+        radial-gradient(65% 42% at 25% 102%, rgba(0,194,255,.6), transparent 72%),
+        var(--bg);
+}
+
+/* Tarjetas de vidrio */
+html[data-tema="vidrio"] .card,
+html[data-tema="vidrio"] .cat-tile,
+html[data-tema="vidrio"] .registro{
+    background:var(--surface);
+    border:1px solid var(--border);
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+    box-shadow:var(--shadow-sm);
+}
+html[data-tema="vidrio"] .card:hover{ background:rgba(255,255,255,.09); }
+
+/* Cabecera: sin ilustración, el saldo flota sobre el fondo */
+html[data-tema="vidrio"] .header{
+    background:transparent;
+    box-shadow:none;
+    min-height:0;
+    padding:26px 6px 18px;
+    overflow:visible;
+}
+html[data-tema="vidrio"] .saludo{ color:var(--text-muted); font-weight:500; }
+html[data-tema="vidrio"] .header h1{ font-weight:500; letter-spacing:-.02em; }
+html[data-tema="vidrio"] .hs-label{ color:var(--text-soft); font-weight:500; }
+html[data-tema="vidrio"] .hs-saldo{
+    font-weight:200;
+    letter-spacing:-.045em;
+    font-size:clamp(52px,12vw,72px);
+    line-height:1;
+}
+html[data-tema="vidrio"] .hs-chip{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.22);
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+    color:var(--text-soft);
+    font-weight:500;
+}
+html[data-tema="vidrio"] .hs-chip b{ font-weight:600; }
+html[data-tema="vidrio"] .btn-bloquear{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.22);
+    color:#fff;
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+    box-shadow:none;
+}
+@media(max-width:640px){
+    html[data-tema="vidrio"] .header{ padding:18px 4px 12px; min-height:0; }
+}
+html[data-tema="vidrio"] body:not([data-vista="dashboard"]) .header{ padding:22px 6px 12px; }
+
+/* Categorías */
+html[data-tema="vidrio"] .cat-tile .ct-ico{ background:rgba(255,255,255,.12); box-shadow:none; }
+html[data-tema="vidrio"] .cat-tile strong{ color:#fff; font-weight:600; }
+html[data-tema="vidrio"] .cat-tile span{ color:var(--text-muted); }
+
+/* Barra para escribir */
+html[data-tema="vidrio"] .registro textarea{
+    background:transparent;
+    color:#fff;
+}
+html[data-tema="vidrio"] .registro textarea::placeholder{ color:var(--text-muted); }
+
+/* Botones secundarios dentro de tarjetas (Editar, Borrar, Ver todas...) */
+html[data-tema="vidrio"] .movimiento button,
+html[data-tema="vidrio"] .btn-toggle-deudas,
+html[data-tema="vidrio"] .card button:not([type="submit"]):not(#registrar){
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.18);
+    color:#fff;
+    box-shadow:none;
+}
+
+/* Formularios */
+html[data-tema="vidrio"] input,
+html[data-tema="vidrio"] select,
+html[data-tema="vidrio"] textarea{
+    background:rgba(255,255,255,.07);
+    border-color:rgba(255,255,255,.18);
+    color:#fff;
+}
+html[data-tema="vidrio"] select option{ background:#16142A; color:#fff; }
+html[data-tema="vidrio"] input::placeholder{ color:var(--text-muted); }
+
+/* Píldoras y avisos */
+html[data-tema="vidrio"] .pill{ background:rgba(255,255,255,.14); color:#fff; }
+html[data-tema="vidrio"] .card-icon,
+html[data-tema="vidrio"] .insight-icon{ background:rgba(255,255,255,.12); }
+html[data-tema="vidrio"] .total-card,
+html[data-tema="vidrio"] .insight{
+    background:rgba(255,255,255,.06);
+    border-color:rgba(255,255,255,.14);
+}
+html[data-tema="vidrio"] .aviso-fijos{
+    background:rgba(255,217,138,.14);
+    border:1px solid rgba(255,217,138,.35);
+    color:#FFE7B0;
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+}
+html[data-tema="vidrio"] .respuesta{ color:var(--text-soft); }
+html[data-tema="vidrio"] .deuda-card{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); }
+html[data-tema="vidrio"] .tarjeta-vencida{ color:#FFD7A8; background:rgba(255,170,60,.16); }
+html[data-tema="vidrio"] .cuota-tea{ color:#CFC2FF; }
+html[data-tema="vidrio"] .toast{
+    background:rgba(255,255,255,.92);
+    color:#0A0A14;
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+}
+html[data-tema="vidrio"] .banner-demo{
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.2);
+    color:#fff;
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+}
+html[data-tema="vidrio"] .banner-demo button{ background:#fff; color:#0A0A14; }
+html[data-tema="vidrio"] .pin-overlay{ background:rgba(10,10,20,.72); -webkit-backdrop-filter:blur(18px); backdrop-filter:blur(18px); }
+html[data-tema="vidrio"] .pin-box{ background:rgba(255,255,255,.1); }
+
+/* Menú: píldora de vidrio */
+html[data-tema="vidrio"] .sidebar{
+    background:rgba(255,255,255,.06);
+    border-right:1px solid rgba(255,255,255,.1);
+    -webkit-backdrop-filter:var(--vidrio-blur);
+    backdrop-filter:var(--vidrio-blur);
+}
+html[data-tema="vidrio"] .logo-icon{ background:rgba(255,255,255,.14); }
+html[data-tema="vidrio"] .logo span{ color:var(--text-muted); }
+html[data-tema="vidrio"] .sidebar nav a{ color:var(--text-soft); }
+html[data-tema="vidrio"] .sidebar nav .active,
+html[data-tema="vidrio"] .sidebar nav a.active:hover{
+    background:#fff;
+    color:#0A0A14;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+@media(max-width:640px){
+    html[data-tema="vidrio"] .sidebar{
+        background:rgba(255,255,255,.1);
+        border:1px solid rgba(255,255,255,.2);
+        box-shadow:0 18px 40px rgba(0,0,0,.35);
+    }
+}
+
+/* Muestra en Configuración > Apariencia */
+.tema-muestra.m-vidrio{
+    background:
+        radial-gradient(circle at 20% 25%, #6C4BFF 0, transparent 55%),
+        radial-gradient(circle at 85% 60%, #FF4D8D 0, transparent 50%),
+        radial-gradient(circle at 35% 100%, #00C2FF 0, transparent 55%),
+        #0A0A14;
+}
+
+/*==================================================
+   FLUIDEZ (todos los estilos)
+====================================================*/
+
+/* Al cambiar de pestaña, la vista entra suave */
+.vista.entra{ animation:vista-entra .38s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes vista-entra{
+    from{ opacity:0; transform:translateY(10px); }
+    to{ opacity:1; transform:none; }
+}
+
+/* Al cargar, las tarjetas aparecen en cascada */
+.cascada{ animation:cascada .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:var(--retraso,0ms); }
+@keyframes cascada{
+    from{ opacity:0; transform:translateY(14px) scale(.985); }
+    to{ opacity:1; transform:none; }
+}
+
+/* Movimiento nuevo: entra y se ilumina un instante */
+.mov-nuevo{ animation:mov-nuevo .9s ease-out both; }
+@keyframes mov-nuevo{
+    0%{ opacity:0; transform:translateX(-8px); background:rgba(255,255,255,.14); }
+    40%{ opacity:1; transform:none; }
+    100%{ background:transparent; }
+}
+
+/* Botones: respuesta táctil al presionar */
+button,
+.sidebar nav a,
+.cat-tile,
+.tema-opcion{
+    transition:transform .18s cubic-bezier(.2,.8,.2,1), background-color .2s, box-shadow .2s, opacity .2s;
+}
+button:active:not(:disabled),
+.sidebar nav a:active,
+.cat-tile:active{ transform:scale(.96); }
+
+.card{ transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background-color .25s; }
+@media(hover:hover){
+    .card:hover{ transform:translateY(-2px); }
+}
+
+html{ scroll-behavior:smooth; }
+
+@media (prefers-reduced-motion:reduce){
+    .vista.entra,.cascada,.mov-nuevo{ animation:none !important; }
+    button:active,.sidebar nav a:active,.cat-tile:active,.card:hover{ transform:none !important; }
+    html{ scroll-behavior:auto; }
+}

@@ -17,7 +17,9 @@ function colorEstilo(nombre, defecto) {
 }
 
 function esEstiloOscuro() {
-    return document.documentElement.getAttribute("data-tema") === null;
+    // Noche, Vidrio y los estilos especiales oscuros usan gráficos oscuros
+    const t = document.documentElement.getAttribute("data-tema");
+    return t === null || (t !== "iridiscente" && t !== "atardecer");
 }
 
 // "comida", "Comida " y "COMIDA" cuentan como la misma categoría
