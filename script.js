@@ -3354,9 +3354,34 @@ function parsearInteres(original) {
 
 }
 
+// «openai 5 dólares», «$12 steam»: se lee el monto en dólares y luego se pasa a soles
+const RE_DOLAR = /us\$|\$|\busd\b|\bd[oó]lar(?:es)?\b/gi;
+
 function parsearRapido(texto) {
 
     const original = String(texto || "").trim();
+
+    if (RE_DOLAR.test(original)) {
+
+        RE_DOLAR.lastIndex = 0;
+
+        const sinDolar = original.replace(RE_DOLAR, " ").replace(/\s+/g, " ").trim();
+
+        const { limpio, tarjeta } = extraerTarjeta(sinDolar);
+
+        const r = parsearRapidoBase(limpio);
+
+        if (!r || (tarjeta && r.tipo !== "Gasto")) return null;
+
+        if (tarjeta) r.medio = tarjeta;
+
+        r.usd = r.monto;
+
+        return r;
+
+    }
+
+    RE_DOLAR.lastIndex = 0;
 
     const interes = parsearInteres(original);
 
@@ -3435,7 +3460,7 @@ function parsearRapidoBase(texto) {
 
         const m = estado.movimientos[i];
 
-        if (sinTildes(m.descripcion).trim() === clave) {
+        if (sinTildes(String(m.descripcion || "").replace(/ · US\$.*$/, "")).trim() === clave) {
 
             if (esPrestamo(m) || esReembolso(m)) return null;
 
@@ -3910,6 +3935,35 @@ async function pagarCuotaDesdeBarra(c) {
 
 }
 
+// Tipo de cambio dólar → sol del día (se pide una sola vez por día)
+let cambioDelDia = null;
+
+async function tipoCambioHoy() {
+
+    const hoy = new Date().toDateString();
+
+    if (cambioDelDia && cambioDelDia.dia === hoy) return cambioDelDia.tc;
+
+    if (modoDemo) return 3.75;
+
+    try {
+
+        const r = await api("tipoCambio");
+
+        cambioDelDia = { dia: hoy, tc: Number(r.tc) };
+
+        return cambioDelDia.tc;
+
+    } catch (e) {
+
+        console.error(e);
+
+        return null;
+
+    }
+
+}
+
 async function registrarMovimiento() {
 
     const texto = $("mensaje").value.trim();
@@ -3957,7 +4011,26 @@ async function registrarMovimiento() {
     }
 
     // Camino rápido: mensaje simple y categoría conocida, sin IA ni Make
-    const rapido = parsearRapido(texto);
+    let rapido = parsearRapido(texto);
+
+    // En dólares: se convierte a soles con el cambio del día (si no hay cambio, lo intenta la IA)
+    if (rapido && rapido.usd) {
+
+        const tc = await tipoCambioHoy();
+
+        if (tc) {
+
+            rapido.monto = Math.round(rapido.usd * tc * 100) / 100;
+
+            rapido.descripcion = `${rapido.descripcion} · US$${rapido.usd} × ${tc}`;
+
+        } else {
+
+            rapido = null;
+
+        }
+
+    }
 
     if (rapido) {
 
