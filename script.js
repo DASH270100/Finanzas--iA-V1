@@ -3996,15 +3996,27 @@ async function registrarMovimiento() {
 
     }
 
+    await registrarConIA({ mensaje: texto });
+
+}
+
+// Registro con la IA: texto, texto dictado o foto de una boleta.
+// «envio» es lo que va al servidor: { mensaje } o { mensaje, imagen }.
+async function registrarConIA(envio, aviso = "🤖 Analizando movimiento...") {
+
+    const texto = envio.mensaje || "";
+
     const boton = $("registrar");
 
     const textoBoton = $("textoBoton");
 
     boton.disabled = true;
 
+    medios.ocupado(true);
+
     textoBoton.textContent = "⏳ Registrando...";
 
-    $("respuesta").textContent = "🤖 Analizando movimiento...";
+    $("respuesta").textContent = aviso;
 
     try {
 
@@ -4018,7 +4030,7 @@ async function registrarMovimiento() {
 
         const nivelesAntes = nivelesTarjetas();
 
-        await api("registrar", { mensaje: texto });
+        await api("registrar", envio);
 
         $("mensaje").value = "";
 
@@ -4054,7 +4066,9 @@ async function registrarMovimiento() {
 
             $("respuesta").textContent = claro
                 ? "⚠️ " + claro
-                : "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
+                : envio.imagen
+                    ? "⚠️ No se pudo leer la foto. Inténtalo otra vez o escríbelo en la barra."
+                    : "⚠️ No se pudo registrar. Tu texto sigue abajo, inténtalo otra vez.";
 
             $("mensaje").value = texto;
 
@@ -4066,11 +4080,340 @@ async function registrarMovimiento() {
 
         boton.disabled = false;
 
+        medios.ocupado(false);
+
         textoBoton.textContent = "➕ Registrar movimiento";
 
     }
 
 }
+
+// =========================
+// REGISTRAR CON AUDIO O FOTO
+// =========================
+
+const medios = (() => {
+
+    const SEG_MAX = 60;
+
+    let grabadora = null, flujo = null, trozos = [], reloj = null, inicio = 0, cancelado = false;
+
+    const btnAudio = () => $("btnAudio");
+
+    const btnFoto = () => $("btnFoto");
+
+    function ocupado(si) {
+
+        [btnAudio(), btnFoto()].forEach((b) => { if (b && !(si === false && b.classList.contains("grabando"))) b.disabled = si; });
+
+    }
+
+    function enDemo() {
+
+        if (!modoDemo) return false;
+
+        mostrarToast("🎙️📷 En la demo no se puede usar audio ni foto");
+
+        return true;
+
+    }
+
+    function tipoAudio() {
+
+        if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
+
+        return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((t) => MediaRecorder.isTypeSupported(t)) || "";
+
+    }
+
+    function aBase64(blob) {
+
+        return new Promise((ok, mal) => {
+
+            const lector = new FileReader();
+
+            lector.onload = () => ok(String(lector.result).split(",")[1] || "");
+
+            lector.onerror = () => mal(new Error("No se pudo leer el archivo"));
+
+            lector.readAsDataURL(blob);
+
+        });
+
+    }
+
+    function apagar() {
+
+        clearInterval(reloj);
+
+        if (flujo) flujo.getTracks().forEach((t) => t.stop());
+
+        flujo = null;
+
+        const b = btnAudio();
+
+        if (b) { b.classList.remove("grabando"); b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Registrar con audio"); }
+
+        $("mensaje").placeholder = $("mensaje").dataset.placeholder || $("mensaje").placeholder;
+
+    }
+
+    async function alternarAudio() {
+
+        if (enDemo()) return;
+
+        if (grabadora && grabadora.state === "recording") { grabadora.stop(); return; }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+
+            mostrarToast("🎙️ Tu navegador no permite grabar audio aquí");
+
+            return;
+
+        }
+
+        try {
+
+            flujo = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        } catch (e) {
+
+            console.error(e);
+
+            $("respuesta").textContent = "🎙️ Necesito permiso para usar el micrófono. Actívalo en los ajustes del navegador para esta página.";
+
+            mostrarToast("🎙️ Sin permiso para el micrófono");
+
+            return;
+
+        }
+
+        const tipo = tipoAudio();
+
+        grabadora = tipo ? new MediaRecorder(flujo, { mimeType: tipo }) : new MediaRecorder(flujo);
+
+        trozos = [];
+
+        cancelado = false;
+
+        grabadora.ondataavailable = (e) => { if (e.data && e.data.size) trozos.push(e.data); };
+
+        grabadora.onstop = enviarAudio;
+
+        grabadora.start();
+
+        inicio = Date.now();
+
+        const b = btnAudio();
+
+        b.classList.add("grabando");
+
+        b.setAttribute("aria-pressed", "true");
+
+        b.setAttribute("aria-label", "Terminar de grabar");
+
+        btnFoto().disabled = true;
+
+        const caja = $("mensaje");
+
+        if (!caja.dataset.placeholder) caja.dataset.placeholder = caja.placeholder;
+
+        caja.placeholder = "Te escucho… toca el micrófono para terminar";
+
+        const tic = () => {
+
+            const s = Math.floor((Date.now() - inicio) / 1000);
+
+            $("respuesta").textContent = `🔴 Grabando 0:${String(s).padStart(2, "0")} · di algo como «almuerzo 18 y taxi 12». Toca 🎙️ para terminar.`;
+
+            if (s >= SEG_MAX && grabadora.state === "recording") grabadora.stop();
+
+        };
+
+        tic();
+
+        reloj = setInterval(tic, 500);
+
+    }
+
+    async function enviarAudio() {
+
+        const duro = Date.now() - inicio;
+
+        const tipo = (grabadora && grabadora.mimeType) || tipoAudio() || "audio/webm";
+
+        apagar();
+
+        btnFoto().disabled = false;
+
+        if (cancelado) return;
+
+        const blob = new Blob(trozos, { type: tipo });
+
+        if (duro < 700 || blob.size < 1500) {
+
+            $("respuesta").textContent = "🎙️ Muy corto. Mantén el micrófono un par de segundos y habla claro.";
+
+            return;
+
+        }
+
+        ocupado(true);
+
+        $("respuesta").textContent = "🎧 Escuchando tu audio...";
+
+        let texto = "";
+
+        try {
+
+            const r = await api("transcribir", { audio: await aBase64(blob), tipo });
+
+            texto = String(r.texto || "").trim();
+
+        } catch (e) {
+
+            ocupado(false);
+
+            if (e instanceof ErrorPin) { manejarError(e); return; }
+
+            console.error(e);
+
+            $("respuesta").textContent = "⚠️ " + (e && e.message && !/fetch|network|red \(/i.test(e.message) ? e.message : "No se pudo escuchar el audio. Inténtalo otra vez.");
+
+            return;
+
+        }
+
+        ocupado(false);
+
+        if (!texto) {
+
+            $("respuesta").textContent = "🎙️ No entendí nada en el audio. Prueba otra vez, más cerca del celular.";
+
+            return;
+
+        }
+
+        // Se registra como si lo hubieras escrito (pasa por las mismas reglas rápidas)
+        $("mensaje").value = texto.slice(0, MAX_CARACTERES);
+
+        mostrarToast("🎙️ «" + texto.slice(0, 60) + (texto.length > 60 ? "…" : "") + "»");
+
+        registrarMovimiento();
+
+    }
+
+    // Achica la foto (≈1280 px, JPEG) para que viaje rápido y la IA la lea bien
+    function achicar(archivo) {
+
+        return new Promise((ok, mal) => {
+
+            const url = URL.createObjectURL(archivo);
+
+            const img = new Image();
+
+            img.onload = () => {
+
+                URL.revokeObjectURL(url);
+
+                const lado = 1280, k = Math.min(1, lado / Math.max(img.naturalWidth, img.naturalHeight));
+
+                const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+
+                const lienzo = document.createElement("canvas");
+
+                lienzo.width = w;
+
+                lienzo.height = h;
+
+                const ctx = lienzo.getContext("2d");
+
+                ctx.fillStyle = "#fff";
+
+                ctx.fillRect(0, 0, w, h);
+
+                ctx.drawImage(img, 0, 0, w, h);
+
+                ok(lienzo.toDataURL("image/jpeg", 0.75).split(",")[1] || "");
+
+            };
+
+            img.onerror = () => { URL.revokeObjectURL(url); mal(new Error("Ese archivo no parece una foto")); };
+
+            img.src = url;
+
+        });
+
+    }
+
+    function elegirFoto() {
+
+        if (enDemo()) return;
+
+        const entrada = $("fotoEntrada");
+
+        entrada.value = "";
+
+        entrada.click();
+
+    }
+
+    async function fotoElegida() {
+
+        const archivo = $("fotoEntrada").files && $("fotoEntrada").files[0];
+
+        if (!archivo) return;
+
+        let imagen = "";
+
+        try {
+
+            $("respuesta").textContent = "📷 Preparando la foto...";
+
+            imagen = await achicar(archivo);
+
+        } catch (e) {
+
+            $("respuesta").textContent = "⚠️ " + e.message;
+
+            return;
+
+        }
+
+        if (!imagen) { $("respuesta").textContent = "⚠️ No se pudo leer la foto"; return; }
+
+        // Lo escrito en la barra viaja como pista («fue con la BCP», «dividido entre 2»...)
+        const pista = $("mensaje").value.trim().slice(0, MAX_CARACTERES);
+
+        await registrarConIA({ mensaje: pista, imagen }, "🧾 Leyendo la foto...");
+
+    }
+
+    function iniciar() {
+
+        if (!btnAudio() || !btnFoto()) return;
+
+        btnAudio().addEventListener("click", alternarAudio);
+
+        btnFoto().addEventListener("click", elegirFoto);
+
+        $("fotoEntrada").addEventListener("change", fotoElegida);
+
+        // Si no hay forma de grabar, el micrófono ni se muestra
+        if (!navigator.mediaDevices || !window.MediaRecorder) btnAudio().hidden = true;
+
+        // Al bloquear o cambiar de pestaña a media grabación, se descarta
+        document.addEventListener("visibilitychange", () => {
+
+            if (document.hidden && grabadora && grabadora.state === "recording") { cancelado = true; grabadora.stop(); }
+
+        });
+
+    }
+
+    return { iniciar, ocupado };
+
+})();
 
 // =========================
 // PRESUPUESTO POR CATEGORÍA
@@ -4814,6 +5157,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
     $("registrar").addEventListener("click", registrarMovimiento);
+
+    medios.iniciar();
 
     // Ejemplos tocables: llenan el cuadro de registro y llevan al usuario hasta él
     document.addEventListener("click", (e) => {

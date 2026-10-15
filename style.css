@@ -4500,3 +4500,116 @@ a.tema-candado small{
 .leyenda-grafico .lg-monto{ grid-row:1; grid-column:3; text-align:right; }
 .leyenda-grafico .lg-pct{ grid-row:1; grid-column:4; }
 .leyenda-grafico .lg-barra{ grid-row:2; grid-column:2 / 5; }
+
+/*==================================================
+        REGISTRAR CON AUDIO O FOTO
+====================================================*/
+
+.medios{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:14px;
+}
+
+/* :is(#id) da a la regla el peso de un id para ganarle a los estilos de botón de cada tema */
+html .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
+    width:auto;
+    min-height:44px;
+    margin:0;
+    padding:10px 16px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text);
+    font-size:14px;
+    font-weight:600;
+    box-shadow:none;
+    transform:none;
+}
+
+html .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
+    background:var(--surface);
+    border-color:var(--primary);
+    transform:none;
+    box-shadow:none;
+}
+
+html .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):disabled{ opacity:.45; cursor:default; }
+
+html .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto)[hidden]{ display:none; }
+
+.btn-medio svg{ width:20px; height:20px; flex:none; }
+
+/* Grabando: rojo con pulso */
+html .registro .medios.medios > button.btn-medio#btnAudio.grabando{
+    background:#FF3B5C;
+    border-color:#FF3B5C;
+    color:#fff;
+    animation:pulsoGrabando 1.2s ease-out infinite;
+}
+
+@keyframes pulsoGrabando{
+    0%{ box-shadow:0 0 0 0 rgba(255,59,92,.55); }
+    100%{ box-shadow:0 0 0 14px rgba(255,59,92,0); }
+}
+
+@media (prefers-reduced-motion:reduce){
+    html .registro .medios.medios > button.btn-medio#btnAudio.grabando{ animation:none; }
+}
+
+/* Temas con barra tipo píldora: solo íconos redondos dentro de la barra */
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro textarea{ min-width:0; }
+
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .medios{
+    flex:none;
+    flex-wrap:nowrap;
+    gap:4px;
+    margin:0;
+}
+
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
+    width:44px;
+    height:44px;
+    min-height:44px;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:var(--text-muted);
+}
+
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
+    background:var(--surface-light);
+    color:var(--text);
+}
+
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .btn-medio span{
+    position:absolute;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+}
+
+html[data-tema="vidrio"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ color:rgba(255,255,255,.7); }
+html[data-tema="vidrio"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{ background:rgba(255,255,255,.12); color:#fff; }
+
+/* Neón: la barra es blanca, los íconos van oscuros */
+html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ color:#3A3F55; }
+html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{ background:rgba(4,5,13,.07); color:#04050D; }
+
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro .medios.medios > button.btn-medio#btnAudio.grabando{
+    background:#FF3B5C;
+    color:#fff;
+}
+
+@media (max-width:480px){
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .medios{ gap:0; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ width:40px; height:40px; min-height:40px; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"]) .registro textarea{ padding-left:18px; padding-right:8px; }
+}
