@@ -4854,3 +4854,19 @@ html #buzonForm .buzon-tipos.buzon-tipos > button.buzon-tipo[aria-checked="true"
 
 /* Black card: botones dorados con texto oscuro para que se lean */
 html[data-tema="blackcard"] button[type="submit"]{ color:#0A0A0A; }
+.resumen-ia{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding:12px 14px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    cursor:pointer;
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+}
+.resumen-ia input{ width:20px; height:20px; min-height:0; margin:1px 0 0; padding:0; flex:none; accent-color:var(--primary); }
+.resumen-ia small{ display:block; margin-top:2px; font-size:12px; font-weight:500; color:var(--text-muted); }
+.resumen-ia:has(input:disabled){ opacity:.6; cursor:default; }

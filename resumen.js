@@ -121,6 +121,38 @@
 
     }
 
+    // Lo que se manda a la IA: números ya calculados, nada de movimientos uno por uno
+    function datosParaIA(d) {
+
+        const r2 = (n) => Math.round(n * 100) / 100;
+
+        const mesRef = d.periodo === "todo" ? claveMes(new Date()) : d.periodo;
+
+        const gastadoEn = (cat) => sumar(estado.movimientos.filter((m) =>
+            m.fecha && claveMes(m.fecha) === mesRef && esGastoReal(m) && nombreCategoria(m.categoria) === cat));
+
+        return {
+            periodo: d.periodo === "todo" ? "Desde el inicio" : nombreMes(d.periodo),
+            mesEnCurso: d.periodo === claveMes(new Date()),
+            desde: d.desde ? fechaLarga(d.desde) : "",
+            hasta: d.hasta ? fechaLarga(d.hasta) : "",
+            ingresos: r2(d.totalI),
+            gastos: r2(d.totalG),
+            resultado: r2(d.saldo),
+            porcentajeAhorrado: d.totalI > 0 ? Math.round((d.saldo / d.totalI) * 100) : null,
+            gastosPorCategoria: d.categorias.slice(0, 12).map((c) => ({ categoria: limpio(c.nombre), total: r2(c.total), porcentaje: d.totalG ? Math.round((c.total / d.totalG) * 100) : 0 })),
+            mesAnterior: d.anterior ? { mes: nombreMes(d.anterior.clave), ingresos: r2(d.anterior.ingresos), gastos: r2(d.anterior.gastos) } : null,
+            mesAMes: d.periodo === "todo" ? d.meses.slice(-12).map((m) => ({ mes: nombreMes(m.clave), ingresos: r2(m.ingresos), gastos: r2(m.gastos) })) : undefined,
+            gastosMasGrandes: d.top.map((m) => ({ descripcion: limpio(m.descripcion).slice(0, 40), categoria: limpio(m.categoria), monto: r2(m.monto) })),
+            presupuestosDelMes: (estado.presupuestos || []).map((p) => ({ categoria: limpio(p.categoria), limite: r2(p.limite), gastado: r2(gastadoEn(p.categoria)) })),
+            gastosFijos: (estado.fijos || []).slice(0, 15).map((f) => ({ nombre: limpio(f.nombre).slice(0, 30), tipo: f.tipo, monto: r2(f.monto) })),
+            tarjetas: d.tarjetas.map((t) => ({ nombre: limpio(t.nombre), deuda: r2(t.deuda), limite: r2(t.presupuesto), usoPorcentaje: t.presupuesto > 0 ? Math.round((t.deuda / t.presupuesto) * 100) : null })),
+            teDebenEnTotal: r2(d.teDeben.reduce((s, x) => s + x.monto, 0)),
+            metas: d.metas.map((m) => ({ nombre: limpio(m.nombre).slice(0, 30), objetivo: r2(m.objetivo), ahorrado: r2(m.ahorrado) }))
+        };
+
+    }
+
     // ---------- Colores ----------
 
     function rgb(hex, respaldo) {
@@ -176,7 +208,7 @@
 
     // ---------- PDF ----------
 
-    function dibujar(d) {
+    function dibujar(d, ia) {
 
         const { jsPDF } = window.jspdf;
 
@@ -303,7 +335,26 @@
 
         }
 
-        if (frase) { doc.text(doc.splitTextToSize(frase, ANCHO), M, y); y += 10; }
+        if (frase) { const ls = doc.splitTextToSize(frase, ANCHO); doc.text(ls, M, y); y += ls.length * 4.6 + 5; }
+
+        // Titular de la IA: lo primero que se lee después de los números
+        if (ia && ia.titular) {
+
+            fuente(12.5, "bold");
+
+            const ls = doc.splitTextToSize(limpio(ia.titular), ANCHO - 16);
+
+            const alto = 13 + ls.length * 5.6;
+
+            relleno(A.map((v) => Math.round(v + (255 - v) * 0.9))); doc.roundedRect(M, y, ANCHO, alto, 3, 3, "F");
+
+            fuente(7.5, "bold"); color(A); doc.setCharSpace(0.8); texto("ANÁLISIS DE TU ASISTENTE IA", M + 8, y + 7); doc.setCharSpace(0);
+
+            fuente(12.5, "bold"); color(TINTA); doc.text(ls, M + 8, y + 13.5);
+
+            y += alto + 6;
+
+        }
 
         // --- Categorías ---
         if (d.categorias.length) {
@@ -345,6 +396,78 @@
                 fuente(8.5); color(GRIS); texto(Math.round((c.total / d.totalG) * 100) + "%", W - M, y, { align: "right" });
 
                 y += 8;
+
+            });
+
+        }
+
+        // --- Recomendaciones de la IA ---
+        if (ia && (ia.recomendaciones.length || ia.bien.length || ia.ojo.length)) {
+
+            titulo("Recomendaciones de tu asistente IA", "Generadas con IA, revísalas con criterio");
+
+            // Vas bien / Ojo con: dos columnas
+            const col = (ANCHO - 6) / 2;
+
+            const bloque = (lista, x, tit, c) => {
+
+                let yy = y;
+
+                fuente(9.5, "bold"); color(c); texto(tit, x, yy); yy += 5.5;
+
+                lista.forEach((t) => {
+
+                    fuente(9); color(TINTA);
+
+                    const ls = doc.splitTextToSize(limpio(t), col - 5);
+
+                    relleno(c); doc.circle(x + 1.2, yy - 1.2, 0.9, "F");
+
+                    doc.text(ls, x + 4.5, yy);
+
+                    yy += ls.length * 4.2 + 2.2;
+
+                });
+
+                return yy;
+
+            };
+
+            if (ia.bien.length || ia.ojo.length) {
+
+                espacio(30);
+
+                const y1 = bloque(ia.bien, M, "Lo que vas haciendo bien", VERDE);
+
+                const y2 = bloque(ia.ojo, M + col + 6, "Ojo con esto", ROJO);
+
+                y = Math.max(y1, y2) + 4;
+
+            }
+
+            ia.recomendaciones.forEach((r, i) => {
+
+                fuente(9.5);
+
+                const ls = doc.splitTextToSize(limpio(r.detalle), ANCHO - 22);
+
+                const alto = 12 + ls.length * 4.3 + (r.ahorro > 0 ? 6 : 0);
+
+                espacio(alto + 4);
+
+                relleno(FONDO); doc.roundedRect(M, y, ANCHO, alto, 3, 3, "F");
+
+                relleno(A); doc.circle(M + 7, y + 7, 3.6, "F");
+
+                fuente(9.5, "bold"); doc.setTextColor(255, 255, 255); texto(String(i + 1), M + 7, y + 8.3, { align: "center" });
+
+                fuente(10.5, "bold"); color(TINTA); texto(limpio(r.titulo), M + 14, y + 8.3);
+
+                fuente(9.5); color(TINTA); doc.text(ls, M + 14, y + 14);
+
+                if (r.ahorro > 0) { fuente(8.5, "bold"); color(VERDE); texto("Podrías ahorrar unos " + fmt(r.ahorro) + " al mes", M + 14, y + 14 + ls.length * 4.3 + 1.5); }
+
+                y += alto + 4;
 
             });
 
@@ -572,6 +695,13 @@
 
         $("resumenError").textContent = "";
 
+        // En la demo no hay IA de verdad (no hay sesión): la casilla se apaga
+        $("resumenIA").checked = !modoDemo;
+
+        $("resumenIA").disabled = modoDemo;
+
+        $("resumenIAnota").textContent = modoDemo ? "No disponible en la demo" : "Tarda unos segundos más";
+
         $("resumenOverlay").hidden = false;
 
         cargarJsPDF().catch(() => {}); // se va adelantando mientras eligen
@@ -594,7 +724,33 @@
 
             await cargarJsPDF();
 
-            const doc = dibujar(calcular(periodo));
+            const d = calcular(periodo);
+
+            let ia = null;
+
+            if ($("resumenIA").checked && !modoDemo && d.cantidad) {
+
+                boton.textContent = "✨ Analizando con IA...";
+
+                try {
+
+                    ia = (await api("analizar", { datos: datosParaIA(d) })).analisis || null;
+
+                } catch (e) {
+
+                    if (e instanceof ErrorPin) { cerrar(); manejarError(e); return; }
+
+                    console.error(e);
+
+                    mostrarToast("✨ " + (e && e.message && !/fetch|network|red \(/i.test(e.message) ? e.message : "No se pudo analizar con IA") + " · el PDF sale sin recomendaciones");
+
+                }
+
+            }
+
+            boton.textContent = "⏳ Armando el PDF...";
+
+            const doc = dibujar(d, ia);
 
             doc.save(`finanzas-ia-${periodo === "todo" ? "desde-el-inicio" : periodo}.pdf`);
 
@@ -683,7 +839,7 @@
 
     }
 
-    window.resumenPDF = { calcular, dibujar, cargarJsPDF };
+    window.resumenPDF = { calcular, dibujar, cargarJsPDF, datosParaIA };
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
     else iniciar();

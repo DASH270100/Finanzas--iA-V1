@@ -41,7 +41,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=63">
+    <link rel="stylesheet" href="style.css?v=64">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -111,6 +111,11 @@
 
         <label class="resumen-campo">¿De qué periodo?
             <select id="resumenPeriodo"></select>
+        </label>
+
+        <label class="resumen-ia">
+            <input id="resumenIA" type="checkbox" checked>
+            <span>✨ Incluir análisis y recomendaciones de la IA<small id="resumenIAnota">Tarda unos segundos más</small></span>
         </label>
 
         <div id="resumenError" class="pin-error" role="alert"></div>
@@ -1214,7 +1219,7 @@
 <script src="demo.js?v=54"></script>
 
 <script src="script.js?v=61"></script>
-<script src="resumen.js?v=1"></script>
+<script src="resumen.js?v=2"></script>
 <script src="fluidez.js?v=1"></script>
 
 </body>
