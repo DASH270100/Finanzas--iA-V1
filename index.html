@@ -43,7 +43,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=72">
+    <link rel="stylesheet" href="style.css?v=75">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -835,6 +835,54 @@
 
         </section>
 
+        <!-- POR COBRAR (MODO FREELANCE) -->
+
+        <section id="cobrarCard" class="card cobrar-card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-hand-coins"></use></svg>Por cobrar</h2>
+
+                    <p id="subtituloCobrar">Tus trabajos freelance: quién te debe y cuándo te paga.</p>
+
+                </div>
+
+            </div>
+
+            <div id="porCobrar"></div>
+
+            <form id="cobrarForm" class="presupuesto-form cobrar-form" autocomplete="off">
+
+                <label>Cliente
+                    <input id="cobrarCliente" type="text" maxlength="50" list="listaClientes" placeholder="Ej: Nativo Cream" required>
+                </label>
+
+                <label>Trabajo
+                    <input id="cobrarTrabajo" type="text" maxlength="70" placeholder="Ej: Logo y manual de marca">
+                </label>
+
+                <label>Monto (S/)
+                    <input id="cobrarMonto" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="700" required>
+                </label>
+
+                <label>¿Cuándo te pagan? (opcional)
+                    <input id="cobrarFecha" type="date">
+                </label>
+
+                <input id="cobrarId" type="hidden">
+
+                <button id="cobrarBoton" type="submit">Guardar</button>
+
+            </form>
+
+            <datalist id="listaClientes"></datalist>
+
+            <div id="clientesTop" class="clientes-top"></div>
+
+        </section>
+
         <section class="card tarjetas-card">
 
             <div class="card-title">
@@ -1291,12 +1339,13 @@
 
 <script src="graficos.js?v=58"></script>
 
-<script src="demo.js?v=54"></script>
+<script src="demo.js?v=55"></script>
 
 <script src="iconos.js?v=1"></script>
-<script src="script.js?v=67"></script>
+<script src="script.js?v=68"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=3"></script>
+<script src="freelance.js?v=3"></script>
 <script src="fluidez.js?v=2"></script>
 
 </body>

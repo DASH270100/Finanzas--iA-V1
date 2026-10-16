@@ -5535,3 +5535,95 @@ html #alcanzaForm .alc-modo > button.alc-modo-btn[aria-checked="true"]{
 @media (max-width:420px){
     .alcanza-form{ grid-template-columns:minmax(0,1fr) 120px; }
 }
+
+/*==================================================
+        MODO FREELANCE: por cobrar
+====================================================*/
+.cobro-item{
+    padding:14px;
+    margin-bottom:10px;
+    border-radius:18px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-left:4px solid var(--border);
+}
+.cobro-item.estado-vencido{ border-left-color:var(--red); }
+.cobro-item.estado-hoy,
+.cobro-item.estado-pronto{ border-left-color:#F59E0B; }
+.cobro-item.estado-futuro{ border-left-color:var(--green); }
+.cobro-top{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:12px; align-items:center; }
+.cobro-avatar{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    flex:none;
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:#fff;
+    background:linear-gradient(135deg, var(--av), color-mix(in srgb, var(--av) 65%, #000));
+}
+.cobro-avatar.chica{ width:34px; height:34px; font-size:12.5px; }
+.cobro-info{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+.cobro-info strong{ font-size:15px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cobro-info span{ font-size:13px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cobro-cuando{ font-size:12px; font-weight:600; color:var(--text-muted); }
+.cobro-cuando .ico{ width:12px; height:12px; vertical-align:-1px; }
+.estado-vencido .cobro-cuando{ color:var(--red); }
+.estado-hoy .cobro-cuando, .estado-pronto .cobro-cuando{ color:#D97706; }
+.cobro-monto{ font-size:17px; font-weight:800; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.cobro-acciones{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.cobro-acciones .mov-btn .ico{ width:14px; height:14px; margin-right:4px; vertical-align:-2px; }
+.cobro-parte{ display:flex; gap:8px; margin-top:10px; }
+.cobro-parte[hidden]{ display:none; }
+.cobro-parte input{ flex:1; min-width:0; margin:0; }
+.cobro-parte button{ width:auto; margin:0; padding:10px 16px; }
+
+.cobrados{ margin:6px 2px 10px; }
+.cobrados summary{ cursor:pointer; font-size:13px; font-weight:700; color:var(--text-muted); }
+.cobrado-fila{ display:flex; justify-content:space-between; gap:10px; padding:8px 2px; font-size:13px; color:var(--text-soft); border-bottom:1px dashed var(--border); }
+.cobrado-fila .ico{ width:14px; height:14px; color:var(--green); vertical-align:-2px; }
+.cobrado-fila b{ font-weight:600; color:var(--text-muted); white-space:nowrap; }
+
+.cobrar-form{ grid-template-columns:1fr 1fr; }
+
+/* Clientes del año */
+.clientes-top:empty{ display:none; }
+.clientes-top{ margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+.clientes-top h3{ margin:0 0 4px; font-size:16px; }
+.clientes-total{ margin:0 0 14px; font-size:13.5px; color:var(--text-muted); }
+.clientes-total b{ color:var(--green); }
+.cliente-fila{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.cliente-datos{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.cliente-cab{ display:flex; justify-content:space-between; gap:10px; }
+.cliente-cab strong{ font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cliente-cab b{ font-size:14px; color:var(--text); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.cliente-barra{ height:6px; border-radius:999px; background:color-mix(in srgb, var(--text-muted) 18%, transparent); overflow:hidden; }
+.cliente-barra span{ display:block; height:100%; border-radius:999px; }
+.cliente-datos small{ font-size:11.5px; color:var(--text-muted); }
+
+@media (max-width:640px){
+    .cobrar-form{ grid-template-columns:1fr; }
+}
+.cobro-info strong{
+    white-space:normal;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    line-height:1.25;
+}
+.cobro-top{ align-items:start; }
+.cobro-avatar{ margin-top:2px; }
+.cobro-monto{ margin-top:2px; }
+.cobro-acciones{ flex-wrap:nowrap; }
+.cobro-acciones .mov-btn{ white-space:nowrap; }
+.cobro-acciones .btn-ico{ width:38px; padding:0; display:inline-grid; place-items:center; flex:none; }
+.cobro-acciones .btn-ico .ico{ margin:0; width:16px; height:16px; }
+.cobro-acciones [data-cobrar="todo"]{ flex:1 1 auto; }
+.cobro-lado{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.cobro-mini{ display:flex; gap:6px; }
+.cobro-mini .btn-ico{ width:32px; height:32px; min-height:32px; padding:0; margin:0; display:inline-grid; place-items:center; }
+.cobro-mini .btn-ico .ico{ width:15px; height:15px; margin:0; }
+.cobro-acciones .mov-btn{ flex:1 1 0; justify-content:center; text-align:center; }

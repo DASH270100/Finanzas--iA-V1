@@ -33,6 +33,7 @@ const estado = {
     fijos: [],
     metas: [],
     tarjetas: [],
+    porCobrar: [],
     usuario: null,
     personas: [],
     adminEdicion: null
@@ -404,7 +405,21 @@ function normalizarDatos(data) {
         .map((f) => ({ nombre: String(f[0] ?? "").trim(), presupuesto: numero(f[1]), dia: Math.min(31, Math.max(0, Math.round(numero(f[2])))), proximo: parseFecha(f[3]) }))
         .filter((t) => t.nombre !== "" && t.nombre.toLowerCase() !== "tarjeta");
 
-    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas, tarjetas };
+    // Por cobrar (freelance): [ID, Cliente, Trabajo, Monto, Fecha de cobro, Estado, Cobrado el, Creado]
+    const porCobrar = (data.porCobrar || [])
+        .map((f) => ({
+            id: String(f[0] ?? "").trim(),
+            cliente: String(f[1] ?? "").trim(),
+            trabajo: String(f[2] ?? "").trim(),
+            monto: numero(f[3]),
+            fecha: parseFecha(f[4]),
+            cobrado: String(f[5] ?? "").trim().toLowerCase() === "cobrado",
+            cobradoEl: parseFecha(f[6]),
+            creado: parseFecha(f[7])
+        }))
+        .filter((x) => x.id && x.id !== "ID" && x.cliente);
+
+    return { movimientos, deudas, dashboard: data.dashboard || [], presupuestos, fijos, metas, tarjetas, porCobrar };
 
 }
 
@@ -436,6 +451,8 @@ function aplicarDatos(data) {
     estado.metas = n.metas;
 
     estado.tarjetas = n.tarjetas;
+
+    estado.porCobrar = n.porCobrar;
 
 }
 
@@ -3320,6 +3337,8 @@ function renderTodo() {
 
     renderMetas();
 
+    if (window.freelance) freelance.render();
+
     renderDeudas();
 
 }
@@ -5593,6 +5612,7 @@ const PLEGABLES = {
     cuotaForm: "Agregar préstamo",
     fijoForm: "Agregar gasto fijo",
     ingFijoForm: "Agregar ingreso fijo",
+    cobrarForm: "Agregar trabajo por cobrar",
     metaForm: "Nueva meta"
 };
 

@@ -54,7 +54,8 @@ const DemoBackend = (() => {
             presupuestos: [["Categoría", "Límite"]],
             fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo", "Cuotas", "Pagadas", "TEA %", "Saldo", "Capital"]],
             metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
-            tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]]
+            tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]],
+            porCobrar: [["ID", "Cliente", "Trabajo", "Monto", "Fecha de cobro", "Estado", "Cobrado el", "Creado"]]
         };
 
     }
@@ -318,6 +319,73 @@ const DemoBackend = (() => {
         nuevaFilaMov(tipo, categoria, descripcion, monto, tipo === "Gasto" ? seguro(p.medio, 40) : "");
 
         return ok();
+
+    }
+
+    // Modo freelance: trabajos por cobrar
+    function hoyTexto() {
+
+        const d = new Date();
+
+        return String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + d.getFullYear();
+
+    }
+
+    function filaCobro(id) {
+
+        for (let i = 1; i < db.porCobrar.length; i++) if (db.porCobrar[i][0] === id) return i;
+
+        return 0;
+
+    }
+
+    function porCobrar(p) {
+
+        const i = p.id ? filaCobro(p.id) : 0;
+
+        if (p.quitar) { if (i) db.porCobrar.splice(i, 1); return ok(); }
+
+        const cliente = seguro(p.cliente, 50), trabajo = seguro(p.trabajo, 70), monto = Math.round(Number(p.monto) * 100) / 100;
+
+        if (!cliente.trim()) return fallo("Escribe el cliente");
+
+        if (!isFinite(monto) || monto <= 0) return fallo("Monto no válido");
+
+        const f = String(p.fecha || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+        const fecha = f ? f[3] + "/" + f[2] + "/" + f[1] : "";
+
+        if (i) { db.porCobrar[i][1] = cliente; db.porCobrar[i][2] = trabajo; db.porCobrar[i][3] = monto; db.porCobrar[i][4] = fecha; return ok({ id: p.id }); }
+
+        const id = "C" + Date.now().toString(36).toUpperCase();
+
+        db.porCobrar.push([id, cliente, trabajo, monto, fecha, "Pendiente", "", hoyTexto()]);
+
+        return ok({ id });
+
+    }
+
+    function cobrar(p) {
+
+        const i = filaCobro(p.id);
+
+        if (!i) return fallo("No encontré ese trabajo");
+
+        const r = db.porCobrar[i];
+
+        if (r[5] === "Cobrado") return fallo("Ese trabajo ya está cobrado");
+
+        const monto = p.monto === undefined || p.monto === "" ? r[3] : Math.round(Number(p.monto) * 100) / 100;
+
+        if (!(monto > 0) || monto > r[3] + 0.005) return fallo("Monto no válido");
+
+        nuevaFilaMov("Ingreso", "Freelance", (r[2] ? r[2] + " · " : "") + r[1], monto, "");
+
+        const resta = Math.round((r[3] - monto) * 100) / 100;
+
+        if (resta <= 0.005) { r[5] = "Cobrado"; r[6] = hoyTexto(); } else r[3] = resta;
+
+        return ok({ resta: Math.max(0, resta) });
 
     }
 
@@ -994,7 +1062,8 @@ const DemoBackend = (() => {
                     presupuestos: clonar(db.presupuestos),
                     fijos: clonar(db.fijos),
                     metas: clonar(db.metas),
-                    tarjetas: clonar(db.tarjetas)
+                    tarjetas: clonar(db.tarjetas),
+                    porCobrar: clonar(db.porCobrar)
                 });
 
             case "registrar": return registrar(p);
@@ -1007,6 +1076,8 @@ const DemoBackend = (() => {
             case "pagarFijo": return pagarFijo(p);
             case "adelantarCuota": return adelantarCuota(p);
             case "tarjeta": return tarjeta(p);
+            case "porCobrar": return porCobrar(p);
+            case "cobrar": return cobrar(p);
             case "meta": return meta(p);
             case "aporte": return aporte(p);
             case "preguntar": return preguntar(p);
