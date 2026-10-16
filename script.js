@@ -2358,7 +2358,7 @@ function fijoHTML(f) {
 
             <div class="fijo-top">
 
-                <span class="fijo-nombre">${ing ? "💼" : "🔁"} ${esc(f.nombre)}</span>
+                <span class="fijo-nombre">${burbujaCategoria(f.nombre + " " + (f.categoria || ""), ing, "chica")}${esc(f.nombre)}</span>
 
                 <span class="fijo-monto">${ing ? "+ " : ""}${money(f.monto)}</span>
 
@@ -2461,7 +2461,7 @@ function cuotaHTML(f) {
 
             <div class="fijo-top">
 
-                <span class="fijo-nombre">🏦 ${esc(f.nombre)}${f.tea > 0 ? ` <small class="cuota-tea">TEA ${f.tea}%</small>` : ""}</span>
+                <span class="fijo-nombre">${burbujaCategoria("banco", false, "chica")}${esc(f.nombre)}${f.tea > 0 ? ` <small class="cuota-tea">TEA ${f.tea}%</small>` : ""}</span>
 
                 <span class="fijo-monto">${money(f.monto)} <small>al mes</small></span>
 
@@ -2857,6 +2857,71 @@ function avisoCambioTarjetas(antes) {
 }
 
 // Barra de uso de una tarjeta (la misma en Planificar, en el inicio y al registrar una compra)
+// Colores de la tarjeta según el banco (si no se reconoce, el color del estilo)
+function coloresBanco(nombre) {
+
+    const t = String(nombre || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const BANCOS = [
+        [/bcp|credito/, "#0A2F8F", "#1F5BD8", "#FF7A1A"],
+        [/interbank|\bibk\b/, "#0B8F4D", "#05B05E", "#0A4FA3"],
+        [/bbva/, "#072146", "#1464A5", "#5BBEFF"],
+        [/scotia/, "#A30F14", "#EC111A", "#FFFFFF"],
+        [/falabella|cmr/, "#2E6B1F", "#5BA531", "#C8E6A0"],
+        [/ripley/, "#3E1450", "#6E2A8C", "#F5C2FF"],
+        [/\boh\b|oechsle/, "#C1121F", "#F0353F", "#FFD166"],
+        [/diners/, "#1C2B39", "#3B5470", "#B7C7D6"],
+        [/banbif/, "#00566B", "#0090A8", "#9EE7F2"],
+        [/pichincha/, "#1E2B6F", "#FFD100", "#FFD100"],
+        [/amex|american/, "#0B5FA5", "#2E8BD6", "#BFE3FF"]
+    ];
+
+    for (const [re, a, b, acento] of BANCOS) if (re.test(t)) return { a, b, acento };
+
+    return null;
+
+}
+
+// Una tarjeta "de plástico" con lo que debes, el uso del límite y la fecha de pago
+function plasticoHTML(t) {
+
+    const c = coloresBanco(t.nombre);
+
+    const pct = t.presupuesto > 0 ? Math.round(t.pct * 100) : 0;
+
+    const ancho = Math.min(100, pct);
+
+    const alerta = t.presupuesto > 0 && t.pct >= 0.8;
+
+    const estilo = c ? `--pl-a:${c.a};--pl-b:${c.b};--pl-acento:${c.acento}` : "";
+
+    return `
+        <div class="plastico${c ? "" : " pl-estilo"}${alerta ? " pl-alerta" : ""}" style="${estilo}">
+
+            <div class="pl-top">
+                <span class="pl-banco">${esc(t.nombre)}</span>
+                <span class="pl-chip" aria-hidden="true"></span>
+            </div>
+
+            <div class="pl-centro">
+                <span class="pl-label">${t.deuda > 0.005 ? "Debes" : "Al día"}</span>
+                <span class="pl-monto">${money(t.deuda)}</span>
+            </div>
+
+            ${t.presupuesto > 0 ? `
+            <div class="pl-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${ancho}" aria-label="Uso del límite de ${esc(t.nombre)}">
+                <span style="width:${ancho}%"></span>
+            </div>` : ""}
+
+            <div class="pl-pie">
+                <span>${t.presupuesto > 0 ? `${pct}% de ${money(t.presupuesto)}` : "Sin límite puesto"}</span>
+                ${t.pagoTexto ? `<span class="${t.pagoDias <= 3 && t.deuda > 0.005 ? "pl-pronto" : ""}">${ico("calendar-days")} ${esc(t.pagoTexto)}</span>` : ""}
+            </div>
+
+        </div>`;
+
+}
+
 function barraUsoHTML(t) {
 
     const ancho = Math.min(100, Math.round(t.pct * 100));
@@ -2868,7 +2933,7 @@ function barraUsoHTML(t) {
 
             <div class="presupuesto-top">
 
-                <span class="presupuesto-nombre">💳 ${esc(t.nombre)}</span>
+                <span class="presupuesto-nombre">${ico("credit-card")} ${esc(t.nombre)}</span>
 
                 <span class="presupuesto-monto">${t.deuda > 0.005 ? `Debes ${money(t.deuda)}${t.presupuesto > 0 ? ` de ${money(t.presupuesto)}` : ""}` : `Sin deuda${t.presupuesto > 0 ? ` · límite ${money(t.presupuesto)}` : ""}`}</span>
 
@@ -2947,19 +3012,20 @@ function renderTarjetas() {
             <div class="presupuesto-item tarjeta-item" data-nombre="${esc(t.nombre)}"
                 data-presupuesto="${t.presupuesto}" data-deuda="${t.deuda}" data-dia="${t.dia || ""}" data-fecha="${t.pagoFecha ? aInputFecha(t.pagoFecha) : ""}">
 
-                ${barraUsoHTML(t)}
+                ${plasticoHTML(t)}
+
+                ${t.mensaje && t.presupuesto > 0 ? `<div class="pl-mensaje nivel-${t.nivel === "sin" ? "ok" : t.nivel === "limite" ? "exceso" : t.nivel}">${esc(t.mensaje)}</div>` : ""}
 
                 ${t.vencido > 0.005 ? `<div class="tarjeta-vencida">⚠️ Pasó tu día de pago: ya debías ${money(t.vencido)}. Paga hoy y evitas que crezca 💪</div>` : ""}
-                ${t.pagoTexto ? `<div class="tarjeta-pago ${t.pagoDias <= 3 && t.deuda > 0.005 ? "pronto" : ""}">📅 ${esc(t.pagoTexto)}</div>` : ""}
 
                 ${detalle ? `<div class="tarjeta-detalle">${esc(detalle)}</div>` : ""}
 
                 ${t.deuda > 0.005 ? `
                 <div class="presupuesto-acciones tarjeta-acciones tarjeta-pagar">
 
-                    <button class="mov-btn mov-btn-primario" type="button" data-tarj="pagartodo">✓ Pagué todo (${money(t.deuda)})</button>
+                    <button class="mov-btn mov-btn-primario" type="button" data-tarj="pagartodo" aria-label="Pagué todo: ${money(t.deuda)}">✓ Pagué todo</button>
 
-                    <button class="mov-btn" type="button" data-tarj="pagarparte">Pagar una parte</button>
+                    <button class="mov-btn" type="button" data-tarj="pagarparte">Pagué una parte</button>
 
                 </div>
 
@@ -2974,7 +3040,7 @@ function renderTarjetas() {
 
                 <div class="presupuesto-acciones tarjeta-acciones">
 
-                    <button class="mov-btn" type="button" data-tarj="editar">Cambiar límite o día de pago</button>
+                    <button class="mov-btn" type="button" data-tarj="editar">${ico("pencil")} Editar</button>
 
                     ${t.presupuesto > 0
                         ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar límite</button>`
@@ -3132,6 +3198,24 @@ function infoMeta(m) {
 
 }
 
+// Anillo de progreso (como los de actividad del reloj)
+function anilloHTML(pct, nivel, nombre) {
+
+    const R = 30, C = 2 * Math.PI * R;
+
+    const off = C * (1 - Math.min(100, pct) / 100);
+
+    return `
+        <div class="anillo nivel-${nivel}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Avance de ${esc(nombre)}">
+            <svg viewBox="0 0 72 72" aria-hidden="true">
+                <circle class="anillo-fondo" cx="36" cy="36" r="${R}"/>
+                <circle class="anillo-valor" cx="36" cy="36" r="${R}" stroke-dasharray="${C.toFixed(2)}" style="--total:${C.toFixed(2)};--off:${off.toFixed(2)}"/>
+            </svg>
+            <span>${nivel === "ok" ? ico("flag") : pct + "%"}</span>
+        </div>`;
+
+}
+
 function renderMetas() {
 
     const items = estado.metas.map((m) => ({ ...m, info: infoMeta(m) }));
@@ -3160,31 +3244,22 @@ function renderMetas() {
             <div class="meta-item" data-nombre="${esc(m.nombre)}" data-objetivo="${m.objetivo}"
                 data-fecha="${m.fecha ? aInputFecha(m.fecha) : ""}">
 
-                <div class="presupuesto-top">
+                <div class="meta-cab">
 
-                    <span class="presupuesto-nombre">🏁 ${esc(m.nombre)}</span>
+                    ${anilloHTML(ancho, m.info.nivel, m.nombre)}
 
-                    <span class="presupuesto-monto">${money(m.ahorrado)} de ${money(m.objetivo)}</span>
+                    <div class="meta-info">
+                        <strong>${esc(m.nombre)}</strong>
+                        <span class="meta-cifras"><b>${money(m.ahorrado)}</b> de ${money(m.objetivo)}</span>
+                        <small class="meta-estado nivel-${m.info.nivel}">${esc(m.info.texto)}</small>
+                    </div>
 
-                </div>
-
-                <div class="presupuesto-barra" role="progressbar"
-                    aria-valuemin="0" aria-valuemax="100" aria-valuenow="${ancho}"
-                    aria-label="Avance de ${esc(m.nombre)}">
-
-                    <div class="presupuesto-progreso ${m.info.nivel === "ok" ? "nivel-ok" : "meta-progreso"}"
-                        style="width:${ancho}%"></div>
-
-                </div>
-
-                <div class="meta-estado nivel-${m.info.nivel}">
-                    ${Math.round(m.info.pct * 100)}% · ${esc(m.info.texto)}
                 </div>
 
                 <div class="meta-aporte">
 
                     <input class="meta-monto" type="number" step="0.01" min="0.01"
-                        inputmode="decimal" placeholder="Monto (S/)" aria-label="Monto a aportar o retirar">
+                        inputmode="decimal" placeholder="S/ 0.00" aria-label="Monto a aportar o retirar">
 
                     <button class="mov-btn mov-btn-primario" type="button" data-meta="aportar">＋ Aportar</button>
 
