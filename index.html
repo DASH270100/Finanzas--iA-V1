@@ -43,7 +43,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=75">
+    <link rel="stylesheet" href="style.css?v=76">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -139,6 +139,31 @@
         <button id="resumenPDF" type="submit">📄 Descargar PDF</button>
 
         <button id="resumenCSV" class="mov-btn resumen-csv" type="button">📊 Descargar movimientos para Excel</button>
+
+    </div>
+
+</div>
+
+<div id="estiloOverlay" class="pin-overlay" hidden>
+
+    <div class="card pin-box buzon-box estilo-box" role="dialog" aria-modal="true" aria-labelledby="estiloNombre">
+
+        <button id="estiloCerrar" class="buzon-x" type="button" aria-label="Cerrar">✕</button>
+
+        <div class="estilo-telefono"><img id="estiloImg" alt="" width="390" height="720" decoding="async"></div>
+
+        <div class="estilo-info">
+            <span id="estiloPrecio" class="estilo-precio"></span>
+            <h2 id="estiloNombre"></h2>
+            <p id="estiloDesc" class="buzon-intro"></p>
+        </div>
+
+        <a id="estiloComprar" class="estilo-comprar" href="#" target="_blank" rel="noopener">
+            <svg class="ico" aria-hidden="true"><use href="#i-mensaje"></use></svg>
+            <span>Pedirlo por WhatsApp</span>
+        </a>
+
+        <p class="estilo-nota">Le escribes a Diego, coordinan el pago y te lo activa en tu cuenta. Aparece aquí listo para usar.</p>
 
     </div>
 
@@ -1341,8 +1366,8 @@
 
 <script src="demo.js?v=55"></script>
 
-<script src="iconos.js?v=1"></script>
-<script src="script.js?v=68"></script>
+<script src="iconos.js?v=2"></script>
+<script src="script.js?v=69"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=3"></script>
 <script src="freelance.js?v=3"></script>

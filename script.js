@@ -598,9 +598,9 @@ function renderTemasEspeciales(catalogo) {
 
     const lista = catalogo.filter((t) => TEMAS[t.id] || !t.tiene);
 
-    $("temasEspecialesBloque").hidden = lista.length === 0;
+    vitrina.catalogo = lista;
 
-    const usuario = (estado.usuario && estado.usuario.usuario) || "";
+    $("temasEspecialesBloque").hidden = lista.length === 0;
 
     caja.innerHTML = lista.map((t) => {
 
@@ -615,17 +615,56 @@ function renderTemasEspeciales(catalogo) {
 
         }
 
-        const mensaje = `Hola Diego, quiero desbloquear el estilo ${t.nombre} en Finanzas IA.${usuario ? " Mi usuario es " + usuario + "." : ""}`;
-
-        return `<a class="tema-candado" href="https://wa.me/${WHATSAPP_DIEGO}?text=${encodeURIComponent(mensaje)}" target="_blank" rel="noopener">
+        // Bloqueado: se toca y se abre la vista previa con el precio y el botón de WhatsApp
+        return `<button type="button" class="tema-candado" data-estilo="${esc(t.id)}">
             ${muestra}
-            <span class="candado-badge">🔒 ${esc(t.precio || "De pago")}</span>
-            <span>${esc(t.nombre)}<small>Desbloquéalo escribiéndole a Diego</small></span>
-        </a>`;
+            <span class="candado-badge"><svg class="ico" aria-hidden="true"><use href="#i-lock"></use></svg>${esc(t.precio || "De pago")}</span>
+            <span>${esc(t.nombre)}<small>${esc(t.descripcion || "Estilo especial")}</small></span>
+        </button>`;
 
     }).join("");
 
 }
+
+// Vista previa de un estilo de pago: captura, precio y pedido por WhatsApp
+const vitrina = (() => {
+
+    let catalogo = [];
+
+    function abrir(id) {
+        const t = catalogo.find((x) => x.id === id);
+        if (!t) return;
+        const usuario = (estado.usuario && estado.usuario.usuario) || "";
+        const mensaje = `Hola Diego 👋 Quiero el estilo ${t.nombre} (${t.precio || "de pago"}) en Finanzas IA.${usuario ? " Mi usuario es @" + usuario + "." : ""}`;
+        $("estiloImg").src = `previews/estilo-${t.id}.webp`;
+        $("estiloImg").alt = `Así se ve Finanzas IA con el estilo ${t.nombre}`;
+        $("estiloNombre").textContent = t.nombre;
+        $("estiloDesc").textContent = t.descripcion || "";
+        $("estiloPrecio").textContent = t.precio || "De pago";
+        $("estiloComprar").href = `https://wa.me/${WHATSAPP_DIEGO}?text=${encodeURIComponent(mensaje)}`;
+        $("estiloComprar").querySelector("span").textContent = `Lo quiero · ${t.precio || "por WhatsApp"}`;
+        $("estiloOverlay").hidden = false;
+        $("estiloCerrar").focus();
+    }
+
+    function cerrar() { $("estiloOverlay").hidden = true; }
+
+    function iniciar() {
+        $("temasEspeciales").addEventListener("click", (e) => {
+            const b = e.target.closest(".tema-candado");
+            if (b) abrir(b.dataset.estilo);
+        });
+        $("estiloCerrar").addEventListener("click", cerrar);
+        $("estiloOverlay").addEventListener("click", (e) => { if (e.target === $("estiloOverlay")) cerrar(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("estiloOverlay").hidden) cerrar(); });
+        // Si la imagen no está (estilo nuevo sin captura), se esconde el marco
+        $("estiloImg").addEventListener("error", () => { $("estiloImg").closest(".estilo-telefono").hidden = true; });
+        $("estiloImg").addEventListener("load", () => { $("estiloImg").closest(".estilo-telefono").hidden = false; });
+    }
+
+    return { iniciar, abrir, cerrar, set catalogo(c) { catalogo = c || []; } };
+
+})();
 
 function temaGuardado() {
     try {
@@ -5870,6 +5909,8 @@ window.addEventListener("DOMContentLoaded", () => {
     medios.iniciar();
 
     buzon.iniciar();
+
+    vitrina.iniciar();
 
     // Ejemplos tocables: llenan el cuadro de registro y llevan al usuario hasta él
     document.addEventListener("click", (e) => {
