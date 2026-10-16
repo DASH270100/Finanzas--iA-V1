@@ -1352,11 +1352,24 @@ function renderDashboard() {
 
 function iconoDe(m) {
 
-    if (esPrestamo(m) || esReembolso(m)) return "🤝";
+    if (esPrestamo(m) || esReembolso(m)) return burbujaCategoria("préstamo", false);
 
-    if (esPagoTarjeta(m)) return "💳";
+    if (esPagoTarjeta(m)) return burbujaCategoria("pago de tarjeta", false);
 
-    return ICONOS[m.categoria.toLowerCase()] || (esIngreso(m) ? "💵" : "📦");
+    return burbujaCategoria(m.categoria, esIngreso(m));
+
+}
+
+// "Hoy", "Ayer" o "Lunes 13 oct"
+function etiquetaDia(fecha) {
+
+    const corto = formatearFecha(fecha);
+
+    if (corto === "Hoy" || corto === "Ayer") return corto;
+
+    const t = fecha.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" }).replace(".", "").replace(",", "");
+
+    return t.charAt(0).toUpperCase() + t.slice(1);
 
 }
 
@@ -1388,7 +1401,7 @@ function renderActividad() {
             ((b.fecha ? b.fecha.getTime() : 0) - (a.fecha ? a.fecha.getTime() : 0)) ||
             (b.idx - a.idx)
         )
-        .slice(0, 5);
+        .slice(0, 8);
 
     if (!recientes.length) {
 
@@ -1410,42 +1423,91 @@ function renderActividad() {
         .map((c) => `<option value="${esc(c)}"></option>`)
         .join("");
 
-    $("actividad").innerHTML = recientes.map((m) =>
-        estado.editando === m.fila ? formularioEdicion(m) : `
-        <div class="movimiento" data-fila="${m.fila}">
+    // Agrupado por día, con lo gastado ese día
+    const grupos = [];
 
-            <div class="movimiento-superior">
+    recientes.forEach((m) => {
 
-                <div class="movimiento-nombre">
-                    ${iconoDe(m)} ${esc(m.descripcion || m.categoria)}
-                </div>
+        const k = m.fecha ? m.fecha.toDateString() : "sin-fecha";
 
-                <div class="movimiento-monto ${esIngreso(m) ? "ingreso" : "gasto"}">
-                    ${esIngreso(m) ? "+" : "-"} ${money(m.monto)}
-                </div>
+        let g = grupos.find((x) => x.k === k);
 
-            </div>
+        if (!g) { g = { k, fecha: m.fecha, lista: [] }; grupos.push(g); }
 
-            <div class="movimiento-inferior">
+        g.lista.push(m);
 
-                <span>${esc(m.categoria)}${m.medio ? ` · 💳 ${esc(m.medio)}` : ""}</span>
+    });
 
-                <span>${esc(formatearFecha(m.fecha, m.fechaTexto))}</span>
+    const gastadoElDia = (fecha) => fecha
+        ? sumar(estado.movimientos.filter((x) => x.fecha && x.fecha.toDateString() === fecha.toDateString() && esGastoReal(x)))
+        : 0;
+
+    const fila = (m) => estado.editando === m.fila ? formularioEdicion(m) : `
+        <div class="movimiento mov-fila" data-fila="${m.fila}">
+
+            <div class="mov-toque" role="button" tabindex="0" aria-expanded="false"
+                aria-label="${esc(m.descripcion || m.categoria)}, ${esIngreso(m) ? "ingreso" : "gasto"} de ${money(m.monto)}. Toca para editar o borrar">
+
+                ${iconoDe(m)}
+
+                <span class="mov-txt">
+                    <strong>${esc(m.descripcion || m.categoria)}</strong>
+                    <small>${esc(m.categoria)}${m.medio ? ` · ${esc(m.medio)}` : ""}</small>
+                </span>
+
+                <span class="mov-monto ${esIngreso(m) ? "ingreso" : "gasto"}">${esIngreso(m) ? "+" : "−"} ${money(m.monto)}</span>
 
             </div>
 
             <div class="movimiento-acciones">
 
                 <button class="mov-btn" type="button" data-accion="editar"
-                    aria-label="Editar movimiento">✏️ Editar</button>
+                    aria-label="Editar movimiento">${ico("pencil")} Editar</button>
 
                 <button class="mov-btn mov-btn-borrar" type="button" data-accion="borrar"
-                    aria-label="Borrar movimiento">🗑️ Borrar</button>
+                    aria-label="Borrar movimiento">${ico("trash")} Borrar</button>
 
             </div>
 
+        </div>`;
+
+    $("actividad").innerHTML = grupos.map((g) => {
+
+        const gastado = gastadoElDia(g.fecha);
+
+        return `
+        <div class="act-dia">
+            <span>${g.fecha ? esc(etiquetaDia(g.fecha)) : esc(g.lista[0].fechaTexto || "Sin fecha")}</span>
+            ${gastado > 0 ? `<span>Gastaste ${money(gastado)}</span>` : ""}
         </div>
-    `).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>`;
+        ${g.lista.map(fila).join("")}`;
+
+    }).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>`;
+
+}
+
+// Tocar una fila abre sus acciones (y cierra las demás)
+function alternarFila(toque) {
+
+    const fila = toque.closest(".mov-fila");
+
+    const abrir = !fila.classList.contains("abierto");
+
+    $("actividad").querySelectorAll(".mov-fila.abierto").forEach((f) => {
+
+        f.classList.remove("abierto");
+
+        f.querySelector(".mov-toque").setAttribute("aria-expanded", "false");
+
+    });
+
+    if (abrir) {
+
+        fila.classList.add("abierto");
+
+        toque.setAttribute("aria-expanded", "true");
+
+    }
 
 }
 
@@ -1557,7 +1619,7 @@ function renderCatTiles(grupos) {
 
     caja.innerHTML = top.map((g, i) => `
         <div class="cat-tile c${i % 5}">
-            <span class="ct-ico">${ICONOS[g.nombre.toLowerCase()] || "📦"}</span>
+            <span class="ct-ico">${ico(icoCategoria(g.nombre).nombre)}</span>
             <strong>S/ ${Math.round(g.total)}</strong>
             <small>${esc(g.nombre)}</small>
         </div>
@@ -4954,7 +5016,7 @@ function renderPresupuestos() {
 
         const ancho = Math.min(100, Math.round(pct * 100));
 
-        const icono = ICONOS[p.categoria.toLowerCase()] || "📦";
+        const icono = burbujaCategoria(p.categoria, false, "chica");
 
         return `
             <div class="presupuesto-item" data-categoria="${esc(p.categoria)}" data-limite="${p.limite}">
@@ -6579,7 +6641,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
         const boton = e.target.closest("[data-accion]");
 
-        if (boton) accionActividad(boton);
+        if (boton) { accionActividad(boton); return; }
+
+        const toque = e.target.closest(".mov-toque");
+
+        if (toque) alternarFila(toque);
+
+    });
+
+    $("actividad").addEventListener("keydown", (e) => {
+
+        const toque = e.target.closest(".mov-toque");
+
+        if (toque && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); alternarFila(toque); }
 
     });
 

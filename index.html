@@ -41,7 +41,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=65">
+    <link rel="stylesheet" href="style.css?v=67">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -56,7 +56,7 @@
 
     <form id="pinForm" class="card pin-box">
 
-        <div class="logo-icon">🔒</div>
+        <div class="logo-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg></div>
 
         <h2>Finanzas IA</h2>
 
@@ -161,7 +161,7 @@
 
     <form id="claveForm" class="card pin-box" autocomplete="off">
 
-        <div class="logo-icon">🔑</div>
+        <div class="logo-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg></div>
 
         <h2 id="claveTitulo">Crea tu contraseña</h2>
 
@@ -215,7 +215,7 @@
 
         <div class="logo">
 
-            <div class="logo-icon">💰</div>
+            <div class="logo-icon logo-marca"><img src="icono.svg?v=1" alt=""></div>
 
             <div>
 
@@ -230,23 +230,23 @@
         <nav aria-label="Principal">
 
             <a href="#inicio" class="active" aria-current="page" data-vista="dashboard">
-                <span class="nav-icon">📊</span><span class="nav-text">Dashboard</span>
+                <span class="nav-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-layout-dashboard"></use></svg></span><span class="nav-text">Dashboard</span>
             </a>
 
             <a href="#estadisticas" data-vista="estadisticas">
-                <span class="nav-icon">📈</span><span class="nav-text">Estadísticas</span>
+                <span class="nav-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chart-column"></use></svg></span><span class="nav-text">Estadísticas</span>
             </a>
 
             <a href="#fijos" data-vista="fijos">
-                <span class="nav-icon">🗓️</span><span class="nav-text">Planificar</span>
+                <span class="nav-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-calendar-days"></use></svg></span><span class="nav-text">Planificar</span>
             </a>
 
             <a href="#asistente" data-vista="asistente">
-                <span class="nav-icon">🤖</span><span class="nav-text">Asistente IA</span>
+                <span class="nav-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-sparkles"></use></svg></span><span class="nav-text">Asistente IA</span>
             </a>
 
             <a href="#configuracion" data-vista="configuracion">
-                <span class="nav-icon">⚙</span><span class="nav-text">Configuración</span>
+                <span class="nav-icon"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"></use></svg></span><span class="nav-text">Configuración</span>
             </a>
 
         </nav>
@@ -307,7 +307,7 @@
 
             </div>
 
-            <button id="bloquear" class="btn-bloquear" type="button">🔒 Bloquear</button>
+            <button id="bloquear" class="btn-bloquear" type="button"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-lock"></use></svg> Bloquear</button>
 
         </header>
 
@@ -440,7 +440,7 @@
 
             <div class="card tarjeta">
 
-                <div class="card-icon">📈</div>
+                <div class="card-icon ci-ingreso"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-trending-up"></use></svg></div>
 
                 <div class="card-info">
 
@@ -454,7 +454,7 @@
 
             <div class="card tarjeta">
 
-                <div class="card-icon">📉</div>
+                <div class="card-icon ci-gasto"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-trending-down"></use></svg></div>
 
                 <div class="card-info">
 
@@ -468,7 +468,7 @@
 
             <div class="card tarjeta saldo">
 
-                <div class="card-icon">💰</div>
+                <div class="card-icon ci-saldo"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-wallet"></use></svg></div>
 
                 <div class="card-info">
 
@@ -556,7 +556,7 @@
 
                     <div>
 
-                        <h2>📋 Actividad reciente</h2>
+                        <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-clipboard-list"></use></svg>Actividad reciente</h2>
 
                         <p>Últimos movimientos registrados.</p>
 
@@ -582,7 +582,7 @@
 
                 <div>
 
-                    <h2>💸 Deudas pendientes</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-hand-coins"></use></svg>Deudas pendientes</h2>
 
                     <p id="contadorDeudas">Cargando...</p>
 
@@ -626,7 +626,7 @@
 
                 <div>
 
-                    <h2>📈 Estadísticas</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-chart-column"></use></svg>Estadísticas</h2>
 
                     <p id="subtituloEstadisticas">Tu ritmo de gasto y cómo vienen tus meses.</p>
 
@@ -672,7 +672,7 @@
 
                 <div>
 
-                    <h2>🎯 Presupuesto por categoría</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-target"></use></svg>Presupuesto por categoría</h2>
 
                     <p id="subtituloPresupuesto">Fija un límite mensual por categoría y sigue cuánto te queda.</p>
 
@@ -720,7 +720,7 @@
 
                 <div>
 
-                    <h2>💼 Ingresos fijos</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-briefcase"></use></svg>Ingresos fijos</h2>
 
                     <p id="subtituloIngFijos">Lo que te pagan cada mes, con su fecha.</p>
 
@@ -766,7 +766,7 @@
 
                 <div>
 
-                    <h2>💳 Mis tarjetas</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-credit-card"></use></svg>Mis tarjetas</h2>
 
                     <p id="subtituloTarjetas">Mira cuánto debes en cada tarjeta y recibe avisos.</p>
 
@@ -811,7 +811,7 @@
 
                 <div>
 
-                    <h2>🏦 Lo que debo</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-landmark"></use></svg>Lo que debo</h2>
 
                     <p id="subtituloCuotas">Préstamos con cuotas fijas: ve cuánto te falta y paga con un toque.</p>
 
@@ -876,7 +876,7 @@
 
                 <div>
 
-                    <h2>🔁 Gastos fijos</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg>Gastos fijos</h2>
 
                     <p id="subtituloFijos">Lo que pagas cada mes, con su fecha de cobro.</p>
 
@@ -926,7 +926,7 @@
 
                 <div>
 
-                    <h2>🏁 Metas de ahorro</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-piggy-bank"></use></svg>Metas de ahorro</h2>
 
                     <p id="subtituloMetas">Aparta plata para lo que quieres lograr.</p>
 
@@ -976,7 +976,7 @@
 
                 <div>
 
-                    <h2>🤖 Asistente financiero</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-sparkles"></use></svg>Asistente financiero</h2>
 
                     <p>Pregúntame sobre tus gastos, ingresos, deudas y presupuestos.</p>
 
@@ -1025,7 +1025,7 @@
 
                 <div>
 
-                    <h2>⚙ Configuración</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-settings"></use></svg>Configuración</h2>
 
                     <p>Ajustes de la app.</p>
 
@@ -1037,7 +1037,7 @@
 
                 <div>
 
-                    <h3>🎨 Apariencia</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-palette"></use></svg>Apariencia</h3>
 
                     <p>Elige cómo quieres ver la app. Se guarda en este dispositivo.</p>
 
@@ -1081,7 +1081,7 @@
 
                 <div>
 
-                    <h3>💡 Buzón de mejoras</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-lightbulb"></use></svg>Buzón de mejoras</h3>
 
                     <p>La app está en beta. Cuéntame qué falla, qué no se entiende o qué te gustaría tener.</p>
 
@@ -1095,7 +1095,7 @@
 
                 <div>
 
-                    <h3>👤 Mi cuenta</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-user"></use></svg>Mi cuenta</h3>
 
                     <p>Entras como <strong id="cuentaUsuario">—</strong>. Tu contraseña es solo tuya: nadie más la puede ver.</p>
 
@@ -1109,7 +1109,7 @@
 
                 <div>
 
-                    <h3>🎬 Modo demo</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-clapperboard"></use></svg>Modo demo</h3>
 
                     <p>Mira la app como la vería alguien que entra por primera vez: sin datos y 100% funcional. Puedes registrar, editar, borrar, crear presupuestos y metas. Todo ocurre solo en esta pantalla y no toca tu hoja de Google.</p>
 
@@ -1129,7 +1129,7 @@
 
                 <div>
 
-                    <h2>👑 Panel de administración</h2>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-crown"></use></svg>Panel de administración</h2>
 
                     <p id="adminResumen">Las personas que tienen acceso a la app.</p>
 
@@ -1145,7 +1145,7 @@
 
             <div class="admin-buzon">
 
-                <h3>📬 Buzón de mejoras <span id="adminBuzonNuevas" class="buzon-contador" hidden></span></h3>
+                <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-mailbox"></use></svg>Buzón de mejoras <span id="adminBuzonNuevas" class="buzon-contador" hidden></span></h3>
 
                 <div id="adminBuzon" class="admin-buzon-lista"><p class="vacio">Cargando…</p></div>
 
@@ -1218,9 +1218,10 @@
 
 <script src="demo.js?v=54"></script>
 
-<script src="script.js?v=62"></script>
+<script src="iconos.js?v=1"></script>
+<script src="script.js?v=63"></script>
 <script src="resumen.js?v=3"></script>
-<script src="fluidez.js?v=1"></script>
+<script src="fluidez.js?v=2"></script>
 
 </body>
 

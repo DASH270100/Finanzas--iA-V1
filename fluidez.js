@@ -75,7 +75,7 @@
     const obsActividad = new MutationObserver(() => {
         const lista = document.getElementById("actividad");
         if (!lista) return;
-        const items = lista.children;
+        const items = lista.querySelectorAll(".movimiento");
         const primero = items[0] ? items[0].textContent : "";
         if (items.length > cantidadAntes && cantidadAntes > 0 && primero !== primeroAntes && items[0]) {
             items[0].classList.add("mov-nuevo");

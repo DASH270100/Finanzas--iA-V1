@@ -4942,3 +4942,142 @@ html[data-tema="blackcard"] button[type="submit"]{ color:#0A0A0A; }
 .respuesta ol.pasos > li::before,
 .respuesta ol.pasos > li::marker{ content:none; display:none; }
 .respuesta ol.pasos > li{ counter-increment:none; padding-left:0; }
+
+/*==================================================
+        ÍCONOS (set de líneas, toman el color del texto)
+====================================================*/
+.ico{
+    width:1em;
+    height:1em;
+    flex:none;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    vertical-align:-0.14em;
+}
+/* Ícono al lado de los títulos */
+.h-ico{
+    width:.95em;
+    height:.95em;
+    margin-right:.42em;
+    color:var(--primary);
+    stroke-width:2.2;
+}
+/* Menú */
+.nav-icon .ico{ width:22px; height:22px; vertical-align:middle; stroke-width:1.9; }
+.mov-btn .ico{ width:15px; height:15px; margin-right:4px; vertical-align:-3px; }
+
+/* Círculo de color de cada categoría */
+.cat-burbuja{
+    width:42px;
+    height:42px;
+    flex:none;
+    border-radius:14px;
+    display:inline-grid;
+    place-items:center;
+    background:color-mix(in srgb, var(--cat) 17%, transparent);
+    color:var(--cat);
+}
+.cat-burbuja .ico{ width:20px; height:20px; stroke-width:2; }
+.cat-burbuja.chica{ width:28px; height:28px; border-radius:9px; vertical-align:middle; margin-right:6px; }
+.cat-burbuja.chica .ico{ width:15px; height:15px; }
+
+/* Íconos dentro de las categorías destacadas */
+.cat-tile .ct-ico{ display:inline-grid; place-items:center; }
+.cat-tile .ct-ico .ico{ width:55%; height:55%; }
+
+/*==================================================
+        ACTIVIDAD RECIENTE: agrupada por día
+====================================================*/
+#actividad .act-dia{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin:18px 8px 6px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+}
+#actividad .act-dia:first-child{ margin-top:4px; }
+#actividad .act-dia span:last-child{ text-transform:none; letter-spacing:0; font-weight:600; }
+
+#actividad .movimiento.mov-fila{
+    margin:0;
+    padding:0;
+    background:transparent;
+    border:0;
+    border-radius:16px;
+    box-shadow:none;
+    transform:none;
+}
+#actividad .mov-toque{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    padding:9px 8px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:background .2s ease;
+    -webkit-tap-highlight-color:transparent;
+}
+#actividad .mov-toque:hover,
+#actividad .mov-fila.abierto .mov-toque{ background:var(--surface-light); }
+#actividad .mov-toque:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
+
+#actividad .mov-txt{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+#actividad .mov-txt strong{
+    font-size:15px;
+    font-weight:600;
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#actividad .mov-txt small{
+    font-size:12.5px;
+    color:var(--text-muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+#actividad .mov-monto{
+    font-size:15px;
+    font-weight:700;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+}
+#actividad .mov-monto.ingreso{ color:var(--green); }
+
+/* Acciones: escondidas hasta tocar la fila */
+#actividad .mov-fila .movimiento-acciones{
+    display:none;
+    gap:8px;
+    padding:4px 8px 12px 62px;
+}
+#actividad .mov-fila.abierto .movimiento-acciones{ display:flex; animation:pasoEntra .25s ease both; }
+#actividad .mov-fila .movimiento-acciones .mov-btn{
+    width:auto;
+    margin:0;
+    padding:8px 14px;
+    min-height:36px;
+    font-size:13px;
+}
+#actividad .mov-fila .movimiento-acciones{ justify-content:flex-start; flex-wrap:wrap; }
+
+/* Logo, tarjetas del resumen y candado con íconos */
+.logo-icon .ico{ width:52%; height:52%; color:#fff; }
+.logo-icon.logo-marca{ padding:0; overflow:hidden; background:none; }
+.logo-icon.logo-marca img{ width:100%; height:100%; display:block; object-fit:cover; }
+.btn-bloquear .ico{ width:14px; height:14px; margin-right:3px; vertical-align:-2px; }
+.card-icon{ display:grid; place-items:center; }
+.card-icon .ico{ width:24px; height:24px; }
+.card-icon.ci-ingreso{ color:var(--green); }
+.card-icon.ci-gasto{ color:var(--red); }
+.card-icon.ci-saldo{ color:var(--primary); }
