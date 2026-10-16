@@ -4214,6 +4214,9 @@ async function registrarMovimiento() {
 
     }
 
+    // «¿me alcanza para unas zapatillas de 450?» → abre el simulador, no registra nada
+    if (window.meAlcanza && meAlcanza.desdeLaBarra(texto)) return;
+
     // «adelanté 1000 a la moto» → baja el capital del préstamo (sin IA)
     const adelanto = parsearAdelanto(texto);
 

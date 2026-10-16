@@ -5404,3 +5404,134 @@ html.cargando .cinta-neon{ visibility:hidden; }
 .meta-item .meta-aporte{ flex-wrap:nowrap; }
 .meta-item .meta-monto{ min-width:0; flex:1 1 auto; }
 .meta-item .meta-aporte .mov-btn{ flex:none; padding:8px 12px; }
+
+/*==================================================
+        ¿ME ALCANZA?
+====================================================*/
+.alcanza-form{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 150px;
+    gap:12px;
+    align-items:end;
+}
+.alc-campo{ display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--text-soft); min-width:0; }
+.alc-campo input,
+.alc-campo select{
+    width:100%;
+    min-height:46px;
+    margin:0;
+    padding:0 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text);
+    font:inherit;
+    font-size:15px;
+    font-weight:600;
+    box-shadow:none;
+}
+.alc-campo input:focus,
+.alc-campo select:focus{ outline:none; border-color:var(--primary); }
+.alc-modo{
+    grid-column:1 / -1;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px;
+    padding:4px;
+    border-radius:14px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+}
+html #alcanzaForm .alc-modo > button.alc-modo-btn{
+    width:auto;
+    margin:0;
+    min-height:40px;
+    padding:0 10px;
+    border-radius:10px;
+    border:0;
+    background:transparent;
+    color:var(--text-muted);
+    font-size:14px;
+    font-weight:700;
+    box-shadow:none;
+    transform:none;
+}
+html #alcanzaForm .alc-modo > button.alc-modo-btn[aria-checked="true"]{
+    background:var(--primary);
+    color:#fff;
+}
+.alc-tarjeta{ grid-column:1 / -1; }
+.alc-cuotas-campos{ grid-column:1 / -1; display:grid; grid-template-columns:120px minmax(0,1fr); gap:12px; align-items:end; }
+.alc-cuotas-campos[hidden]{ display:none; }
+.alc-ayuda{ grid-column:1 / -1; margin-top:-4px; }
+.alcanza-form #alcCalcular{ grid-column:1 / -1; margin:0; }
+
+.alcanza-resultado:empty{ display:none; }
+.alcanza-resultado{ margin-top:18px; display:flex; flex-direction:column; gap:14px; animation:pasoEntra .35s ease both; }
+
+/* Veredicto */
+.alc-veredicto{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    padding:18px;
+    border-radius:20px;
+    border:1.5px solid var(--alc-c);
+    background:color-mix(in srgb, var(--alc-c) 12%, transparent);
+    --alc-c:var(--green);
+}
+.alc-veredicto.justo{ --alc-c:#F59E0B; }
+.alc-veredicto.no{ --alc-c:var(--red); }
+.alc-ico{
+    flex:none;
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    display:grid;
+    place-items:center;
+    background:var(--alc-c);
+    color:#fff;
+}
+.alc-ico .ico{ width:22px; height:22px; }
+.alc-veredicto strong{ display:block; font-size:18px; line-height:1.25; color:var(--text); }
+.alc-veredicto p{ margin:5px 0 0; font-size:14px; line-height:1.45; color:var(--text-soft); }
+
+/* Contado vs cuotas */
+.alc-compara{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.alc-compara > div{
+    padding:14px;
+    border-radius:16px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+}
+.alc-compara span{ font-size:12.5px; font-weight:600; color:var(--text-muted); }
+.alc-compara b{ font-size:clamp(16px, 4.6vw, 20px); white-space:nowrap; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; }
+.alc-compara small{ font-size:12px; font-weight:600; color:var(--red); }
+.alc-consejo{ margin:0; font-size:14px; line-height:1.45; color:var(--text-soft); }
+.alc-consejo .ico{ color:var(--primary); width:16px; height:16px; vertical-align:-3px; }
+
+.alc-extras{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.alc-extras li{ display:flex; gap:9px; align-items:flex-start; font-size:13.5px; line-height:1.4; color:var(--text-soft); }
+.alc-extras .ico{ flex:none; width:16px; height:16px; margin-top:2px; color:var(--primary); }
+.alc-extras li.alc-alerta{ color:var(--red); font-weight:600; }
+.alc-extras li.alc-alerta .ico{ color:var(--red); }
+
+/* ¿Cómo lo calculé? */
+.alc-detalle summary{ cursor:pointer; font-size:13.5px; font-weight:700; color:var(--text-soft); }
+.alc-filas{ margin-top:10px; display:flex; flex-direction:column; }
+.alc-fila{ display:flex; justify-content:space-between; gap:12px; padding:8px 2px; border-bottom:1px dashed var(--border); font-size:13.5px; color:var(--text-soft); }
+.alc-fila b{ white-space:nowrap; color:var(--text); font-variant-numeric:tabular-nums; }
+.alc-fila.alc-sub{ border-bottom-style:solid; font-weight:700; }
+.alc-fila.alc-total{ border-bottom:0; font-size:15px; font-weight:800; color:var(--text); }
+.alc-fila.alc-total b{ color:var(--green); }
+.alc-fila.alc-total.neg b{ color:var(--red); }
+
+.alc-acciones{ display:flex; flex-wrap:wrap; gap:8px; }
+.alc-acciones .ico{ width:15px; height:15px; margin-right:4px; vertical-align:-3px; }
+
+@media (max-width:420px){
+    .alcanza-form{ grid-template-columns:minmax(0,1fr) 120px; }
+}
