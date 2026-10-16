@@ -270,52 +270,77 @@ function renderBarrasMeses(meses) {
 
     }
 
+    // Colores del estilo; los meses anteriores van más suaves y el elegido resalta
+    const alfa = (c, a) => {
+        const m = String(c).trim().match(/^#([0-9a-f]{6})$/i);
+        if (!m) return c;
+        const n = parseInt(m[1], 16);
+        return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    };
+
+    const cIng = colorEstilo("--green", "#22C55E"), cGas = colorEstilo("--red", "#EF4444");
+
+    const ultimo = meses.length - 1;
+
+    const kilo = (v) => v >= 1000 ? (Math.round(v / 100) / 10).toString().replace(/\.0$/, "") + "k" : Math.round(v).toString();
+
     graficoMeses = new ApexCharts(contenedor, {
 
         chart: {
             type: "bar",
-            height: 280,
-            fontFamily: "Montserrat, sans-serif",
+            height: 230,
+            fontFamily: getComputedStyle(document.body).fontFamily || "Montserrat, sans-serif",
             toolbar: { show: false },
-            animations: { enabled: true, speed: 600 }
+            zoom: { enabled: false },
+            animations: { enabled: true, speed: 550 }
         },
 
         series: [
-            { name: "Ingresos", data: meses.map((m) => m.ingresos) },
-            { name: "Gastos", data: meses.map((m) => m.gastos) }
+            { name: "Entró", data: meses.map((m) => Math.round(m.ingresos * 100) / 100) },
+            { name: "Salió", data: meses.map((m) => Math.round(m.gastos * 100) / 100) }
+        ],
+
+        colors: [
+            ({ dataPointIndex }) => dataPointIndex === ultimo ? cIng : alfa(cIng, 0.38),
+            ({ dataPointIndex }) => dataPointIndex === ultimo ? cGas : alfa(cGas, 0.38)
         ],
 
         xaxis: {
-            categories: meses.map((m) => m.etiqueta),
-            labels: { style: { colors: colorEstilo("--text-muted", "#94A3B8") } },
+            categories: meses.map((m) => m.etiqueta.charAt(0).toUpperCase() + m.etiqueta.slice(1)),
+            labels: { style: { colors: meses.map((m, i) => i === ultimo ? colorEstilo("--text", "#E2E8F0") : colorEstilo("--text-muted", "#94A3B8")), fontSize: "12px", fontWeight: 600 } },
             axisBorder: { show: false },
             axisTicks: { show: false }
         },
 
         yaxis: {
-            labels: {
-                style: { colors: colorEstilo("--text-muted", "#94A3B8") },
-                formatter: (v) => "S/ " + Math.round(v)
-            }
+            tickAmount: 3,
+            labels: { style: { colors: colorEstilo("--text-muted", "#94A3B8"), fontSize: "11px" }, formatter: (v) => kilo(v) }
         },
 
-        colors: ["#22C55E", "#EF4444"],
+        plotOptions: { bar: { borderRadius: 5, borderRadiusApplication: "end", columnWidth: "72%" } },
 
-        plotOptions: { bar: { borderRadius: 6, columnWidth: "55%" } },
+        stroke: { show: true, width: 3, colors: ["transparent"] },
 
         dataLabels: { enabled: false },
 
-        grid: { borderColor: colorEstilo("--border", "#26354B"), strokeDashArray: 4 },
+        grid: { borderColor: alfa(colorEstilo("--border", "#26354B"), 0.7), strokeDashArray: 3, padding: { left: 4, right: 4 } },
 
         legend: {
             position: "top",
-            horizontalAlign: "right",
+            horizontalAlign: "left",
+            fontSize: "12px",
+            fontWeight: 600,
             labels: { colors: colorEstilo("--text-soft", "#CBD5E1") },
-            markers: { radius: 10 }
+            markers: { size: 5, shape: "circle", fillColors: [cIng, cGas] },
+            itemMargin: { horizontal: 10 }
         },
+
+        states: { hover: { filter: { type: "none" } }, active: { filter: { type: "none" } } },
 
         tooltip: {
             theme: esEstiloOscuro() ? "dark" : "light",
+            shared: true,
+            intersect: false,
             y: { formatter: (val) => money(val) }
         }
 

@@ -410,6 +410,8 @@ function normalizarDatos(data) {
 
 function aplicarDatos(data) {
 
+    document.documentElement.classList.remove("cargando");
+
     estado.usuario = data.usuario || null;
 
     revisarTemas(data.catalogo);
@@ -1947,6 +1949,8 @@ function renderEstadisticas() {
 
     if (!gastos.length && !ingresos.length) {
 
+        $("statTiles").className = "stat-tiles";
+
         $("statExtra").innerHTML = "";
 
         $("statTiles").innerHTML = estado.movimientos.length
@@ -1967,79 +1971,152 @@ function renderEstadisticas() {
 
     const mayor = gastos.reduce((a, b) => (b.monto > (a ? a.monto : 0) ? b : a), null);
 
-    const porDia = new Array(7).fill(0);
-
-    gastos.forEach((m) => { porDia[m.fecha.getDay()] += m.monto; });
-
-    const maxDia = Math.max(...porDia);
-
-    const diaCaro = maxDia > 0 ? DIAS_SEMANA[porDia.indexOf(maxDia)] : null;
-
     const ahorro = totalIngresos - totalGastos;
 
-    const T_PROMEDIO = {
-        icono: "📅",
-        etiqueta: "Promedio diario",
-        valor: money(promedio),
-        nota: `En ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}`
-    };
-
-    const T_PROYECCION = {
-        icono: "🔮",
-        etiqueta: esActual ? "Proyección a fin de mes" : "Total del mes",
-        valor: money(esActual ? proyeccion : totalGastos),
-        nota: esActual ? "Si sigues a este ritmo" : "Gastos reales del mes"
-    };
-
-    const T_MAYOR = {
-        icono: "💥",
-        etiqueta: "Mayor gasto",
-        valor: mayor ? money(mayor.monto) : "—",
-        nota: mayor ? esc(mayor.descripcion || mayor.categoria) : "Sin gastos"
-    };
-
-    const T_DIA = {
-        icono: "🗓️",
-        etiqueta: "Día que más gastas",
-        valor: diaCaro ? diaCaro.charAt(0).toUpperCase() + diaCaro.slice(1) : "—",
-        nota: diaCaro ? money(maxDia) + " en total" : "Sin gastos"
-    };
-
-    const T_AHORRO = {
-        icono: ahorro >= 0 ? "🐷" : "⚠️",
-        etiqueta: ahorro >= 0 ? "Te sobró" : "Gastaste de más",
-        valor: money(Math.abs(ahorro)),
-        nota: `${money(totalIngresos)} de ingresos`
-    };
-
-    // Lo esencial a la vista; el resto, en "Ver más detalles"
     const interesMes = sumar(delPeriodo(esInteres));
 
-    const T_INTERES = {
-        icono: "😬",
-        etiqueta: "Intereses de tarjeta",
-        valor: money(interesMes),
-        nota: "Pagando a tiempo se evitan"
+    // Mes anterior: para comparar y para la línea punteada
+    const cAnt = claveMes(new Date(y, mm - 2, 1));
+
+    const gastosAnt = estado.movimientos.filter((m) => esGastoReal(m) && m.fecha && claveMes(m.fecha) === cAnt);
+
+    const totalAnt = sumar(gastosAnt);
+
+    const nombreAnt = nombreMes(cAnt).split(" ")[0].toLowerCase();
+
+    // Gasto acumulado día a día (este mes y el anterior)
+    const acumulado = (lista, dias) => {
+
+        const porDia = new Array(dias).fill(0);
+
+        lista.forEach((m) => { const d = m.fecha.getDate(); if (d <= dias) porDia[d - 1] += m.monto; });
+
+        let s = 0;
+
+        return porDia.map((v) => (s += v));
+
     };
 
-    const tiles = [T_AHORRO, T_PROYECCION, T_MAYOR];
+    const acum = acumulado(gastos, diasTranscurridos);
 
-    if (interesMes > 0.005) tiles.push(T_INTERES);
+    const diasAnt = new Date(y, mm - 1, 0).getDate();
 
-    const extra = [T_PROMEDIO, T_DIA];
+    const acumAnt = gastosAnt.length ? acumulado(gastosAnt, diasAnt) : [];
 
-    const tileHTML = (t) => `
-        <div class="stat-tile">
-            <div class="stat-icono">${t.icono}</div>
-            <div class="stat-etiqueta">${t.etiqueta}</div>
-            <div class="stat-valor">${t.valor}</div>
-            <div class="stat-nota">${t.nota}</div>
-        </div>
-    `;
+    // Mini-gráfico: x = día del mes, y = acumulado
+    function sparkline() {
 
-    $("statTiles").innerHTML = tiles.map(tileHTML).join("");
+        const tope = Math.max(esActual ? proyeccion : totalGastos, acumAnt.length ? acumAnt[acumAnt.length - 1] : 0, 1);
 
-    $("statExtra").innerHTML = extra.map(tileHTML).join("");
+        const punto = (v, i, total) => `${((i + 1) / total) * 100},${32 - (v / tope) * 30}`;
+
+        const linea = (arr, total) => "0,32 " + arr.map((v, i) => punto(v, i, total)).join(" ");
+
+        const actual = linea(acum, diasMes);
+
+        const ultimoX = (acum.length / diasMes) * 100, ultimoY = 32 - ((acum[acum.length - 1] || 0) / tope) * 30;
+
+        return `<svg class="st-spark" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+            ${acumAnt.length ? `<polyline class="st-spark-ant" points="${linea(acumAnt, diasAnt)}"/>` : ""}
+            ${esActual ? `<line class="st-spark-proy" x1="${ultimoX}" y1="${ultimoY}" x2="100" y2="${32 - (proyeccion / tope) * 30}"/>` : ""}
+            <polygon class="st-spark-area" points="${actual} ${ultimoX},32"/>
+            <polyline class="st-spark-linea" points="${actual}"/>
+        </svg>`;
+
+    }
+
+    // Mini-barras por día de la semana (lunes primero)
+    const porDiaSemana = new Array(7).fill(0);
+
+    gastos.forEach((m) => { porDiaSemana[m.fecha.getDay()] += m.monto; });
+
+    const ordenLunes = [1, 2, 3, 4, 5, 6, 0];
+
+    const maxDia = Math.max(...porDiaSemana);
+
+    const diaCaro = maxDia > 0 ? DIAS_SEMANA[porDiaSemana.indexOf(maxDia)] : null;
+
+    const barrasSemana = `<div class="st-semana" aria-hidden="true">${ordenLunes.map((d) => {
+        const h = maxDia > 0 ? Math.max(6, Math.round((porDiaSemana[d] / maxDia) * 100)) : 6;
+        return `<span class="${porDiaSemana[d] === maxDia && maxDia > 0 ? "top" : ""}"><i style="height:${h}%"></i><b>${"DLMMJVS"[d]}</b></span>`;
+    }).join("")}</div>`;
+
+    // Comparación con el mes anterior (en curso: contra el mismo día del mes pasado)
+    let chip = "";
+
+    if (totalAnt > 0) {
+
+        const base = esActual ? (acumAnt[Math.min(diasTranscurridos, acumAnt.length) - 1] || 0) : totalAnt;
+
+        if (base > 0) {
+
+            const dif = Math.round(((totalGastos - base) / base) * 100);
+
+            chip = `<span class="st-chip ${dif > 0 ? "sube" : "baja"}">${ico(dif > 0 ? "trending-up" : "trending-down")} ${Math.abs(dif)}% ${dif > 0 ? "más" : "menos"} que ${nombreAnt}</span>`;
+
+        }
+
+    }
+
+    const pctGastado = totalIngresos > 0 ? Math.min(100, Math.round((totalGastos / totalIngresos) * 100)) : 100;
+
+    const hero = `
+        <div class="st-hero ${ahorro >= 0 ? "positivo" : "negativo"}">
+            <div class="st-hero-top">
+                <span class="st-label">${ahorro >= 0 ? "Te sobró" : "Gastaste de más"}${esActual ? " por ahora" : ""}</span>
+                ${chip}
+            </div>
+            <div class="st-hero-num">${money(Math.abs(ahorro))}</div>
+            <div class="st-barra" role="img" aria-label="Gastaste ${pctGastado}% de lo que entró"><span style="width:${pctGastado}%"></span></div>
+            <div class="st-barra-leyenda">
+                <span><i class="g"></i>Salió <b>${money(totalGastos)}</b></span>
+                <span><i class="i"></i>Entró <b>${money(totalIngresos)}</b></span>
+            </div>
+        </div>`;
+
+    const tProyeccion = `
+        <div class="st-tile st-ancho">
+            <div class="st-tile-cab">${ico("chart-column")}<span>${esActual ? "Proyección a fin de mes" : "Gasto del mes"}</span></div>
+            <div class="st-tile-num">${money(esActual ? proyeccion : totalGastos)}</div>
+            <div class="st-tile-nota">${esActual ? `Si sigues a este ritmo · llevas ${money(totalGastos)} en ${diasTranscurridos} ${diasTranscurridos === 1 ? "día" : "días"}` : "Gastos reales del mes"}</div>
+            ${sparkline()}
+            <div class="st-spark-leyenda"><span><i class="act"></i>${nombreMes(periodo).split(" ")[0]}</span>${acumAnt.length ? `<span><i class="ant"></i>${nombreAnt.charAt(0).toUpperCase() + nombreAnt.slice(1)}</span>` : ""}</div>
+        </div>`;
+
+    const tPromedio = `
+        <div class="st-tile">
+            <div class="st-tile-cab">${ico("calendar-days")}<span>Promedio diario</span></div>
+            <div class="st-tile-num">${money(promedio)}</div>
+            <div class="st-tile-nota">${diaCaro ? `Gastas más los ${diaCaro}` : "Sin gastos"}</div>
+            ${barrasSemana}
+        </div>`;
+
+    const tMayor = `
+        <div class="st-tile">
+            <div class="st-tile-cab">${ico("receipt")}<span>Mayor gasto</span></div>
+            <div class="st-mayor">
+                ${mayor ? burbujaCategoria(mayor.categoria, false) : ""}
+                <div>
+                    <div class="st-tile-num">${mayor ? money(mayor.monto) : "—"}</div>
+                    <div class="st-tile-nota">${mayor ? esc(mayor.descripcion || mayor.categoria) + " · " + esc(formatearFecha(mayor.fecha, mayor.fechaTexto)) : "Sin gastos"}</div>
+                </div>
+            </div>
+        </div>`;
+
+    const tInteres = interesMes > 0.005 ? `
+        <div class="st-tile st-alerta">
+            <div class="st-tile-cab">${ico("percent")}<span>Intereses de tarjeta</span></div>
+            <div class="st-tile-num">${money(interesMes)}</div>
+            <div class="st-tile-nota">Plata que se va al banco. Pagando el total a tiempo se evita.</div>
+        </div>` : "";
+
+    const caja = $("statTiles");
+
+    caja.className = "stats-nuevo";
+
+    caja.innerHTML = hero + `<div class="st-grid">${tProyeccion}${tPromedio}${tMayor}${tInteres}</div>`;
+
+    $("statExtra").innerHTML = "";
 
 }
 
@@ -3175,6 +3252,8 @@ function renderTodo() {
 function mostrarErrorCarga(mostrar) {
 
     $("errorCarga").hidden = !mostrar;
+
+    if (mostrar) document.documentElement.classList.remove("cargando");
 
 }
 

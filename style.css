@@ -5081,3 +5081,198 @@ html[data-tema="blackcard"] button[type="submit"]{ color:#0A0A0A; }
 .card-icon.ci-ingreso{ color:var(--green); }
 .card-icon.ci-gasto{ color:var(--red); }
 .card-icon.ci-saldo{ color:var(--primary); }
+
+/*==================================================
+        ESTADÍSTICAS (rediseño)
+====================================================*/
+.stats-nuevo{ display:flex; flex-direction:column; gap:14px; margin:6px 0 22px; }
+
+/* Resultado del mes */
+.st-hero{
+    padding:20px 20px 18px;
+    border-radius:22px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+}
+.st-hero-top{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; }
+.st-label{ font-size:13px; font-weight:700; color:var(--text-muted); letter-spacing:.02em; }
+.st-hero-num{
+    margin:6px 0 14px;
+    font-size:clamp(36px, 10vw, 52px);
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+}
+.st-hero.negativo .st-hero-num{ color:var(--red); }
+.st-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    background:color-mix(in srgb, var(--green) 14%, transparent);
+    color:var(--green);
+}
+.st-chip.sube{ background:color-mix(in srgb, var(--red) 14%, transparent); color:var(--red); }
+.st-chip .ico{ width:14px; height:14px; }
+
+.st-barra{
+    height:10px;
+    border-radius:999px;
+    overflow:hidden;
+    background:color-mix(in srgb, var(--green) 30%, transparent);
+}
+.st-barra span{
+    display:block;
+    height:100%;
+    border-radius:999px;
+    background:var(--red);
+    transition:width .8s cubic-bezier(.2,.8,.2,1);
+}
+.st-barra-leyenda{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:9px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--text-soft);
+}
+.st-barra-leyenda i{ display:inline-block; width:8px; height:8px; margin-right:6px; border-radius:50%; vertical-align:1px; }
+.st-barra-leyenda i.g{ background:var(--red); }
+.st-barra-leyenda i.i{ background:var(--green); }
+
+/* Tarjetas */
+.st-grid{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+.st-tile{
+    min-width:0;
+    padding:16px;
+    border-radius:20px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+.st-tile.st-ancho{ grid-column:1 / -1; }
+.st-tile-cab{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--text-muted); }
+.st-tile-cab .ico{ width:16px; height:16px; color:var(--primary); }
+.st-tile-num{
+    font-size:clamp(20px, 5.6vw, 26px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+    white-space:nowrap;
+}
+.st-tile-nota{ font-size:12.5px; color:var(--text-muted); line-height:1.35; overflow:hidden; text-overflow:ellipsis; }
+.st-alerta .st-tile-cab .ico,
+.st-alerta .st-tile-num{ color:var(--red); }
+.st-mayor{ display:flex; align-items:center; gap:12px; min-width:0; }
+.st-mayor > div{ min-width:0; }
+.st-mayor .st-tile-nota{ white-space:nowrap; }
+
+/* Mini-gráfico del mes */
+.st-spark{ width:100%; height:64px; margin-top:10px; overflow:visible; }
+.st-spark polyline, .st-spark line{ fill:none; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round; }
+.st-spark-linea{ stroke:var(--primary); stroke-width:2.5; }
+.st-spark-area{ fill:color-mix(in srgb, var(--primary) 16%, transparent); stroke:none; }
+.st-spark-ant{ stroke:var(--text-muted); stroke-width:1.5; stroke-dasharray:4 4; opacity:.7; }
+.st-spark-proy{ stroke:var(--primary); stroke-width:2; stroke-dasharray:2 5; opacity:.8; }
+.st-spark-leyenda{ display:flex; gap:16px; font-size:12px; font-weight:600; color:var(--text-muted); }
+.st-spark-leyenda i{ display:inline-block; width:14px; height:0; margin-right:6px; vertical-align:3px; border-top:2.5px solid var(--primary); }
+.st-spark-leyenda i.ant{ border-top:2px dashed var(--text-muted); }
+
+/* Mini-barras de la semana */
+.st-semana{ display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; align-items:end; height:58px; margin-top:10px; }
+.st-semana span{ height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; }
+.st-semana i{ width:100%; max-width:16px; border-radius:5px; background:color-mix(in srgb, var(--text-muted) 32%, transparent); }
+.st-semana span.top i{ background:var(--primary); }
+.st-semana b{ font-size:10.5px; font-weight:700; color:var(--text-muted); }
+.st-semana span.top b{ color:var(--text); }
+
+.grafico-meses .apexcharts-legend-text{ font-weight:600 !important; }
+
+@media (max-width:420px){
+    .st-grid{ grid-template-columns:1fr; }
+    .st-semana{ height:50px; }
+}
+
+/*==================================================
+        CARGA ELEGANTE: esqueletos con brillo + entrada
+====================================================*/
+.skel{
+    display:block;
+    border-radius:10px;
+    background:linear-gradient(100deg,
+        color-mix(in srgb, var(--text) 7%, transparent) 30%,
+        color-mix(in srgb, var(--text) 15%, transparent) 50%,
+        color-mix(in srgb, var(--text) 7%, transparent) 70%);
+    background-size:220% 100%;
+    animation:brilloSkel 1.4s linear infinite;
+}
+@keyframes brilloSkel{ from{ background-position:120% 0; } to{ background-position:-120% 0; } }
+
+.skel-lista{ display:flex; flex-direction:column; gap:16px; padding:6px 8px; }
+.skel-fila{ display:grid; grid-template-columns:42px minmax(0,1fr) 70px; align-items:center; gap:12px; }
+.skel-circ{ width:42px; height:42px; border-radius:14px; }
+.skel-txt{ display:flex; flex-direction:column; gap:7px; }
+.skel-txt .skel{ height:11px; }
+.skel-monto{ height:13px; }
+.skel-bloques{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:6px 0 22px; }
+.skel-hero{ grid-column:1 / -1; height:150px; border-radius:22px; }
+.skel-tile{ height:120px; border-radius:20px; }
+
+/* Números de la pantalla mientras no hay datos */
+html.cargando .hs-saldo,
+html.cargando .hs-chip b,
+html.cargando #saldo,
+html.cargando #ingresos,
+html.cargando #gastos{
+    color:transparent !important;
+    -webkit-text-fill-color:transparent;
+    text-shadow:none !important;
+    border-radius:12px;
+    background:linear-gradient(100deg,
+        rgba(128,128,140,.16) 30%,
+        rgba(160,160,175,.32) 50%,
+        rgba(128,128,140,.16) 70%) !important;
+    background-size:220% 100% !important;
+    animation:brilloSkel 1.4s linear infinite !important;
+}
+html.cargando .hs-saldo{ display:inline-block; min-width:62%; }
+
+/* Entrada con el ícono */
+#splash{
+    position:fixed;
+    inset:0;
+    z-index:20000;
+    display:grid;
+    place-items:center;
+    background:var(--bg, #09111F);
+    transition:opacity .4s ease, visibility .4s;
+}
+#splash img{
+    width:96px;
+    height:96px;
+    border-radius:24px;
+    box-shadow:0 18px 50px rgba(46,91,255,.35);
+    animation:splashLatido 1s ease-in-out infinite alternate;
+}
+#splash.fuera{ opacity:0; visibility:hidden; }
+#splash.fuera img{ transform:scale(1.08); transition:transform .4s ease; }
+@keyframes splashLatido{ from{ transform:scale(.96); } to{ transform:scale(1.03); } }
+
+@media (prefers-reduced-motion:reduce){
+    .skel,
+    html.cargando .hs-saldo, html.cargando .hs-chip b,
+    html.cargando #saldo, html.cargando #ingresos, html.cargando #gastos{ animation:none !important; }
+    #splash img{ animation:none; }
+}
+.st-barra-leyenda span{ white-space:nowrap; }
+.st-barra-leyenda b{ color:var(--text); font-weight:700; }
+html.cargando .cinta-neon{ visibility:hidden; }
