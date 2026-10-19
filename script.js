@@ -2747,7 +2747,7 @@ async function guardarFijo(datos) {
 
 const ORDEN_NIVEL_TARJETA = { sin: 0, ok: 1, alerta: 2, limite: 3, exceso: 4 };
 
-const claveTarjeta = (n) => String(n ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+const claveTarjeta = (n) => String(n ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 
 function infoTarjetas() {
 
@@ -2808,7 +2808,8 @@ function infoTarjetas() {
 
         return { ...t, deuda };
 
-    }).filter((t) => t.enHoja || t.deuda > 0.005 || t.mes > 0 || t.pagadoMes > 0).map((t) => {
+    // Se muestra si está en la hoja o si todavía le debes algo. Si la quitaste y está pagada, no vuelve.
+    }).filter((t) => t.enHoja || t.deuda > 0.005).map((t) => {
 
         const deuda = t.deuda;
 
@@ -3098,10 +3099,10 @@ function renderTarjetas() {
 
                     <button class="mov-btn" type="button" data-tarj="editar">${ico("pencil")} Editar</button>
 
-                    ${t.presupuesto > 0
-                        ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar límite</button>`
-                        : (t.deuda <= 0.005
-                            ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar tarjeta</button>` : "")}
+                    ${t.deuda <= 0.005
+                        ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitar">Quitar tarjeta</button>`
+                        : (t.presupuesto > 0
+                            ? `<button class="mov-btn mov-btn-borrar" type="button" data-tarj="quitarlimite">Quitar límite</button>` : "")}
 
                 </div>
 
@@ -6666,8 +6667,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
             }
 
-            // Con presupuesto: solo se quita el límite (la tarjeta sigue mientras tenga compras este mes)
-            if (Number(item.dataset.presupuesto) > 0) await api("tarjeta", { nombre, presupuesto: 0 });
+            // Con deuda solo se puede quitar el límite; sin deuda se quita la tarjeta entera (con sus duplicadas)
+            if (accion === "quitarlimite") await api("tarjeta", { nombre, presupuesto: 0 });
 
             else await api("tarjeta", { nombre, quitar: true });
 
@@ -6675,7 +6676,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
             renderTodo();
 
-            mostrarToast(`🗑️ Listo, quité "${nombre}" (tus compras se conservan)`);
+            mostrarToast(accion === "quitarlimite"
+                ? `Listo, "${nombre}" ya no tiene límite`
+                : `🗑️ Listo, quité "${nombre}" (tus compras se conservan)`);
 
         } catch (err) {
 

@@ -21,7 +21,7 @@ const DemoBackend = (() => {
 
     const fallo = (error) => ({ ok: false, error });
 
-    const clave = (v) => String(v ?? "").trim().toLowerCase();
+    const clave = (v) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 
     const soles = (n) => "S/ " + (Math.round(Number(n) * 100) / 100).toFixed(2);
 
@@ -405,7 +405,8 @@ const DemoBackend = (() => {
 
         if (p.quitar) {
 
-            if (fila) db.tarjetas.splice(fila - 1, 1);
+            // Igual que el backend: se van todas las filas de esa tarjeta, también las duplicadas
+            db.tarjetas = db.tarjetas.filter((t, i) => i === 0 || clave(t[0]) !== clave(nombre));
 
             return ok();
 
