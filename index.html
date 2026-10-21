@@ -43,7 +43,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=76">
+    <link rel="stylesheet" href="style.css?v=78">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -362,7 +362,18 @@
 
         </div>
 
+        <!-- MIS CUENTAS / CUENTA COMPARTIDA -->
+
+        <div id="switchCuenta" class="switch-cuenta" role="tablist" aria-label="Qué cuentas ver">
+            <button type="button" role="tab" data-cuenta="mia" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg> Mis cuentas</button>
+            <button type="button" role="tab" data-cuenta="compartida" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-users"></use></svg> <span id="switchCompNombre">Compartido</span></button>
+        </div>
+
         <div id="vista-dashboard" class="vista">
+
+        <!-- INVITACIÓN A CUENTA COMPARTIDA -->
+
+        <button id="avisoInvitacion" class="aviso-fijos aviso-invitacion" type="button" hidden></button>
 
         <!-- CATEGORÍAS DESTACADAS (solo en los estilos Iridiscente y Atardecer) -->
 
@@ -656,6 +667,96 @@
         </div>
 
         <!-- VISTA ESTADÍSTICAS Y PRESUPUESTO -->
+
+        <!-- ===========================
+                CUENTA COMPARTIDA
+        ============================ -->
+
+        <div id="vista-compartido" class="vista vista-stack" hidden>
+
+            <div id="compSinEspacio"></div>
+
+            <div id="compEspacio" class="vista-stack" hidden>
+
+                <section id="compHero" class="card comp-hero"></section>
+
+                <section class="card comp-anotar">
+
+                    <div class="card-title">
+                        <div>
+                            <h2>Anotar gasto en común</h2>
+                            <p>Escribe cuánto fue y cuánto puso cada uno.</p>
+                        </div>
+                    </div>
+
+                    <form id="compTextoForm" class="comp-barra-texto">
+                        <textarea id="compTexto" rows="1" maxlength="400" placeholder="súper 120, yo 80 Ana 40" aria-label="Gasto en común"></textarea>
+                        <button id="compEnviar" type="submit" aria-label="Anotar"><svg class="ico" aria-hidden="true"><use href="#i-chevron-right"></use></svg></button>
+                    </form>
+
+                    <div id="compEstado" class="comp-estado" role="status" aria-live="polite"></div>
+
+                    <div id="compEjemplos" class="comp-ejemplos">
+                        <button type="button" class="chip-ejemplo" data-base="súper 120, yo 80 {otro} 40" data-comp-ejemplo="">súper 120, yo 80 40</button>
+                        <button type="button" class="chip-ejemplo" data-base="pollo a la brasa 64 a medias" data-comp-ejemplo="">pollo a la brasa 64 a medias</button>
+                        <button type="button" class="chip-ejemplo" data-base="cena 90 la pagó {otro}" data-comp-ejemplo="">cena 90 la pagó</button>
+                    </div>
+
+                    <button id="compManualBtn" class="mov-btn comp-manual" type="button"><svg class="ico" aria-hidden="true"><use href="#i-pencil"></use></svg> Llenar a mano</button>
+
+                    <form id="compForm" class="comp-form" hidden>
+
+                        <input id="compId" type="hidden">
+
+                        <label class="comp-campo comp-ancho">En qué fue
+                            <input id="compDesc" type="text" maxlength="100" placeholder="Súper, alquiler, cena…" required>
+                        </label>
+
+                        <label class="comp-campo">Total
+                            <input id="compTotal" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00">
+                        </label>
+
+                        <label class="comp-campo">Fecha
+                            <input id="compFecha" type="date">
+                        </label>
+
+                        <label class="comp-campo comp-ancho">Categoría <small>(opcional)</small>
+                            <input id="compCat" type="text" maxlength="40" list="compCategorias" placeholder="Súper, Casa, Salidas…">
+                        </label>
+
+                        <datalist id="compCategorias">
+                            <option value="Súper"></option><option value="Casa"></option><option value="Servicios"></option>
+                            <option value="Comida"></option><option value="Salidas"></option><option value="Transporte"></option>
+                            <option value="Mascotas"></option><option value="Viajes"></option>
+                        </datalist>
+
+                        <div class="comp-ancho">
+                            <span class="comp-sub">¿Cuánto puso cada uno?</span>
+                            <div id="compAportes" class="comp-aportes"></div>
+                            <small id="compCuadre" class="comp-cuadre"></small>
+                        </div>
+
+                        <div class="comp-botones comp-ancho">
+                            <button id="compGuardar" type="submit">Anotar gasto</button>
+                            <button id="compCancelar" class="mov-btn" type="button">Cancelar</button>
+                        </div>
+
+                    </form>
+
+                </section>
+
+                <section class="card">
+                    <div class="card-title">
+                        <div><h2 id="compListaTitulo">Gastos de este mes</h2></div>
+                    </div>
+                    <div id="compLista"></div>
+                </section>
+
+                <section id="compAjustes" class="card comp-ajustes"></section>
+
+            </div>
+
+        </div>
 
         <div id="vista-estadisticas" class="vista vista-stack" hidden>
 
@@ -1364,13 +1465,14 @@
 
 <script src="graficos.js?v=58"></script>
 
-<script src="demo.js?v=56"></script>
+<script src="demo.js?v=57"></script>
 
-<script src="iconos.js?v=2"></script>
-<script src="script.js?v=70"></script>
+<script src="iconos.js?v=3"></script>
+<script src="script.js?v=71"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=3"></script>
 <script src="freelance.js?v=3"></script>
+<script src="compartido.js?v=1"></script>
 <script src="fluidez.js?v=2"></script>
 
 </body>

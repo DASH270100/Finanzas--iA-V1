@@ -55,8 +55,113 @@ const DemoBackend = (() => {
             fijos: [["Nombre", "Categoría", "Monto", "Día", "Último registro", "Tipo", "Cuotas", "Pagadas", "TEA %", "Saldo", "Capital"]],
             metas: [["Nombre", "Objetivo", "Ahorrado", "Fecha límite"]],
             tarjetas: [["Tarjeta", "Presupuesto", "Día de pago"]],
-            porCobrar: [["ID", "Cliente", "Trabajo", "Monto", "Fecha de cobro", "Estado", "Cobrado el", "Creado"]]
+            porCobrar: [["ID", "Cliente", "Trabajo", "Monto", "Fecha de cobro", "Estado", "Cobrado el", "Creado"]],
+            compartido: compartidoInicial()
         };
+
+    }
+
+    // =========================
+    // CUENTA COMPARTIDA de ejemplo: la demo ya viene con Ana y algunos gastos del mes
+    // =========================
+
+    function compartidoInicial() {
+
+        const hoy = new Date();
+
+        const dia = (n) => { const d = new Date(hoy.getFullYear(), hoy.getMonth(), Math.max(1, hoy.getDate() - n)); return textoFecha(d); };
+
+        const g = (id, n, categoria, descripcion, yo, ana) => ({ id, fecha: dia(n), categoria, descripcion, total: Math.round((yo + ana) * 100) / 100, registro: yo >= ana ? "demo" : "ana", aportes: { demo: yo, ana } });
+
+        return {
+            activo: {
+                id: "cdemo", nombre: "Demo y Ana", yo: "demo",
+                miembros: [{ usuario: "demo", nombre: "Demo" }, { usuario: "ana", nombre: "Ana" }],
+                gastos: [
+                    g("g1", 9, "Casa", "Alquiler", 700, 500),
+                    g("g2", 6, "Súper", "Súper del mes", 180, 140),
+                    g("g3", 4, "Servicios", "Luz y agua", 0, 96),
+                    g("g4", 2, "Salidas", "Cine y cena", 60, 60),
+                    g("g5", 0, "Súper", "Frutas y pan", 38.5, 0)
+                ]
+            },
+            recibidas: [],
+            enviada: null
+        };
+
+    }
+
+    function compartido(p) {
+
+        const a = db.compartido.activo;
+
+        if (!a) return fallo("En la demo la cuenta compartida ya viene creada. Recarga para volver a verla.");
+
+        const r2 = (x) => Math.round(Number(x) * 100) / 100;
+
+        const cuadrar = (total, aportes) => {
+            const ap = {}; let suma = 0; const faltan = [];
+            a.miembros.forEach((m) => { const v = aportes && aportes[m.usuario] !== undefined && aportes[m.usuario] !== "" ? r2(aportes[m.usuario]) : null; if (v === null) faltan.push(m.usuario); else { ap[m.usuario] = v; suma = r2(suma + v); } });
+            if (Object.values(ap).some((v) => !(v >= 0))) return { error: "Revisa los montos de cada uno" };
+            total = r2(total); if (!(total > 0)) total = suma;
+            if (!(total > 0)) return { error: "Escribe cuánto fue el total" };
+            if (suma === 0 && faltan.length === a.miembros.length) { a.miembros.forEach((m) => { ap[m.usuario] = m.usuario === a.yo ? total : 0; }); return { total, aportes: ap }; }
+            const resto = r2(total - suma);
+            if (resto < -0.009) return { error: `Los aportes suman ${soles(suma)}, más que el total (${soles(total)})` };
+            if (faltan.length === 1) ap[faltan[0]] = Math.max(0, resto);
+            else if (Math.abs(resto) > 0.009) return { error: `Los aportes suman ${soles(suma)} y el total es ${soles(total)}` };
+            return { total, aportes: ap };
+        };
+
+        const guardar = (g, id) => {
+            const c = cuadrar(Number(g.total), g.aportes);
+            if (c.error) return c;
+            const descripcion = seguro(g.descripcion, 100);
+            if (!descripcion) return { error: "Escribe en qué fue el gasto" };
+            const iso = String(g.fecha || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            const fecha = iso ? `${iso[3]}/${iso[2]}/${iso[1]}` : (fechaDe(g.fecha) ? textoFecha(fechaDe(g.fecha)) : textoFecha());
+            const cat = seguro(g.categoria, 40) || categoriaDe(sinTildes(descripcion), false);
+            if (id) {
+                const x = a.gastos.find((y) => y.id === id);
+                if (!x) return { error: "Ese gasto ya no existe" };
+                Object.assign(x, { fecha, categoria: cat, descripcion, total: c.total, aportes: c.aportes });
+                return { id };
+            }
+            const nuevo = { id: "g" + Date.now() + Math.floor(Math.random() * 1000), fecha, categoria: cat, descripcion, total: c.total, registro: a.yo, aportes: c.aportes };
+            a.gastos.push(nuevo);
+            return { id: nuevo.id };
+        };
+
+        if (p.op === "gasto") { const r = guardar(p, p.id); return r.error ? fallo(r.error) : ok({ id: r.id }); }
+
+        if (p.op === "borrar") { a.gastos = a.gastos.filter((g) => g.id !== p.id); return ok(); }
+
+        if (p.op === "salir") return fallo("En la demo no se puede dejar de compartir 🙂");
+
+        if (p.op === "texto") {
+            // Mensajes simples: "súper 120, yo 80 ana 40", "pollo 64 a medias", "cena 90 la pagó ana"
+            let t = " " + sinTildes(p.mensaje).replace(/s\/\.?\s*/g, "").replace(/,/g, " ").replace(/\s+/g, " ") + " ";
+            const aportes = {};
+            let iguales = false, pagoTodo = null;
+            t = t.replace(/\s(a medias|mitad y mitad|entre los dos)\s/g, () => { iguales = true; return " "; });
+            [["yo", "demo"], ["demo", "demo"], ["ana", "ana"]].forEach(([k, u]) => {
+                t = t.replace(new RegExp("\\s" + k + "\\s+(?:puso|puse|pone|dio)?\\s*(\\d+(?:\\.\\d{1,2})?)\\s", "g"), (m0, n) => { aportes[u] = (aportes[u] || 0) + Number(n); return " "; });
+            });
+            t = t.replace(/\s(?:lo|la)?\s*pag(?:o|ue)\s+(yo|ana)\s/, (m0, k) => { pagoTodo = k === "ana" ? "ana" : "demo"; return " "; });
+            const nums = t.match(/\d+(?:\.\d{1,2})?/g) || [];
+            if (nums.length > 1) return fallo("En la demo escribe un gasto a la vez, por ejemplo: súper 120, yo 80 Ana 40");
+            const total = nums.length ? Number(nums[0]) : 0;
+            let desc = t.replace(/\d+(?:\.\d{1,2})?/g, " ").replace(/\b(compartido|compartida)\b/g, " ").replace(/\s+/g, " ").trim();
+            if (!desc || (!total && !Object.keys(aportes).length)) return fallo("No encontré el monto. Prueba: súper 120, yo 80 Ana 40");
+            if (pagoTodo && total) { aportes.demo = pagoTodo === "demo" ? total : 0; aportes.ana = pagoTodo === "ana" ? total : 0; }
+            else if (iguales && total && !Object.keys(aportes).length) { aportes.demo = r2(total / 2); aportes.ana = r2(total - aportes.demo); }
+            const orig = String(p.mensaje).split(/[\s,]+/);
+            desc = desc.split(" ").map((w) => orig.find((o) => sinTildes(o) === w) || w).join(" ");
+            const r = guardar({ descripcion: desc.charAt(0).toUpperCase() + desc.slice(1), total, aportes, fecha: "" }, "");
+            return r.error ? fallo(r.error) : ok({ ids: [r.id] });
+        }
+
+        return fallo("Acción desconocida");
 
     }
 
@@ -1064,7 +1169,8 @@ const DemoBackend = (() => {
                     fijos: clonar(db.fijos),
                     metas: clonar(db.metas),
                     tarjetas: clonar(db.tarjetas),
-                    porCobrar: clonar(db.porCobrar)
+                    porCobrar: clonar(db.porCobrar),
+                    compartido: clonar(db.compartido)
                 });
 
             case "registrar": return registrar(p);
@@ -1082,6 +1188,7 @@ const DemoBackend = (() => {
             case "meta": return meta(p);
             case "aporte": return aporte(p);
             case "preguntar": return preguntar(p);
+            case "compartido": return compartido(p);
 
             default: return fallo("Acción desconocida");
 

@@ -454,6 +454,8 @@ function aplicarDatos(data) {
 
     estado.porCobrar = n.porCobrar;
 
+    estado.compartido = data.compartido || { activo: null, recibidas: [], enviada: null };
+
 }
 
 let ultimaCarga = 0;
@@ -2180,7 +2182,7 @@ function renderEstadisticas() {
 // PESTAÑAS (Dashboard / Estadísticas)
 // =========================
 
-const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente", "configuracion"];
+const VISTAS = ["dashboard", "estadisticas", "fijos", "asistente", "configuracion", "compartido"];
 
 function mostrarVista(nombre) {
 
@@ -2191,13 +2193,14 @@ function mostrarVista(nombre) {
     // Los estilos nuevos cambian la cabecera según la pestaña
     document.body.dataset.vista = nombre;
 
-    const TITULOS = { estadisticas: "Estadísticas", fijos: "Planificar", asistente: "Asistente", configuracion: "Configuración" };
+    const TITULOS = { estadisticas: "Estadísticas", fijos: "Planificar", asistente: "Asistente", configuracion: "Configuración", compartido: "Cuenta compartida" };
 
     $("tituloVista").textContent = TITULOS[nombre] || "";
 
     document.querySelectorAll("nav a[data-vista]").forEach((a) => {
 
-        const activo = a.dataset.vista === nombre;
+        // La cuenta compartida vive en el inicio (se entra por el switch)
+        const activo = a.dataset.vista === (nombre === "compartido" ? "dashboard" : nombre);
 
         a.classList.toggle("active", activo);
 
@@ -2215,6 +2218,14 @@ function mostrarVista(nombre) {
     else if (nombre === "asistente") renderChat();
 
     else if (nombre === "configuracion") renderConfig();
+
+    else if (nombre === "compartido" && window.compartido) compartido.render();
+
+    document.querySelectorAll("#switchCuenta [data-cuenta]").forEach((b) => {
+
+        b.setAttribute("aria-selected", String((b.dataset.cuenta === "compartida") === (nombre === "compartido")));
+
+    });
 
     window.scrollTo({ top: 0 });
 
@@ -3378,6 +3389,8 @@ function renderTodo() {
     renderMetas();
 
     if (window.freelance) freelance.render();
+
+    if (window.compartido) compartido.render();
 
     renderDeudas();
 
