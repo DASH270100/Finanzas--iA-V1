@@ -773,8 +773,10 @@ function renderUsuario() {
 
     const titulo = document.querySelector(".header h1");
 
-    // El administrador conserva su saludo de siempre; el resto ve su propio nombre
-    if (titulo && u && u.rol !== "admin" && u.nombre) titulo.textContent = "Hola " + u.nombre;
+    // Cada persona elige cómo la saluda la app (Configuración → Mi cuenta)
+    const saludo = u && (u.saludo || u.nombre);
+
+    if (titulo && saludo) titulo.textContent = "Hola " + saludo;
 
     if (!$("vista-configuracion").hidden) renderConfig();
 
@@ -998,14 +1000,24 @@ function renderConfig() {
 
     if (visible) { cargarPersonas(); buzon.cargarAdmin(); }
 
-    // "Mi cuenta": solo para personas con usuario (el admin cambia su clave en el Apps Script)
+    // "Mi cuenta": nombre para todos; la contraseña solo para quienes no son admin (el admin la cambia en el Apps Script)
     const u = estado.usuario;
 
-    const conCuenta = !modoDemo && !!u && u.rol !== "admin" && !!u.usuario;
+    const conCuenta = !modoDemo && !!u && !!u.usuario;
 
     $("cuentaBloque").hidden = !conCuenta;
 
-    if (conCuenta) $("cuentaUsuario").textContent = "@" + u.usuario;
+    if (conCuenta) {
+
+        $("cuentaUsuario").textContent = "@" + u.usuario;
+
+        $("cuentaNombre").textContent = u.saludo || u.nombre || "—";
+
+        $("cuentaClave").hidden = u.rol === "admin";
+
+        $("cuentaNotaClave").hidden = u.rol === "admin";
+
+    }
 
     $("notifTexto").textContent = u && u.rol === "admin"
         ? "Te aviso 2 días antes y el mismo día de tus pagos, y cuando llega una falla, idea o duda al buzón."
@@ -6209,6 +6221,61 @@ window.addEventListener("DOMContentLoaded", () => {
     $("claveCancelar").addEventListener("click", () => { $("claveOverlay").hidden = true; });
 
     $("cuentaClave").addEventListener("click", () => abrirCambioClave(false));
+
+    // Cambiar el nombre del saludo
+    $("cuentaNombreBtn").addEventListener("click", () => {
+
+        $("nombreForm").hidden = false;
+
+        $("cuentaNombreBtn").hidden = true;
+
+        $("nombreNuevo").value = (estado.usuario && (estado.usuario.saludo || estado.usuario.nombre)) || "";
+
+        $("nombreNuevo").focus();
+
+        $("nombreNuevo").select();
+
+    });
+
+    const cerrarNombre = () => { $("nombreForm").hidden = true; $("cuentaNombreBtn").hidden = false; };
+
+    $("nombreCancelar").addEventListener("click", cerrarNombre);
+
+    $("nombreForm").addEventListener("submit", async (e) => {
+
+        e.preventDefault();
+
+        const nombre = $("nombreNuevo").value.trim();
+
+        if (nombre.length < 2) { mostrarToast("✍️ Escribe tu nombre"); return; }
+
+        const b = $("nombreGuardar");
+
+        b.disabled = true;
+
+        try {
+
+            await api("miNombre", { nombre });
+
+            cerrarNombre();
+
+            await cargarDatos();
+
+            renderTodo();
+
+            mostrarToast(`👋 ¡Listo, ${nombre}!`);
+
+        } catch (err) {
+
+            errorDeAccion(err);
+
+        } finally {
+
+            b.disabled = false;
+
+        }
+
+    });
 
     $("adminNombre").addEventListener("input", actualizarAvisoCodigo);
 

@@ -6121,3 +6121,25 @@ html[data-tema="blackcard"] #adminBuzonFiltros button.buzon-filtro[aria-selected
 }
 .avisos-nota{ color:var(--text-muted); font-size:12px; }
 .notif-bloque .admin-avisos{ margin:0; width:100%; }
+
+/* Mi cuenta: cambiar nombre */
+.cuenta-botones{ display:flex; gap:8px; flex-wrap:wrap; }
+#cuentaBloque .cuenta-botones .mov-btn{ width:auto; margin:0; }
+.nombre-form{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.nombre-form[hidden]{ display:none; }
+#nombreNuevo{
+    flex:1 1 180px;
+    min-height:44px;
+    margin:0;
+    padding:10px 14px;
+    font:inherit;
+    font-size:15px;
+    color:var(--text);
+    background:var(--surface-light);
+    border:1px solid var(--border);
+    border-radius:12px;
+    outline:none;
+}
+#nombreNuevo:focus{ border-color:var(--primary); }
+#cuentaBloque .nombre-form button{ width:auto; margin:0; min-height:44px; padding:0 18px; }
+#cuentaBloque [hidden]{ display:none !important; }

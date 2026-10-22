@@ -48,7 +48,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=82">
+    <link rel="stylesheet" href="style.css?v=83">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -1367,11 +1367,20 @@
 
                     <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-user"></use></svg>Mi cuenta</h3>
 
-                    <p>Entras como <strong id="cuentaUsuario">—</strong>. Tu contraseña es solo tuya: nadie más la puede ver.</p>
+                    <p>Entras como <strong id="cuentaUsuario">—</strong> y la app te saluda como <strong id="cuentaNombre">—</strong>.<span id="cuentaNotaClave"> Tu contraseña es solo tuya: nadie más la puede ver.</span></p>
+
+                    <form id="nombreForm" class="nombre-form" hidden>
+                        <input id="nombreNuevo" type="text" maxlength="30" autocomplete="nickname" placeholder="¿Cómo quieres que te salude?" aria-label="Tu nombre">
+                        <button id="nombreGuardar" type="submit">Guardar</button>
+                        <button id="nombreCancelar" class="mov-btn" type="button">Cancelar</button>
+                    </form>
 
                 </div>
 
-                <button id="cuentaClave" class="mov-btn" type="button">🔑 Cambiar contraseña</button>
+                <div class="cuenta-botones">
+                    <button id="cuentaNombreBtn" class="mov-btn" type="button">✏️ Cambiar nombre</button>
+                    <button id="cuentaClave" class="mov-btn" type="button">🔑 Cambiar contraseña</button>
+                </div>
 
             </div>
 
@@ -1491,7 +1500,7 @@
 <script src="demo.js?v=58"></script>
 
 <script src="iconos.js?v=3"></script>
-<script src="script.js?v=77"></script>
+<script src="script.js?v=78"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=3"></script>
 <script src="freelance.js?v=3"></script>
