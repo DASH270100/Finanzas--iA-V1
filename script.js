@@ -4720,8 +4720,12 @@ const buzon = (() => {
 
         const corto = (t) => "«" + (t.length > 40 ? t.slice(0, 40) + "…" : t) + "»";
 
+        const resp = (x) => x.respuesta ? " · " + x.respuesta : "";
+
         const textos = nuevas.map((x) =>
-            x.estado === "Lista" ? `🎉 Tu idea ${corto(x.texto)} ya está en la app`
+            x.tipo === "No entendí algo" && x.respuesta ? `💬 Diego respondió tu duda ${corto(x.texto)}: ${x.respuesta}`
+            : x.estado === "Lista" && x.tipo === "Algo falla" ? `🔧 Arreglado: ${corto(x.texto)}${resp(x)}`
+            : x.estado === "Lista" ? `🎉 Tu idea ${corto(x.texto)} ya está en la app${resp(x)}`
             : x.estado === "En revisión" ? `👀 Diego está revisando ${corto(x.texto)}`
             : `💤 ${corto(x.texto)}: por ahora no${x.respuesta ? " · " + x.respuesta : ""}`);
 
@@ -4751,6 +4755,47 @@ const buzon = (() => {
 
     }
 
+    // Filtro del buzón por tipo: Todas / Fallas / Ideas / Dudas
+    const FILTROS_ADMIN = [
+        { id: "todas", nombre: "Todas", ico: "📬", tipo: null },
+        { id: "falla", nombre: "Fallas", ico: "🐞", tipo: "Algo falla" },
+        { id: "idea", nombre: "Ideas", ico: "💡", tipo: "Idea" },
+        { id: "duda", nombre: "Dudas", ico: "🤔", tipo: "No entendí algo" }
+    ];
+
+    let adminLista = [], adminEstados = null, adminFiltro = "todas";
+
+    function pintarAdmin() {
+
+        const caja = $("adminBuzon");
+
+        const delTipo = (f) => f.tipo ? adminLista.filter((x) => x.tipo === f.tipo) : adminLista;
+
+        $("adminBuzonFiltros").innerHTML = FILTROS_ADMIN.map((f) => {
+
+            const todas = delTipo(f);
+
+            const nuevas = todas.filter((x) => x.estado === "Recibida").length;
+
+            return `<button type="button" role="tab" class="buzon-filtro" data-filtro="${f.id}" aria-selected="${adminFiltro === f.id}">
+                ${f.ico} ${f.nombre} <span class="bf-num">${todas.length}</span>${nuevas ? `<span class="bf-nuevas" title="${nuevas} sin revisar">${nuevas}</span>` : ""}
+            </button>`;
+
+        }).join("");
+
+        const filtro = FILTROS_ADMIN.find((f) => f.id === adminFiltro) || FILTROS_ADMIN[0];
+
+        // Primero lo que aún no revisas
+        const lista = delTipo(filtro).slice().sort((a, b) => (a.estado === "Recibida" ? 0 : 1) - (b.estado === "Recibida" ? 0 : 1));
+
+        caja.innerHTML = lista.length
+            ? lista.map((x) => adminItemHTML(x, adminEstados || Object.keys(ESTADO_UI))).join("")
+            : adminLista.length
+                ? `<p class="vacio">No hay ${filtro.nombre.toLowerCase()} por ahora.</p>`
+                : '<p class="vacio">Todavía no llegan sugerencias. Cuando tus amigas escriban, aparecen aquí.</p>';
+
+    }
+
     async function cargarAdmin() {
 
         const caja = $("adminBuzon");
@@ -4759,17 +4804,17 @@ const buzon = (() => {
 
             const r = await api("admin_sugerencias");
 
-            const lista = r.sugerencias || [];
+            adminLista = r.sugerencias || [];
 
-            const nuevas = lista.filter((x) => x.estado === "Recibida").length;
+            adminEstados = r.estados || null;
+
+            const nuevas = adminLista.filter((x) => x.estado === "Recibida").length;
 
             $("adminBuzonNuevas").hidden = !nuevas;
 
             $("adminBuzonNuevas").textContent = nuevas + (nuevas === 1 ? " nueva" : " nuevas");
 
-            caja.innerHTML = lista.length
-                ? lista.map((x) => adminItemHTML(x, r.estados || Object.keys(ESTADO_UI))).join("")
-                : '<p class="vacio">Todavía no llegan sugerencias. Cuando tus amigas escriban, aparecen aquí.</p>';
+            pintarAdmin();
 
         } catch (e) {
 
@@ -4826,6 +4871,18 @@ const buzon = (() => {
         document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("buzonOverlay").hidden) cerrar(); });
 
         document.querySelectorAll(".buzon-tipo").forEach((b) => b.addEventListener("click", () => elegir(b.dataset.tipo)));
+
+        $("adminBuzonFiltros").addEventListener("click", (e) => {
+
+            const b = e.target.closest("[data-filtro]");
+
+            if (!b) return;
+
+            adminFiltro = b.dataset.filtro;
+
+            pintarAdmin();
+
+        });
 
         $("adminBuzon").addEventListener("click", (e) => {
 

@@ -6047,3 +6047,42 @@ html[data-tema="blackcard"] .comp-avatar + .comp-avatar{ color:#0A0A0A; }
 #compUsuario:focus{ border-color:var(--primary); box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 #compForm input[type="date"]{ color-scheme:inherit; }
 #compEspacio[hidden], #compSinEspacio[hidden]{ display:none !important; }
+
+/* Buzón (admin): filtro por tipo */
+.admin-buzon-filtros{ display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px; }
+.admin-buzon-filtros:empty{ display:none; }
+#adminBuzonFiltros button.buzon-filtro{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    width:auto;
+    min-height:36px;
+    margin:0;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface-light);
+    color:var(--text-soft);
+    font:inherit;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:normal;
+    text-transform:none;
+    box-shadow:none;
+    transform:none;
+    cursor:pointer;
+}
+#adminBuzonFiltros button.buzon-filtro:hover{ border-color:var(--primary); color:var(--text); box-shadow:none; transform:none; }
+#adminBuzonFiltros button.buzon-filtro[aria-selected="true"]{ background:var(--primary); border-color:var(--primary); color:#fff; }
+html[data-tema="blackcard"] #adminBuzonFiltros button.buzon-filtro[aria-selected="true"]{ color:#0A0A0A; }
+.bf-num{ opacity:.7; font-weight:600; }
+.bf-nuevas{
+    min-width:18px; height:18px;
+    padding:0 5px;
+    display:inline-grid; place-items:center;
+    border-radius:999px;
+    background:#F43F5E;
+    color:#fff;
+    font-size:11px;
+    font-weight:800;
+}
