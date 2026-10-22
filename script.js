@@ -811,6 +811,30 @@ const notificaciones = (() => {
 
     }
 
+    // Cómo agregar la app al inicio según el navegador del iPhone
+    function pasosInstalarIOS() {
+
+        const ua = navigator.userAgent;
+
+        const ultimo = `<li>Abre Finanzas IA desde ese ícono nuevo, entra con tu usuario y vuelve aquí a <b>Activar notificaciones</b>.</li>`;
+
+        if (/CriOS/i.test(ua)) return `
+            <li>En Chrome, toca el botón <b>Compartir</b> <span aria-hidden="true">⬆️</span> que está arriba, junto a la dirección. Si no lo ves, toca los <b>tres puntos</b> y luego <b>Compartir</b>.</li>
+            <li>Elige <b>Agregar a pantalla de inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
+            ${ultimo}`;
+
+        if (/FxiOS|EdgiOS|OPiOS/i.test(ua)) return `
+            <li>Abre el menú del navegador y toca <b>Compartir</b>.</li>
+            <li>Elige <b>Agregar a pantalla de inicio</b>. Si no aparece, abre esta página en <b>Safari</b> y hazlo desde ahí.</li>
+            ${ultimo}`;
+
+        return `
+            <li>En Safari, toca <b>Compartir</b> <span aria-hidden="true">⬆️</span> (abajo, en el centro).</li>
+            <li>Elige <b>Agregar a inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
+            ${ultimo}`;
+
+    }
+
     async function suscripcionActual() {
 
         try {
@@ -838,11 +862,7 @@ const notificaciones = (() => {
             caja.innerHTML = esIOS() && !instalada()
                 ? `<div class="avisos-off">
                         <span>🔔 <b>Notificaciones en tu iPhone</b>: primero agrega Finanzas IA a tu pantalla de inicio.</span>
-                        <ol class="avisos-pasos">
-                            <li>En Safari, toca <b>Compartir</b> <span aria-hidden="true">⬆️</span>.</li>
-                            <li>Elige <b>Agregar a inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
-                            <li>Abre Finanzas IA desde ese ícono, entra y vuelve aquí a <b>Activar notificaciones</b>.</li>
-                        </ol>
+                        <ol class="avisos-pasos">${pasosInstalarIOS()}</ol>
                    </div>`
                 : `<div class="avisos-off"><span>🔔 Este navegador no permite notificaciones. Prueba desde Chrome, Edge o desde la app en tu iPhone.</span></div>`;
 
