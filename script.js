@@ -780,6 +780,196 @@ function renderUsuario() {
 
 }
 
+// =========================
+// NOTIFICACIONES (todas las personas): recordatorios de pagos; a Diego además el buzón
+// =========================
+const notificaciones = (() => {
+
+    // Notificaciones de la propia app (Web Push). En el iPhone: con la app agregada a la pantalla de inicio.
+    const pushSoportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+    const esIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const instalada = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+
+    function nombreDispositivo() {
+
+        const ua = navigator.userAgent;
+
+        return (/iPhone/i.test(ua) ? "iPhone" : /iPad/i.test(ua) ? "iPad" : /Android/i.test(ua) ? "Android" : /Mac/i.test(ua) ? "Mac" : /Windows/i.test(ua) ? "Windows" : "Otro") +
+            (instalada() ? " · app" : " · navegador");
+
+    }
+
+    function urlB64ABytes(b64) {
+
+        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+
+        const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+
+        return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+
+    }
+
+    async function suscripcionActual() {
+
+        try {
+
+            const reg = await navigator.serviceWorker.getRegistration();
+
+            return reg ? await reg.pushManager.getSubscription() : null;
+
+        } catch (e) { return null; }
+
+    }
+
+    async function pintarAvisos() {
+
+        const caja = $("notifCaja");
+
+        if (!caja) return;
+
+        if (modoDemo) { caja.innerHTML = '<div class="avisos-off"><span>En el modo demo no hay notificaciones.</span></div>'; return; }
+
+        if (!estado.usuario || !estado.usuario.usuario) { caja.innerHTML = '<div class="avisos-off"><span>Para recibir notificaciones necesitas tu usuario y contraseña.</span></div>'; return; }
+
+        if (!pushSoportado()) {
+
+            caja.innerHTML = esIOS() && !instalada()
+                ? `<div class="avisos-off">
+                        <span>🔔 <b>Notificaciones en tu iPhone</b>: primero agrega Finanzas IA a tu pantalla de inicio.</span>
+                        <ol class="avisos-pasos">
+                            <li>En Safari, toca <b>Compartir</b> <span aria-hidden="true">⬆️</span>.</li>
+                            <li>Elige <b>Agregar a inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
+                            <li>Abre Finanzas IA desde ese ícono, entra y vuelve aquí a <b>Activar notificaciones</b>.</li>
+                        </ol>
+                   </div>`
+                : `<div class="avisos-off"><span>🔔 Este navegador no permite notificaciones. Prueba desde Chrome, Edge o desde la app en tu iPhone.</span></div>`;
+
+            return;
+
+        }
+
+        if (Notification.permission === "denied") {
+
+            caja.innerHTML = `<div class="avisos-off"><span>🔕 Las notificaciones están bloqueadas. Actívalas en <b>Ajustes → Notificaciones → Finanzas IA</b> y vuelve aquí.</span></div>`;
+
+            return;
+
+        }
+
+        const sub = await suscripcionActual();
+
+        caja.innerHTML = sub
+            ? `<div class="avisos-on">
+                    <div class="avisos-fila">
+                        <span>🔔 <b>Notificaciones activas</b> en este ${esc(nombreDispositivo().split(" ·")[0])}</span>
+                        <button class="mov-btn" type="button" data-avisos="probar">Probar</button>
+                        <button class="mov-btn" type="button" data-avisos="quitar">Desactivar</button>
+                    </div>
+                    <small class="avisos-nota">Probar te manda tus pagos de hoy y de los próximos 2 días (si tienes).</small>
+               </div>`
+            : `<div class="avisos-off">
+                    <span>Actívalas en este celular para que te lleguen aunque no tengas la app abierta.</span>
+                    <button class="mov-btn" type="button" data-avisos="activar">Activar notificaciones</button>
+               </div>`;
+
+    }
+
+    async function accionAvisos(b) {
+
+        const que = b.dataset.avisos;
+
+        b.disabled = true;
+
+        try {
+
+            if (que === "activar") {
+
+                // El permiso se pide primero, directo del toque (el iPhone lo exige así)
+                const permiso = await Notification.requestPermission();
+
+                if (permiso !== "granted") { mostrarToast("🔕 Sin permiso no te puedo avisar"); pintarAvisos(); return; }
+
+                const reg = await navigator.serviceWorker.register("sw.js");
+
+                await navigator.serviceWorker.ready;
+
+                const { clave } = await api("push", { op: "clave" });
+
+                let sub = await reg.pushManager.getSubscription();
+
+                if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ABytes(clave) });
+
+                const desde = Date.now() - 120000;
+
+                const r = await api("push", { op: "suscribir", sub: sub.toJSON(), dispositivo: nombreDispositivo() });
+
+                const c = await caches.open("fia-push");
+
+                await c.put("cfg", new Response(JSON.stringify({ api: API_URL, clave: r.clave, desde })));
+
+                mostrarToast(r.enviados ? "🔔 ¡Listo! Te mandé una notificación de prueba" : "🔔 Activadas. Toca Probar para ver una");
+
+            } else if (que === "probar") {
+
+                const r = await api("push", { op: "probar" });
+
+                mostrarToast(!r.enviados ? "No se pudo enviar. Desactiva y vuelve a activar."
+                    : r.pagos ? `🔔 Te mandé ${r.pagos === 1 ? "tu pago" : "tus " + r.pagos + " pagos"} de estos días`
+                    : "🔔 Enviada. No tienes pagos cerca, pero así te va a llegar");
+
+            } else if (que === "quitar") {
+
+                const sub = await suscripcionActual();
+
+                if (sub) { await api("push", { op: "quitar", endpoint: sub.endpoint }); await sub.unsubscribe(); }
+
+                mostrarToast("🔕 Notificaciones desactivadas en este dispositivo");
+
+            }
+
+            pintarAvisos();
+
+        } catch (e) {
+
+            if (e instanceof ErrorPin) { errorDeAccion(e); return; }
+
+            console.error(e);
+
+            mostrarToast("❌ " + (e && e.message ? e.message : "No se pudieron activar las notificaciones"));
+
+        } finally {
+
+            if (b.isConnected) b.disabled = false;
+
+        }
+
+    }
+
+    function iniciar() {
+
+        const caja = $("notifCaja");
+
+        if (!caja) return;
+
+        caja.addEventListener("click", (e) => {
+
+            const b = e.target.closest("[data-avisos]");
+
+            if (b) accionAvisos(b);
+
+        });
+
+    }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
+    else iniciar();
+
+    return { pintar: pintarAvisos };
+
+})();
+
 function renderConfig() {
 
     const visible = esAdmin();
@@ -796,6 +986,12 @@ function renderConfig() {
     $("cuentaBloque").hidden = !conCuenta;
 
     if (conCuenta) $("cuentaUsuario").textContent = "@" + u.usuario;
+
+    $("notifTexto").textContent = u && u.rol === "admin"
+        ? "Te aviso 2 días antes y el mismo día de tus pagos, y cuando llega una falla, idea o duda al buzón."
+        : "Te aviso 2 días antes y el mismo día de tus pagos fijos, cuotas y tarjetas, y el día que te pagan.";
+
+    notificaciones.pintar();
 
 }
 
@@ -4823,161 +5019,6 @@ const buzon = (() => {
 
     let adminLista = [], adminEstados = null, adminFiltro = "todas";
 
-    // Notificaciones de la propia app (Web Push). En el iPhone: con la app agregada a la pantalla de inicio.
-    const pushSoportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-
-    const esIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-    const instalada = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
-
-    function nombreDispositivo() {
-
-        const ua = navigator.userAgent;
-
-        return (/iPhone/i.test(ua) ? "iPhone" : /iPad/i.test(ua) ? "iPad" : /Android/i.test(ua) ? "Android" : /Mac/i.test(ua) ? "Mac" : /Windows/i.test(ua) ? "Windows" : "Otro") +
-            (instalada() ? " · app" : " · navegador");
-
-    }
-
-    function urlB64ABytes(b64) {
-
-        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
-
-        const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-
-        return Uint8Array.from(raw, (c) => c.charCodeAt(0));
-
-    }
-
-    async function suscripcionActual() {
-
-        try {
-
-            const reg = await navigator.serviceWorker.getRegistration();
-
-            return reg ? await reg.pushManager.getSubscription() : null;
-
-        } catch (e) { return null; }
-
-    }
-
-    async function pintarAvisos() {
-
-        const caja = $("adminAvisos");
-
-        if (modoDemo) { caja.innerHTML = ""; return; }
-
-        if (!pushSoportado()) {
-
-            caja.innerHTML = esIOS() && !instalada()
-                ? `<div class="avisos-off">
-                        <span>🔔 <b>Notificaciones en tu iPhone</b>: primero agrega Finanzas IA a tu pantalla de inicio.</span>
-                        <ol class="avisos-pasos">
-                            <li>En Safari, toca <b>Compartir</b> <span aria-hidden="true">⬆️</span>.</li>
-                            <li>Elige <b>Agregar a inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
-                            <li>Abre Finanzas IA desde ese ícono, entra y vuelve aquí a <b>Activar notificaciones</b>.</li>
-                        </ol>
-                   </div>`
-                : `<div class="avisos-off"><span>🔔 Este navegador no permite notificaciones. Prueba desde Chrome, Edge o desde la app en tu iPhone.</span></div>`;
-
-            return;
-
-        }
-
-        if (Notification.permission === "denied") {
-
-            caja.innerHTML = `<div class="avisos-off"><span>🔕 Las notificaciones están bloqueadas. Actívalas en <b>Ajustes → Notificaciones → Finanzas IA</b> y vuelve aquí.</span></div>`;
-
-            return;
-
-        }
-
-        const sub = await suscripcionActual();
-
-        caja.innerHTML = sub
-            ? `<div class="avisos-on">
-                    <div class="avisos-fila">
-                        <span>🔔 <b>Notificaciones activas</b> en este ${esc(nombreDispositivo().split(" ·")[0])}</span>
-                        <button class="mov-btn" type="button" data-avisos="probar">Probar</button>
-                        <button class="mov-btn" type="button" data-avisos="quitar">Desactivar</button>
-                    </div>
-                    <small class="avisos-nota">Te llega una notificación cuando alguien manda una falla, idea o duda. Al tocarla se abre tu buzón.</small>
-               </div>`
-            : `<div class="avisos-off">
-                    <span>🔔 Recibe una notificación en este dispositivo cuando llegue una falla, idea o duda.</span>
-                    <button class="mov-btn" type="button" data-avisos="activar">Activar notificaciones</button>
-               </div>`;
-
-    }
-
-    async function accionAvisos(b) {
-
-        const que = b.dataset.avisos;
-
-        b.disabled = true;
-
-        try {
-
-            if (que === "activar") {
-
-                // El permiso se pide primero, directo del toque (el iPhone lo exige así)
-                const permiso = await Notification.requestPermission();
-
-                if (permiso !== "granted") { mostrarToast("🔕 Sin permiso no te puedo avisar"); pintarAvisos(); return; }
-
-                const reg = await navigator.serviceWorker.register("sw.js");
-
-                await navigator.serviceWorker.ready;
-
-                const { clave } = await api("admin_push", { op: "clave" });
-
-                let sub = await reg.pushManager.getSubscription();
-
-                if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ABytes(clave) });
-
-                const desde = Date.now() - 120000;
-
-                const r = await api("admin_push", { op: "suscribir", sub: sub.toJSON(), dispositivo: nombreDispositivo() });
-
-                const c = await caches.open("fia-push");
-
-                await c.put("cfg", new Response(JSON.stringify({ api: API_URL, clave: r.clave, desde })));
-
-                mostrarToast(r.enviados ? "🔔 ¡Listo! Te mandé una notificación de prueba" : "🔔 Activadas. Toca Probar para ver una");
-
-            } else if (que === "probar") {
-
-                const r = await api("admin_push", { op: "probar" });
-
-                mostrarToast(r.enviados ? "🔔 Enviada. Debería llegarte en unos segundos" : "No se pudo enviar. Desactiva y vuelve a activar.");
-
-            } else if (que === "quitar") {
-
-                const sub = await suscripcionActual();
-
-                if (sub) { await api("admin_push", { op: "quitar", endpoint: sub.endpoint }); await sub.unsubscribe(); }
-
-                mostrarToast("🔕 Notificaciones desactivadas en este dispositivo");
-
-            }
-
-            pintarAvisos();
-
-        } catch (e) {
-
-            if (e instanceof ErrorPin) { errorDeAccion(e); return; }
-
-            console.error(e);
-
-            mostrarToast("❌ " + (e && e.message ? e.message : "No se pudieron activar las notificaciones"));
-
-        } finally {
-
-            if (b.isConnected) b.disabled = false;
-
-        }
-
-    }
 
     function pintarAdmin() {
 
@@ -5021,8 +5062,6 @@ const buzon = (() => {
             adminLista = r.sugerencias || [];
 
             adminEstados = r.estados || null;
-
-            pintarAvisos();
 
             const nuevas = adminLista.filter((x) => x.estado === "Recibida").length;
 
@@ -5096,14 +5135,6 @@ const buzon = (() => {
         document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("buzonOverlay").hidden) cerrar(); });
 
         document.querySelectorAll(".buzon-tipo").forEach((b) => b.addEventListener("click", () => elegir(b.dataset.tipo)));
-
-        $("adminAvisos").addEventListener("click", (e) => {
-
-            const b = e.target.closest("[data-avisos]");
-
-            if (b) accionAvisos(b);
-
-        });
 
         $("adminBuzonFiltros").addEventListener("click", (e) => {
 
