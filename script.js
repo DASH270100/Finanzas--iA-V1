@@ -469,6 +469,24 @@ function aplicarDatos(data) {
 // Enlace de las notificaciones: …/#buzon
 window.__irAlBuzon = location.hash === "#buzon";
 
+// Service worker: solo para las notificaciones
+if ("serviceWorker" in navigator) {
+
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+
+    // Tocaste una notificación con la app ya abierta: ve al buzón
+    navigator.serviceWorker.addEventListener("message", (e) => {
+
+        if (!e.data || e.data.tipo !== "abrirBuzon" || !estado.usuario || estado.usuario.rol !== "admin") return;
+
+        window.__irAlBuzon = true;
+
+        mostrarVista("configuracion");
+
+    });
+
+}
+
 let ultimaCarga = 0;
 
 async function cargarDatos() {
@@ -4774,43 +4792,92 @@ const buzon = (() => {
         { id: "duda", nombre: "Dudas", ico: "🤔", tipo: "No entendí algo" }
     ];
 
-    let adminLista = [], adminEstados = null, adminFiltro = "todas", temaAvisos = null;
+    let adminLista = [], adminEstados = null, adminFiltro = "todas";
 
-    // Avisos al celular con la app gratis ntfy
-    function pintarAvisos(recienActivado) {
+    // Notificaciones de la propia app (Web Push). En el iPhone: con la app agregada a la pantalla de inicio.
+    const pushSoportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+    const esIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const instalada = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+
+    function nombreDispositivo() {
+
+        const ua = navigator.userAgent;
+
+        return (/iPhone/i.test(ua) ? "iPhone" : /iPad/i.test(ua) ? "iPad" : /Android/i.test(ua) ? "Android" : /Mac/i.test(ua) ? "Mac" : /Windows/i.test(ua) ? "Windows" : "Otro") +
+            (instalada() ? " · app" : " · navegador");
+
+    }
+
+    function urlB64ABytes(b64) {
+
+        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+
+        const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+
+        return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+
+    }
+
+    async function suscripcionActual() {
+
+        try {
+
+            const reg = await navigator.serviceWorker.getRegistration();
+
+            return reg ? await reg.pushManager.getSubscription() : null;
+
+        } catch (e) { return null; }
+
+    }
+
+    async function pintarAvisos() {
 
         const caja = $("adminAvisos");
 
-        if (temaAvisos === null) { caja.innerHTML = ""; return; }
+        if (modoDemo) { caja.innerHTML = ""; return; }
 
-        if (!temaAvisos) {
+        if (!pushSoportado()) {
 
-            caja.innerHTML = `
-                <div class="avisos-off">
-                    <span>🔔 Recibe una notificación en tu celular cuando llegue una falla, idea o duda.</span>
-                    <button class="mov-btn" type="button" data-avisos="activar">Activar avisos</button>
-                </div>`;
+            caja.innerHTML = esIOS() && !instalada()
+                ? `<div class="avisos-off">
+                        <span>🔔 <b>Notificaciones en tu iPhone</b>: primero agrega Finanzas IA a tu pantalla de inicio.</span>
+                        <ol class="avisos-pasos">
+                            <li>En Safari, toca <b>Compartir</b> <span aria-hidden="true">⬆️</span>.</li>
+                            <li>Elige <b>Agregar a inicio</b>. Si ya tenías el ícono, bórralo y agrégalo otra vez.</li>
+                            <li>Abre Finanzas IA desde ese ícono, entra y vuelve aquí a <b>Activar notificaciones</b>.</li>
+                        </ol>
+                   </div>`
+                : `<div class="avisos-off"><span>🔔 Este navegador no permite notificaciones. Prueba desde Chrome, Edge o desde la app en tu iPhone.</span></div>`;
 
             return;
 
         }
 
-        caja.innerHTML = `
-            <div class="avisos-on${recienActivado ? " abierto" : ""}">
-                <div class="avisos-fila">
-                    <span>🔔 <b>Avisos al celular</b> ${recienActivado ? "" : "activos"}</span>
-                    <button class="mov-btn" type="button" data-avisos="probar">Probar</button>
-                    <button class="mov-btn" type="button" data-avisos="pasos" aria-expanded="${!!recienActivado}">Cómo</button>
-                </div>
-                <ol class="avisos-pasos"${recienActivado ? "" : " hidden"}>
-                    <li>Instala la app gratis <b>ntfy</b> (App Store o Play Store).</li>
-                    <li>Toca <b>+</b> y suscríbete a este tema:
-                        <span class="avisos-tema"><code>${esc(temaAvisos)}</code><button class="mov-btn" type="button" data-avisos="copiar">Copiar</button></span>
-                    </li>
-                    <li>Toca <b>Probar</b> y te llega la primera notificación. Al tocarla, se abre tu buzón.</li>
-                </ol>
-                <small class="avisos-nota">El tema es tu clave: no lo compartas.</small>
-            </div>`;
+        if (Notification.permission === "denied") {
+
+            caja.innerHTML = `<div class="avisos-off"><span>🔕 Las notificaciones están bloqueadas. Actívalas en <b>Ajustes → Notificaciones → Finanzas IA</b> y vuelve aquí.</span></div>`;
+
+            return;
+
+        }
+
+        const sub = await suscripcionActual();
+
+        caja.innerHTML = sub
+            ? `<div class="avisos-on">
+                    <div class="avisos-fila">
+                        <span>🔔 <b>Notificaciones activas</b> en este ${esc(nombreDispositivo().split(" ·")[0])}</span>
+                        <button class="mov-btn" type="button" data-avisos="probar">Probar</button>
+                        <button class="mov-btn" type="button" data-avisos="quitar">Desactivar</button>
+                    </div>
+                    <small class="avisos-nota">Te llega una notificación cuando alguien manda una falla, idea o duda. Al tocarla se abre tu buzón.</small>
+               </div>`
+            : `<div class="avisos-off">
+                    <span>🔔 Recibe una notificación en este dispositivo cuando llegue una falla, idea o duda.</span>
+                    <button class="mov-btn" type="button" data-avisos="activar">Activar notificaciones</button>
+               </div>`;
 
     }
 
@@ -4818,44 +4885,62 @@ const buzon = (() => {
 
         const que = b.dataset.avisos;
 
-        if (que === "pasos") {
-
-            const ol = $("adminAvisos").querySelector(".avisos-pasos");
-
-            ol.hidden = !ol.hidden;
-
-            b.setAttribute("aria-expanded", String(!ol.hidden));
-
-            return;
-
-        }
-
-        if (que === "copiar") {
-
-            try { await navigator.clipboard.writeText(temaAvisos); mostrarToast("📋 Tema copiado"); }
-            catch (e) { mostrarToast("Mantén presionado el tema para copiarlo"); }
-
-            return;
-
-        }
-
         b.disabled = true;
 
         try {
 
-            const r = await api("admin_avisos");
+            if (que === "activar") {
 
-            const nuevo = !temaAvisos;
+                // El permiso se pide primero, directo del toque (el iPhone lo exige así)
+                const permiso = await Notification.requestPermission();
 
-            temaAvisos = r.tema || "";
+                if (permiso !== "granted") { mostrarToast("🔕 Sin permiso no te puedo avisar"); pintarAvisos(); return; }
 
-            pintarAvisos(nuevo);
+                const reg = await navigator.serviceWorker.register("sw.js");
 
-            mostrarToast(r.enviado ? "🔔 Prueba enviada. Si te suscribiste en ntfy, ya te llegó" : "No se pudo enviar la prueba. Inténtalo otra vez.");
+                await navigator.serviceWorker.ready;
+
+                const { clave } = await api("admin_push", { op: "clave" });
+
+                let sub = await reg.pushManager.getSubscription();
+
+                if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ABytes(clave) });
+
+                const desde = Date.now() - 120000;
+
+                const r = await api("admin_push", { op: "suscribir", sub: sub.toJSON(), dispositivo: nombreDispositivo() });
+
+                const c = await caches.open("fia-push");
+
+                await c.put("cfg", new Response(JSON.stringify({ api: API_URL, clave: r.clave, desde })));
+
+                mostrarToast(r.enviados ? "🔔 ¡Listo! Te mandé una notificación de prueba" : "🔔 Activadas. Toca Probar para ver una");
+
+            } else if (que === "probar") {
+
+                const r = await api("admin_push", { op: "probar" });
+
+                mostrarToast(r.enviados ? "🔔 Enviada. Debería llegarte en unos segundos" : "No se pudo enviar. Desactiva y vuelve a activar.");
+
+            } else if (que === "quitar") {
+
+                const sub = await suscripcionActual();
+
+                if (sub) { await api("admin_push", { op: "quitar", endpoint: sub.endpoint }); await sub.unsubscribe(); }
+
+                mostrarToast("🔕 Notificaciones desactivadas en este dispositivo");
+
+            }
+
+            pintarAvisos();
 
         } catch (e) {
 
-            errorDeAccion(e);
+            if (e instanceof ErrorPin) { errorDeAccion(e); return; }
+
+            console.error(e);
+
+            mostrarToast("❌ " + (e && e.message ? e.message : "No se pudieron activar las notificaciones"));
 
         } finally {
 
@@ -4908,9 +4993,7 @@ const buzon = (() => {
 
             adminEstados = r.estados || null;
 
-            temaAvisos = r.temaAvisos || "";
-
-            pintarAvisos(false);
+            pintarAvisos();
 
             const nuevas = adminLista.filter((x) => x.estado === "Recibida").length;
 
@@ -4925,7 +5008,7 @@ const buzon = (() => {
 
                 window.__irAlBuzon = false;
 
-                setTimeout(() => document.querySelector(".admin-buzon").scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+                setTimeout(() => $("adminBuzon").closest(".admin-buzon").scrollIntoView({ behavior: "smooth", block: "start" }), 200);
 
             }
 
