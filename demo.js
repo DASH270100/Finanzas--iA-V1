@@ -341,7 +341,8 @@ const DemoBackend = (() => {
             }
 
             // Pago de la tarjeta: no es un gasto nuevo
-            if (/\b(pague|pago|abone)\b/.test(norm) && /tarjeta/.test(norm)) {
+            // "pagué LA tarjeta / mi BBVA" sí; "pagué 99 CON la tarjeta" es una compra
+            if (/\b(pague|pago|abone|abono)\s+(?:\d+(?:[.,]\d+)?\s+)?(?:a\s+)?(la|mi|el)\s+(tarjeta|visa|mastercard|bcp|bbva|interbank|scotiabank|amex|diners|cmr|ripley)\b/.test(norm)) {
 
                 const t = tarjetaDe(parte);
 
@@ -362,6 +363,8 @@ const DemoBackend = (() => {
             const esIngreso = PALABRAS_INGRESO.test(norm);
 
             let desc = limpiarDescripcion(medio ? parte.replace(/\s*(?:con|en)?\s*(?:la\s+|mi\s+)?(?:tarjeta\s+(?:de\s+cr[eé]dito\s+)?)?(?:BCP|BBVA|Interbank|Scotiabank|Visa|Mastercard|Amex|Diners|Falabella|CMR|Ripley)\b/i, " ").replace(medio, " ") : parte, num[0]);
+
+            if (medio && /^pagu[eé]$/i.test(String(desc || "").trim())) desc = "Compra con " + medio;
 
             if (!desc) desc = /yape/.test(norm) ? "Yape" : (esIngreso ? "Ingreso" : "Gasto");
 

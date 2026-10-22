@@ -5711,12 +5711,27 @@ html[data-tema="matcha"]{ --comp-b:#D9A441; }
 html[data-tema="atardecer"]{ --comp-b:#FFC24B; }
 
 /* Switch Mis cuentas / Compartido: solo en el inicio y en la cuenta compartida */
+/* Fila del switch: ocupa el mismo ancho que el contenido (centrado en los estilos que centran) */
 #switchCuenta{
+    display:flex;
+    margin:0 0 18px;
+}
+html[data-tema="atardecer"] #switchCuenta,
+html[data-tema="neon"] #switchCuenta,
+html[data-tema="orbita"] #switchCuenta,
+html[data-tema="blackcard"] #switchCuenta,
+html[data-tema="matcha"] #switchCuenta,
+html[data-tema="cherry"] #switchCuenta,
+html[data-tema="beige"] #switchCuenta{
+    max-width:820px;
+    margin-left:auto;
+    margin-right:auto;
+}
+.switch-pastilla{
     position:relative;
     display:inline-flex;
     gap:4px;
     padding:4px;
-    margin:0 0 18px;
     border-radius:999px;
     background:var(--surface);
     border:1px solid var(--border);
@@ -5751,6 +5766,7 @@ body:not([data-vista="dashboard"]):not([data-vista="compartido"]) #switchCuenta{
 #switchCuenta button[aria-selected="true"]{ background:var(--primary); color:#fff; }
 html[data-tema="blackcard"] #switchCuenta button[aria-selected="true"]{ color:#0A0A0A; }
 #switchCuenta.tiene-aviso [data-cuenta="compartida"]::after{
+    position:static;
     content:"";
     width:8px; height:8px;
     border-radius:50%;
@@ -6007,7 +6023,7 @@ html[data-tema="blackcard"] .comp-avatar + .comp-avatar{ color:#0A0A0A; }
 #vista-compartido .comp-ajustes .mov-btn-borrar{ width:auto; }
 
 @media (max-width:640px){
-    #switchCuenta{ display:flex; width:100%; }
+    .switch-pastilla{ display:flex; width:100%; }
     #switchCuenta button{ flex:1; justify-content:center; padding:8px 10px; }
     .comp-form{ grid-template-columns:1fr; }
 }
