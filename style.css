@@ -6086,3 +6086,37 @@ html[data-tema="blackcard"] #adminBuzonFiltros button.buzon-filtro[aria-selected
     font-size:11px;
     font-weight:800;
 }
+
+/* Buzón (admin): avisos al celular con ntfy */
+.admin-avisos:empty{ display:none; }
+.admin-avisos{ margin:2px 0 14px; }
+.avisos-off, .avisos-on{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:12px 14px;
+    border-radius:var(--radius-sm);
+    border:1px dashed var(--border);
+    background:var(--surface-light);
+    font-size:13.5px;
+    color:var(--text-soft);
+}
+.avisos-on{ border-style:solid; }
+.avisos-fila{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.avisos-fila > span{ flex:1; min-width:140px; color:var(--text); }
+#adminAvisos button.mov-btn{ width:auto; margin:0; min-height:34px; padding:6px 12px; font-size:13px; }
+.avisos-off button.mov-btn{ align-self:flex-start; }
+.avisos-pasos{ margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; line-height:1.45; }
+.avisos-pasos[hidden]{ display:none; }
+.avisos-tema{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.avisos-tema code{
+    padding:6px 10px;
+    border-radius:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:12.5px;
+    word-break:break-all;
+    user-select:all;
+}
+.avisos-nota{ color:var(--text-muted); font-size:12px; }

@@ -456,7 +456,18 @@ function aplicarDatos(data) {
 
     estado.compartido = data.compartido || { activo: null, recibidas: [], enviada: null };
 
+    if (window.__irAlBuzon && estado.usuario && estado.usuario.rol === "admin" && !modoDemo) {
+
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+
+        setTimeout(() => mostrarVista("configuracion"), 0);
+
+    }
+
 }
+
+// Enlace de las notificaciones: …/#buzon
+window.__irAlBuzon = location.hash === "#buzon";
 
 let ultimaCarga = 0;
 
@@ -4763,7 +4774,96 @@ const buzon = (() => {
         { id: "duda", nombre: "Dudas", ico: "🤔", tipo: "No entendí algo" }
     ];
 
-    let adminLista = [], adminEstados = null, adminFiltro = "todas";
+    let adminLista = [], adminEstados = null, adminFiltro = "todas", temaAvisos = null;
+
+    // Avisos al celular con la app gratis ntfy
+    function pintarAvisos(recienActivado) {
+
+        const caja = $("adminAvisos");
+
+        if (temaAvisos === null) { caja.innerHTML = ""; return; }
+
+        if (!temaAvisos) {
+
+            caja.innerHTML = `
+                <div class="avisos-off">
+                    <span>🔔 Recibe una notificación en tu celular cuando llegue una falla, idea o duda.</span>
+                    <button class="mov-btn" type="button" data-avisos="activar">Activar avisos</button>
+                </div>`;
+
+            return;
+
+        }
+
+        caja.innerHTML = `
+            <div class="avisos-on${recienActivado ? " abierto" : ""}">
+                <div class="avisos-fila">
+                    <span>🔔 <b>Avisos al celular</b> ${recienActivado ? "" : "activos"}</span>
+                    <button class="mov-btn" type="button" data-avisos="probar">Probar</button>
+                    <button class="mov-btn" type="button" data-avisos="pasos" aria-expanded="${!!recienActivado}">Cómo</button>
+                </div>
+                <ol class="avisos-pasos"${recienActivado ? "" : " hidden"}>
+                    <li>Instala la app gratis <b>ntfy</b> (App Store o Play Store).</li>
+                    <li>Toca <b>+</b> y suscríbete a este tema:
+                        <span class="avisos-tema"><code>${esc(temaAvisos)}</code><button class="mov-btn" type="button" data-avisos="copiar">Copiar</button></span>
+                    </li>
+                    <li>Toca <b>Probar</b> y te llega la primera notificación. Al tocarla, se abre tu buzón.</li>
+                </ol>
+                <small class="avisos-nota">El tema es tu clave: no lo compartas.</small>
+            </div>`;
+
+    }
+
+    async function accionAvisos(b) {
+
+        const que = b.dataset.avisos;
+
+        if (que === "pasos") {
+
+            const ol = $("adminAvisos").querySelector(".avisos-pasos");
+
+            ol.hidden = !ol.hidden;
+
+            b.setAttribute("aria-expanded", String(!ol.hidden));
+
+            return;
+
+        }
+
+        if (que === "copiar") {
+
+            try { await navigator.clipboard.writeText(temaAvisos); mostrarToast("📋 Tema copiado"); }
+            catch (e) { mostrarToast("Mantén presionado el tema para copiarlo"); }
+
+            return;
+
+        }
+
+        b.disabled = true;
+
+        try {
+
+            const r = await api("admin_avisos");
+
+            const nuevo = !temaAvisos;
+
+            temaAvisos = r.tema || "";
+
+            pintarAvisos(nuevo);
+
+            mostrarToast(r.enviado ? "🔔 Prueba enviada. Si te suscribiste en ntfy, ya te llegó" : "No se pudo enviar la prueba. Inténtalo otra vez.");
+
+        } catch (e) {
+
+            errorDeAccion(e);
+
+        } finally {
+
+            if (b.isConnected) b.disabled = false;
+
+        }
+
+    }
 
     function pintarAdmin() {
 
@@ -4808,6 +4908,10 @@ const buzon = (() => {
 
             adminEstados = r.estados || null;
 
+            temaAvisos = r.temaAvisos || "";
+
+            pintarAvisos(false);
+
             const nuevas = adminLista.filter((x) => x.estado === "Recibida").length;
 
             $("adminBuzonNuevas").hidden = !nuevas;
@@ -4815,6 +4919,15 @@ const buzon = (() => {
             $("adminBuzonNuevas").textContent = nuevas + (nuevas === 1 ? " nueva" : " nuevas");
 
             pintarAdmin();
+
+            // Llegaste tocando una notificación: baja directo al buzón
+            if (window.__irAlBuzon) {
+
+                window.__irAlBuzon = false;
+
+                setTimeout(() => document.querySelector(".admin-buzon").scrollIntoView({ behavior: "smooth", block: "start" }), 200);
+
+            }
 
         } catch (e) {
 
@@ -4871,6 +4984,14 @@ const buzon = (() => {
         document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("buzonOverlay").hidden) cerrar(); });
 
         document.querySelectorAll(".buzon-tipo").forEach((b) => b.addEventListener("click", () => elegir(b.dataset.tipo)));
+
+        $("adminAvisos").addEventListener("click", (e) => {
+
+            const b = e.target.closest("[data-avisos]");
+
+            if (b) accionAvisos(b);
+
+        });
 
         $("adminBuzonFiltros").addEventListener("click", (e) => {
 
