@@ -1019,7 +1019,17 @@ function htmlPersona(p) {
 
     let editor = "";
 
-    if (ed && ed.campo === "usuario") {
+    if (ed && ed.campo === "nombre") {
+
+        editor = `
+            <div class="persona-edit">
+                <input type="text" data-campo="nombre" maxlength="40" value="${esc(p.nombre)}" placeholder="Ej: Patricia" aria-label="Nombre">
+                <button type="button" class="mov-btn mov-btn-primario" data-persona-accion="guardar-nombre">Guardar</button>
+                <button type="button" class="mov-btn" data-persona-accion="cancelar">Cancelar</button>
+            </div>
+            <p class="admin-aviso">Hoy la app le dice «Hola ${esc(p.nombre)}». Escribe cómo quieres que la salude.</p>`;
+
+    } else if (ed && ed.campo === "usuario") {
 
         editor = `
             <div class="persona-edit">
@@ -1092,6 +1102,7 @@ function htmlPersona(p) {
             <div class="persona-acciones">
                 ${p.usuario ? '<button type="button" class="mov-btn" data-persona-accion="copiar">📋 Copiar mensaje</button>' : ""}
                 <button type="button" class="mov-btn ${bloqueada ? "" : "mov-btn-borrar"}" data-persona-accion="estado">${bloqueada ? "Activar" : "Bloquear"}</button>
+                <button type="button" class="mov-btn" data-persona-accion="nombre">Cambiar nombre</button>
                 <button type="button" class="mov-btn" data-persona-accion="usuario">${p.usuario ? "Cambiar usuario" : "Ponerle usuario"}</button>
                 ${p.usuario ? '<button type="button" class="mov-btn" data-persona-accion="clave">Nueva contraseña</button>' : ""}
                 <button type="button" class="mov-btn" data-persona-accion="templates">Estilos</button>
@@ -1258,7 +1269,25 @@ async function accionPersona(boton) {
 
         }
 
-        if (accion === "usuario" || accion === "clave" || accion === "templates" || accion === "fecha") {
+        if (accion === "guardar-nombre") {
+
+            const nombre = tarjeta.querySelector("[data-campo=nombre]").value.trim();
+
+            if (!nombre) { mostrarToast("✍️ Escribe el nombre"); return; }
+
+            await api("admin_nombre", { hoja, nombre });
+
+            estado.adminEdicion = null;
+
+            mostrarToast(`✅ Listo: ahora le dice «Hola ${nombre}»`);
+
+            await cargarPersonas();
+
+            return;
+
+        }
+
+        if (accion === "nombre" || accion === "usuario" || accion === "clave" || accion === "templates" || accion === "fecha") {
 
             estado.adminEdicion = { hoja, campo: accion };
 
