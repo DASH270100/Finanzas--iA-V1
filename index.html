@@ -48,7 +48,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=85">
+    <link rel="stylesheet" href="style.css?v=86">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -891,9 +891,17 @@
 
         <div id="vista-fijos" class="vista vista-stack" hidden>
 
+        <div id="planTabs" class="plan-tabs" role="tablist" aria-label="Secciones de Planificar">
+            <button type="button" role="tab" data-plan-tab="pagos" aria-selected="true"><svg class="ico" aria-hidden="true"><use href="#i-calendar-days"></use></svg><span>Pagos</span><b class="plan-num" hidden></b></button>
+            <button type="button" role="tab" data-plan-tab="tarjetas" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-credit-card"></use></svg><span>Tarjetas</span><b class="plan-num" hidden></b></button>
+            <button type="button" role="tab" data-plan-tab="ingresos" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-briefcase"></use></svg><span>Ingresos</span><b class="plan-num" hidden></b></button>
+            <button type="button" role="tab" data-plan-tab="metas" aria-selected="false"><svg class="ico" aria-hidden="true"><use href="#i-piggy-bank"></use></svg><span>Metas</span></button>
+        </div>
+
+
         <!-- ¿ME ALCANZA? -->
 
-        <section id="alcanzaCard" class="card alcanza-card">
+        <section id="alcanzaCard" class="card alcanza-card" data-plan="pagos">
 
             <div class="card-title">
 
@@ -950,7 +958,7 @@
 
         </section>
 
-        <section class="card ingresos-card">
+        <section class="card ingresos-card" data-plan="ingresos">
 
             <div class="card-title">
 
@@ -998,7 +1006,7 @@
 
         <!-- POR COBRAR (MODO FREELANCE) -->
 
-        <section id="cobrarCard" class="card cobrar-card">
+        <section id="cobrarCard" class="card cobrar-card" data-plan="ingresos">
 
             <div class="card-title">
 
@@ -1044,7 +1052,7 @@
 
         </section>
 
-        <section class="card tarjetas-card">
+        <section class="card tarjetas-card" data-plan="tarjetas">
 
             <div class="card-title">
 
@@ -1089,7 +1097,57 @@
 
         </section>
 
-        <section class="card cuotas-card">
+        <section class="card fijos-card" data-plan="pagos">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg>Gastos fijos</h2>
+
+                    <p id="subtituloFijos">Lo que pagas cada mes, con su fecha de cobro.</p>
+
+                </div>
+
+            </div>
+
+            <div id="fijos">
+
+                <p class="vacio">Cargando…</p>
+
+            </div>
+
+            <form id="fijoForm" class="presupuesto-form fijo-form">
+
+                <label>Nombre
+                    <input id="fijoNombre" type="text" maxlength="60"
+                        placeholder="Ej: Alquiler, Spotify" autocomplete="off" required>
+                </label>
+
+                <label>Categoría
+                    <input id="fijoCategoria" type="text" maxlength="40"
+                        list="categoriasPresupuesto" placeholder="Ej: Hogar" autocomplete="off">
+                </label>
+
+                <label>Monto (S/)
+                    <input id="fijoMonto" type="number" step="0.01" min="0.01"
+                        inputmode="decimal" placeholder="1150" required>
+                </label>
+
+                <label>Día de cobro
+                    <input id="fijoDia" type="number" step="1" min="1" max="31"
+                        inputmode="numeric" placeholder="5" required>
+                </label>
+
+                <button id="fijoBoton" type="submit">Guardar fijo</button>
+
+            </form>
+
+            <p class="presupuesto-nota">Si el nombre ya existe, se actualiza. Si el mes tiene menos días (por ejemplo, día 31 en febrero), se cuenta el último día del mes.</p>
+
+        </section>
+
+        <section class="card cuotas-card" data-plan="pagos">
 
             <div class="card-title">
 
@@ -1154,57 +1212,9 @@
 
         </section>
 
-        <section class="card fijos-card">
+        
 
-            <div class="card-title">
-
-                <div>
-
-                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg>Gastos fijos</h2>
-
-                    <p id="subtituloFijos">Lo que pagas cada mes, con su fecha de cobro.</p>
-
-                </div>
-
-            </div>
-
-            <div id="fijos">
-
-                <p class="vacio">Cargando…</p>
-
-            </div>
-
-            <form id="fijoForm" class="presupuesto-form fijo-form">
-
-                <label>Nombre
-                    <input id="fijoNombre" type="text" maxlength="60"
-                        placeholder="Ej: Alquiler, Spotify" autocomplete="off" required>
-                </label>
-
-                <label>Categoría
-                    <input id="fijoCategoria" type="text" maxlength="40"
-                        list="categoriasPresupuesto" placeholder="Ej: Hogar" autocomplete="off">
-                </label>
-
-                <label>Monto (S/)
-                    <input id="fijoMonto" type="number" step="0.01" min="0.01"
-                        inputmode="decimal" placeholder="1150" required>
-                </label>
-
-                <label>Día de cobro
-                    <input id="fijoDia" type="number" step="1" min="1" max="31"
-                        inputmode="numeric" placeholder="5" required>
-                </label>
-
-                <button id="fijoBoton" type="submit">Guardar fijo</button>
-
-            </form>
-
-            <p class="presupuesto-nota">Si el nombre ya existe, se actualiza. Si el mes tiene menos días (por ejemplo, día 31 en febrero), se cuenta el último día del mes.</p>
-
-        </section>
-
-        <section class="card metas-card">
+        <section class="card metas-card" data-plan="metas">
 
             <div class="card-title">
 
@@ -1528,9 +1538,9 @@
 <script src="demo.js?v=58"></script>
 
 <script src="iconos.js?v=4"></script>
-<script src="script.js?v=80"></script>
+<script src="script.js?v=82"></script>
 <script src="resumen.js?v=3"></script>
-<script src="alcanza.js?v=3"></script>
+<script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>
 <script src="compartido.js?v=1"></script>
 <script src="fluidez.js?v=2"></script>

@@ -343,7 +343,8 @@ async function api(accion, extra = {}, pin = leerPin()) {
 }
 
 const SIN_DATOS = new Set(["leer", "login", "preguntar", "estilo", "transcribir", "tipoCambio", "analizar",
-    "misSugerencias", "sugerenciasVistas", "push", "avisoPush", "cambiarClave", "salir"]);
+    "misSugerencias", "sugerenciasVistas", "push", "avisoPush", "cambiarClave", "salir", "error",
+    "agregar"]);   // "agregar" ya se muestra al instante y recarga al final (si no, se pisarían dos registros seguidos)
 
 let datosFrescos = 0;
 
@@ -528,6 +529,8 @@ async function cargarDatos() {
     guardarCache(data);
 
     ultimaCarga = Date.now();
+
+    if (colaOffline.pendientes()) setTimeout(() => colaOffline.enviar(), 500);
 
 }
 
@@ -1769,6 +1772,235 @@ function renderBienvenida() {
     $("bienvenida").hidden = estado.movimientos.length > 0;
 
 }
+
+// =========================
+// ERRORES: si algo se rompe en el navegador, le llega a Diego (sin datos de la persona, solo el error)
+// =========================
+
+(() => {
+
+    const vistos = new Set();
+
+    let enviados = 0;
+
+    function reportar(mensaje, donde) {
+
+        if (modoDemo || !leerPin() || enviados >= 5) return;
+
+        const clave = String(mensaje).slice(0, 120);
+
+        if (vistos.has(clave) || /ResizeObserver|Script error\.?$/i.test(clave)) return;
+
+        vistos.add(clave);
+
+        enviados++;
+
+        let tema = "";
+
+        try { tema = localStorage.getItem(TEMA_KEY) || ""; } catch (e) {}
+
+        api("error", {
+            mensaje: String(mensaje).slice(0, 300),
+            donde: String(donde || "").slice(0, 150),
+            vista: document.body.dataset.vista || "",
+            estilo: tema,
+            dispositivo: navigator.userAgent.slice(0, 120)
+        }).catch(() => {});
+
+    }
+
+    window.addEventListener("error", (e) => reportar(e.message || "Error", (e.filename || "").split("/").pop() + ":" + (e.lineno || "")));
+
+    window.addEventListener("unhandledrejection", (e) => {
+
+        const r = e.reason;
+
+        if (r instanceof ErrorPin || (r && /fetch|network|load failed/i.test(String(r.message)))) return;
+
+        reportar("Promesa: " + (r && r.message ? r.message : String(r)), r && r.stack ? String(r.stack).split("\n")[1] : "");
+
+    });
+
+})();
+
+// =========================
+// SIN CONEXIÓN: lo que se escribe sin internet se guarda y se envía al volver la señal
+// =========================
+
+const colaOffline = (() => {
+
+    const CLAVE = "finanzas_cola";
+
+    const leer = () => { try { return JSON.parse(localStorage.getItem(CLAVE) || "[]"); } catch (e) { return []; } };
+
+    const guardar = (l) => { try { localStorage.setItem(CLAVE, JSON.stringify(l.slice(-30))); } catch (e) {} };
+
+    let enviando = false;
+
+    const esDeRed = (e) => !navigator.onLine || e instanceof TypeError || /failed to fetch|network|load failed|red \(/i.test(String(e && e.message));
+
+    function pintar() {
+
+        const n = leer().length;
+
+        const caja = $("respuesta");
+
+        if (!caja || !n) return;
+
+        caja.textContent = `📴 ${n === 1 ? "1 movimiento guardado" : n + " movimientos guardados"} sin conexión. Se envían solos cuando vuelva la señal.`;
+
+    }
+
+    function agregar(texto, accion, datos) {
+
+        const l = leer();
+
+        l.push(accion ? { accion, datos, t: Date.now() } : { mensaje: texto, t: Date.now() });
+
+        guardar(l);
+
+        pintar();
+
+        mostrarToast("📴 Sin conexión: lo guardé y lo envío apenas vuelva la señal");
+
+    }
+
+    async function enviar() {
+
+        if (enviando || modoDemo || !navigator.onLine || !leerPin()) return;
+
+        let l = leer();
+
+        if (!l.length) return;
+
+        enviando = true;
+
+        let enviados = 0;
+
+        try {
+
+            while (l.length) {
+
+                const x = l[0];
+
+                try { await api(x.accion || "registrar", x.datos || { mensaje: x.mensaje }); }
+                catch (e) { if (esDeRed(e)) break; }          // otro error (p. ej. sin monto): se descarta para no trabar la fila
+
+                l.shift();
+
+                guardar(l);
+
+                enviados++;
+
+            }
+
+            if (enviados) {
+
+                await cargarDatos();
+
+                renderTodo();
+
+                $("respuesta").textContent = l.length ? "" : `✅ Envié ${enviados === 1 ? "el movimiento" : "los " + enviados + " movimientos"} que anotaste sin conexión.`;
+
+                mostrarToast(`✅ Se registraron ${enviados} ${enviados === 1 ? "movimiento pendiente" : "movimientos pendientes"}`);
+
+            }
+
+        } finally {
+
+            enviando = false;
+
+            pintar();
+
+        }
+
+    }
+
+    window.addEventListener("online", () => setTimeout(enviar, 1500));
+
+    return { agregar, enviar, esDeRed, pintar, pendientes: () => leer().length };
+
+})();
+
+// =========================
+// PLANIFICAR EN SECCIONES (Pagos · Tarjetas · Ingresos · Metas)
+// =========================
+
+const plan = (() => {
+
+    const CLAVE = "finanzas_plan";
+
+    let actual = "pagos";
+
+    try { const g = localStorage.getItem(CLAVE); if (["pagos", "tarjetas", "ingresos", "metas"].includes(g)) actual = g; } catch (e) {}
+
+    function ir(nombre, guardar = true) {
+
+        actual = nombre;
+
+        document.querySelectorAll("#vista-fijos [data-plan]").forEach((el) => el.classList.toggle("plan-fuera", el.dataset.plan !== nombre));
+
+        document.querySelectorAll("#planTabs [data-plan-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.planTab === nombre)));
+
+        if (guardar) { try { localStorage.setItem(CLAVE, nombre); } catch (e) {} }
+
+    }
+
+    // Números en las pestañas: lo que pide atención
+    function contar() {
+
+        const poner = (tab, n) => {
+
+            const b = document.querySelector(`#planTabs [data-plan-tab="${tab}"] .plan-num`);
+
+            if (!b) return;
+
+            b.hidden = !(n > 0);
+
+            b.textContent = n > 9 ? "9+" : String(n);
+
+        };
+
+        try {
+
+            const pendientes = estado.fijos.filter((f) => f.tipo !== "Ingreso" && ["vencido", "hoy", "pronto"].includes(infoFijo(f).estado)).length;
+
+            poner("pagos", pendientes);
+
+            poner("tarjetas", infoTarjetas().filter((t) => t.deuda > 0.005 && t.pagoDias !== null && t.pagoDias <= 3).length);
+
+            poner("ingresos", (estado.porCobrar || []).filter((x) => !x.cobrado && x.fecha && x.fecha <= new Date()).length);
+
+        } catch (e) {}
+
+    }
+
+    function iniciar() {
+
+        if (!$("planTabs")) return;
+
+        $("planTabs").addEventListener("click", (e) => {
+
+            const b = e.target.closest("[data-plan-tab]");
+
+            if (!b) return;
+
+            ir(b.dataset.planTab);
+
+            $("planTabs").scrollIntoView({ block: "nearest" });
+
+        });
+
+        ir(actual, false);
+
+    }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
+    else iniciar();
+
+    return { ir, contar };
+
+})();
 
 // =========================
 // BUSCADOR DE MOVIMIENTOS
@@ -3776,6 +4008,8 @@ function renderTodo() {
 
     if (window.compartido) compartido.render();
 
+    plan.contar();
+
     renderDeudas();
 
 }
@@ -4382,6 +4616,15 @@ function registrarRapido(r) {
 
         pendientesGuardar--;
 
+        // Sin conexión: se queda en la pantalla y se envía cuando vuelva la señal
+        if (fallo && !modoDemo && !(fallo instanceof ErrorPin) && colaOffline.esDeRed(fallo)) {
+
+            colaOffline.agregar(null, "agregar", { tipo: r.tipo, categoria: r.categoria, descripcion: r.descripcion, monto: r.monto, medio: r.medio || "" });
+
+            return;
+
+        }
+
         if (fallo) {
 
             const i = estado.movimientos.indexOf(temporal);
@@ -4429,6 +4672,9 @@ function registrarRapido(r) {
 
 // Espera a que Make escriba la fila en el Sheet (en vez de un tiempo fijo)
 async function esperarNuevos(cantidadAntes) {
+
+    // Si la respuesta ya trajo los datos nuevos, no hay que esperar nada
+    if (estado.movimientos.length > cantidadAntes) return estado.movimientos.slice(cantidadAntes);
 
     for (let i = 0; i < 12; i++) {
 
@@ -4916,6 +5162,17 @@ async function registrarConIA(envio) {
         } else {
 
             console.error(e);
+
+            // Sin conexión: el texto se guarda y se envía solo cuando vuelve la señal
+            if (!envio.imagen && texto && !modoDemo && colaOffline.esDeRed(e)) {
+
+                colaOffline.agregar(texto);
+
+                $("mensaje").value = "";
+
+                return;
+
+            }
 
             const claro = e && e.message && !/fetch|network|red \(/i.test(e.message) ? e.message : "";
 
@@ -7066,9 +7323,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    $("avisoFijos").addEventListener("click", () => mostrarVista("fijos"));
+    $("avisoFijos").addEventListener("click", () => { plan.ir("pagos"); mostrarVista("fijos"); });
 
-    $("avisoTarjetas").addEventListener("click", () => mostrarVista("fijos"));
+    $("avisoTarjetas").addEventListener("click", () => { plan.ir("tarjetas"); mostrarVista("fijos"); });
 
     // Tarjetas: guardar presupuesto, usar el del mes pasado, cambiar y quitar
     $("tarjForm").addEventListener("submit", async (e) => {

@@ -412,6 +412,8 @@
 
         const cuotas = t.match(/(\d+)\s*cuotas?/i);
 
+        if (typeof plan !== "undefined") plan.ir("pagos");
+
         mostrarVista("fijos");
 
         llenarTarjetas();
