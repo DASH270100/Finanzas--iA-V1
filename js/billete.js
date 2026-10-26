@@ -118,9 +118,8 @@ const billete = (() => {
 
         clearTimeout(reloj);
 
-        reloj = setTimeout(cerrar, 2800);
+        reloj = setTimeout(cerrar, 1900);
 
-        $("billeteListo").focus({ preventScroll: true });
 
     }
 
