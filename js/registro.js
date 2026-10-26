@@ -752,6 +752,8 @@ function mostrarRegistrados(nuevos) {
         `<strong>${esIngreso(m) ? "+" : "-"} ${money(m.monto)}</strong>`
     );
 
+    if (typeof billete !== "undefined") billete.mostrar(nuevos);
+
     caja.innerHTML =
         `✅ Registrado${nuevos.length > 1 ? ` (${nuevos.length} movimientos)` : ""}:<br>` +
         lineas.join("<br>");
@@ -1064,8 +1066,8 @@ const pasos = (() => {
 
         clearTimeout(reloj);
 
-        caja().innerHTML = `<ol class="pasos">${claves.map((k) =>
-            `<li data-k="${k}"><span class="paso-ico" aria-hidden="true"></span><span class="paso-txt">${TEXTOS[k] || k}</span></li>`).join("")}</ol>`;
+        caja().innerHTML = `<div class="pasos-caja"><span class="pasos-moneda" aria-hidden="true"><i>S/</i></span><ol class="pasos">${claves.map((k) =>
+            `<li data-k="${k}"><span class="paso-ico" aria-hidden="true"></span><span class="paso-txt">${TEXTOS[k] || k}</span></li>`).join("")}</ol></div>`;
 
     }
 
