@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#09111F">
+    <!-- Seguridad: solo se ejecuta código de este sitio y solo se habla con el Apps Script -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 
     <title>Finanzas IA</title>
 
@@ -27,28 +29,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Outfit:wght@200;300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Estilo elegido (se aplica antes de pintar para que no parpadee) -->
-    <script>
-        // Mientras llegan los datos se muestran "esqueletos" con brillo
-        document.documentElement.classList.add("cargando");
-        try {
-            var t = localStorage.getItem("finanzas_tema");
-            if (t === "iridiscente" || t === "atardecer" || t === "vidrio") document.documentElement.setAttribute("data-tema", t);
-            else if (t && /^[a-z]+$/.test(t) && t !== "noche") {
-                // Estilo especial: se usa la copia guardada en este dispositivo
-                var css = localStorage.getItem("finanzas_css_" + t);
-                if (css) {
-                    document.documentElement.setAttribute("data-tema", t);
-                    var st = document.createElement("style");
-                    st.id = "estiloEspecial";
-                    st.textContent = css;
-                    document.head.appendChild(st);
-                }
-            }
-        } catch (e) {}
-    </script>
+    <script src="js/arranque.js?v=1"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=88">
+    <link rel="stylesheet" href="style.css?v=90">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -57,17 +41,7 @@
 
 <!-- Pantalla de entrada: el ícono un instante mientras abre la app -->
 <div id="splash" aria-hidden="true"><img src="icono.svg?v=1" alt=""></div>
-<script>
-    (function () {
-        var t0 = Date.now();
-        function quitar() {
-            var s = document.getElementById("splash");
-            if (!s) return;
-            setTimeout(function () { s.classList.add("fuera"); setTimeout(function () { s.remove(); }, 450); }, Math.max(0, 500 - (Date.now() - t0)));
-        }
-        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", quitar); else quitar();
-    })();
-</script>
+<script src="js/splash.js?v=1"></script>
 
 <!-- ===========================
         PIN
@@ -675,7 +649,7 @@
 
                 </div>
 
-                <button id="dividirBtn" class="mov-btn" type="button" aria-expanded="false" aria-controls="dividirForm">➗ Dividir una cuenta</button>
+                <button id="dividirBtn" class="mov-btn" type="button" aria-expanded="false" aria-controls="dividirForm"><svg class="ico" aria-hidden="true"><use href="#i-divide"></use></svg> Dividir una cuenta</button>
 
             </div>
 
@@ -842,7 +816,7 @@
 
                     <select id="filtroMesStats" class="filtro-mes" aria-label="Periodo de las estadísticas"></select>
 
-                    <button id="btnResumen" class="mov-btn btn-resumen" type="button">📄 Descargar resumen</button>
+                    <button id="btnResumen" class="mov-btn btn-resumen" type="button"><svg class="ico" aria-hidden="true"><use href="#i-file-text"></use></svg> Descargar resumen</button>
 
                 </div>
 
@@ -1430,7 +1404,7 @@
 
                 <div>
 
-                    <h3>🔔 Notificaciones</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-send"></use></svg>Notificaciones</h3>
 
                     <p id="notifTexto">Te aviso 2 días antes y el mismo día de tus pagos fijos, cuotas y tarjetas.</p>
 
@@ -1450,7 +1424,7 @@
 
                 </div>
 
-                <button id="buzonAbrir" class="mov-btn" type="button">✍️ Enviar sugerencia</button>
+                <button id="buzonAbrir" class="mov-btn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-send"></use></svg> Enviar sugerencia</button>
 
             </div>
 
@@ -1458,7 +1432,7 @@
 
                 <div>
 
-                    <h3>🏷️ Mis categorías</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-tag"></use></svg>Mis categorías</h3>
 
                     <p>Renombra una categoría o júntala con otra: se cambia en todos tus movimientos, fijos y presupuestos.</p>
 
@@ -1472,14 +1446,14 @@
 
                 <div>
 
-                    <h3>📦 Mis datos</h3>
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-download"></use></svg>Mis datos</h3>
 
                     <p>Descarga todo lo que registraste en un archivo. Si quieres dejar la app, puedes pedir que borren tu cuenta.</p>
 
                 </div>
 
                 <div class="cuenta-botones">
-                    <button id="datosDescargar" class="mov-btn" type="button">⬇️ Descargar mis datos</button>
+                    <button id="datosDescargar" class="mov-btn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-download"></use></svg> Descargar mis datos</button>
                     <button id="datosBorrar" class="mov-btn mov-btn-borrar" type="button">Pedir que borren mi cuenta</button>
                 </div>
 
@@ -1502,8 +1476,8 @@
                 </div>
 
                 <div class="cuenta-botones">
-                    <button id="cuentaNombreBtn" class="mov-btn" type="button">✏️ Cambiar nombre</button>
-                    <button id="cuentaClave" class="mov-btn" type="button">🔑 Cambiar contraseña</button>
+                    <button id="cuentaNombreBtn" class="mov-btn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-pencil"></use></svg> Cambiar nombre</button>
+                    <button id="cuentaClave" class="mov-btn" type="button"><svg class="ico" aria-hidden="true"><use href="#i-key"></use></svg> Cambiar contraseña</button>
                 </div>
 
             </div>
@@ -1617,15 +1591,20 @@
 
 <!-- LIBRERÍAS (ApexCharts fijado a la versión 3) -->
 
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3"></script>
+<script src="js/vendor/apexcharts-3.54.1.min.js"></script>
 
 <script src="graficos.js?v=58"></script>
 
 <script src="demo.js?v=59"></script>
 
-<script src="iconos.js?v=4"></script>
-<script src="script.js?v=83"></script>
-<script src="resumen.js?v=3"></script>
+<script src="iconos.js?v=5"></script>
+<script src="js/nucleo.js?v=2"></script>
+<script src="js/cuenta.js?v=1"></script>
+<script src="js/inicio.js?v=1"></script>
+<script src="js/secciones.js?v=1"></script>
+<script src="js/registro.js?v=1"></script>
+<script src="js/eventos.js?v=1"></script>
+<script src="resumen.js?v=4"></script>
 <script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>
 <script src="compartido.js?v=1"></script>

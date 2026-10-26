@@ -6,7 +6,7 @@
    ========================================================= */
 (function () {
 
-    const JSPDF_URL = "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js";
+    const JSPDF_URL = "js/vendor/jspdf-2.5.1.umd.min.js";   // copia propia: no depende de un CDN
 
     let cargando = null;
 

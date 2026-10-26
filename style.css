@@ -6286,6 +6286,7 @@ html body .sub-acciones .mov-btn, html body .cat-fila .mov-btn{ width:auto; marg
 
 /* Ahorro: barras sobre y bajo el cero */
 .ahorro-barras{ display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; align-items:stretch; margin-top:6px; }
+.ahorro-barras > .vacio{ grid-column:1 / -1; text-align:center; margin:10px auto; max-width:300px; }
 .ah-col{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; }
 .ah-monto{ font-size:12px; font-weight:700; color:var(--text-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .ah-monto.neg{ color:var(--red); }
@@ -6328,3 +6329,7 @@ html body #dividirBtn{ width:auto; margin:0; flex:0 0 auto; }
 }
 html body .cat-fila.editando button[type="submit"]{ width:auto; margin:0; min-height:44px; padding:0 14px; }
 .cat-nota{ margin:10px 0 0; font-size:12.5px; color:var(--text-muted); }
+
+/* Íconos dentro de botones de texto */
+button.mov-btn > .ico{ width:16px; height:16px; vertical-align:-3px; flex:0 0 auto; }
+button.mov-btn:has(> .ico){ display:inline-flex; align-items:center; justify-content:center; gap:7px; }
