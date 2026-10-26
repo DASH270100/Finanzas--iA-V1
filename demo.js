@@ -91,6 +91,59 @@ const DemoBackend = (() => {
 
     }
 
+    // Dividir una cuenta: tu parte es gasto, la de cada amigo queda como préstamo pendiente
+    function dividir(p) {
+
+        const total = Math.round(Number(p.total) * 100) / 100;
+
+        const personas = (p.personas || []).map((x) => seguro(x, 40)).filter(Boolean);
+
+        if (!seguro(p.descripcion, 60)) return fallo("Escribe en qué fue (ej: Cena del viernes)");
+
+        if (!(total > 0)) return fallo("Escribe el total de la cuenta");
+
+        if (!personas.length) return fallo("Escribe con quién la dividiste");
+
+        const partes = personas.length + (p.incluirme !== false ? 1 : 0);
+
+        const base = Math.floor(total / partes * 100) / 100;
+
+        const mia = p.incluirme !== false ? Math.round((total - base * personas.length) * 100) / 100 : 0;
+
+        const desc = seguro(p.descripcion, 60);
+
+        if (mia > 0) nuevaFilaMov("Gasto", "Salidas", desc + " (mi parte)", mia, "");
+
+        personas.forEach((n) => {
+
+            nuevaFilaMov("Gasto", "Préstamo", "Préstamo a " + n + " · " + desc, base, "");
+
+            db.deudas.push([n, '"' + textoFecha() + '"', base, "Pendiente", desc]);
+
+        });
+
+        return ok({ porPersona: base, miParte: mia, personas: personas.length });
+
+    }
+
+    function categoria(p) {
+
+        const de = String(p.de || "").trim(), a = seguro(p.a, 40);
+
+        if (!a) return fallo("Escribe el nombre nuevo");
+
+        let n = 0;
+
+        db.movimientos.forEach((r, i) => { if (i && clave(r[2]) === clave(de)) { r[2] = a; n++; } });
+
+        db.fijos.forEach((r, i) => { if (i && clave(r[1]) === clave(de)) r[1] = a; });
+
+        db.presupuestos.forEach((r, i) => { if (i && clave(r[0]) === clave(de)) r[0] = a; });
+
+        return ok({ cambiados: n });
+
+    }
+
     function compartido(p) {
 
         const a = db.compartido.activo;
@@ -1192,6 +1245,9 @@ const DemoBackend = (() => {
             case "aporte": return aporte(p);
             case "preguntar": return preguntar(p);
             case "compartido": return compartido(p);
+            case "dividir": return dividir(p);
+            case "categoria": return categoria(p);
+            case "pedirBorrado": return fallo("En la demo no hay cuenta que borrar 🙂");
 
             default: return fallo("Acción desconocida");
 

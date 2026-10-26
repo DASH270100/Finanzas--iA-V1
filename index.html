@@ -48,7 +48,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=86">
+    <link rel="stylesheet" href="style.css?v=88">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -675,7 +675,36 @@
 
                 </div>
 
+                <button id="dividirBtn" class="mov-btn" type="button" aria-expanded="false" aria-controls="dividirForm">➗ Dividir una cuenta</button>
+
             </div>
+
+            <form id="dividirForm" class="dividir-form" hidden>
+
+                <p class="dividir-intro">Pagaste tú toda la cuenta: tu parte se anota como gasto y lo de cada amigo queda aquí como deuda pendiente.</p>
+
+                <label class="comp-campo">En qué fue
+                    <input id="dividirDesc" type="text" maxlength="60" placeholder="Cena del viernes" required>
+                </label>
+
+                <label class="comp-campo">Total que pagaste (S/)
+                    <input id="dividirTotal" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="200" required>
+                </label>
+
+                <label class="comp-campo">Con quiénes <small>(separados por coma)</small>
+                    <input id="dividirPersonas" type="text" maxlength="300" placeholder="Juan, Pía, Leo" required>
+                </label>
+
+                <label class="dividir-yo"><input id="dividirYo" type="checkbox" checked> Yo también consumí (mi parte cuenta)</label>
+
+                <p id="dividirCalculo" class="dividir-calculo" aria-live="polite"></p>
+
+                <div class="comp-botones">
+                    <button id="dividirGuardar" type="submit">Dividir</button>
+                    <button id="dividirCancelar" class="mov-btn" type="button">Cancelar</button>
+                </div>
+
+            </form>
 
             <div id="deudas">
 
@@ -842,6 +871,19 @@
         </section>
 
         <!-- PRESUPUESTO -->
+
+        <section id="ahorroCard" class="card ahorro-card">
+
+            <div class="card-title">
+                <div>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-piggy-bank"></use></svg>Tu ahorro mes a mes</h2>
+                    <p id="ahorroSub">Lo que te quedó cada mes: ingresos menos gastos.</p>
+                </div>
+            </div>
+
+            <div id="ahorroBarras" class="ahorro-barras" role="img"></div>
+
+        </section>
 
         <section class="card presupuesto-card">
 
@@ -1094,6 +1136,19 @@
             </form>
 
             <p class="presupuesto-nota">Cada compra con tarjeta («compré zapatos 200 con la BCP») sube lo que debes. Cuando pagues, toca «Pagué todo» o escribe «pagué la tarjeta BCP 200»: la barra baja. Pagar no cuenta como gasto nuevo y la deuda no se reinicia sola cada mes. Te aviso al llegar al 80% del límite, al límite y si te pasas.</p>
+
+        </section>
+
+        <section id="suscripcionesCard" class="card suscripciones-card" data-plan="pagos" hidden>
+
+            <div class="card-title">
+                <div>
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg>Cobros que se repiten</h2>
+                    <p>Los vi en varios meses. Si son fijos, agrégalos y te aviso antes de cada cobro.</p>
+                </div>
+            </div>
+
+            <div id="suscripciones"></div>
 
         </section>
 
@@ -1399,6 +1454,37 @@
 
             </div>
 
+            <div id="categoriasBloque" class="config-bloque config-bloque-col">
+
+                <div>
+
+                    <h3>🏷️ Mis categorías</h3>
+
+                    <p>Renombra una categoría o júntala con otra: se cambia en todos tus movimientos, fijos y presupuestos.</p>
+
+                </div>
+
+                <div id="categoriasLista" class="categorias-lista"></div>
+
+            </div>
+
+            <div id="datosBloque" class="config-bloque config-bloque-col">
+
+                <div>
+
+                    <h3>📦 Mis datos</h3>
+
+                    <p>Descarga todo lo que registraste en un archivo. Si quieres dejar la app, puedes pedir que borren tu cuenta.</p>
+
+                </div>
+
+                <div class="cuenta-botones">
+                    <button id="datosDescargar" class="mov-btn" type="button">⬇️ Descargar mis datos</button>
+                    <button id="datosBorrar" class="mov-btn mov-btn-borrar" type="button">Pedir que borren mi cuenta</button>
+                </div>
+
+            </div>
+
             <div id="cuentaBloque" class="config-bloque" hidden>
 
                 <div>
@@ -1535,14 +1621,15 @@
 
 <script src="graficos.js?v=58"></script>
 
-<script src="demo.js?v=58"></script>
+<script src="demo.js?v=59"></script>
 
 <script src="iconos.js?v=4"></script>
-<script src="script.js?v=82"></script>
+<script src="script.js?v=83"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>
 <script src="compartido.js?v=1"></script>
+<script src="extras.js?v=2"></script>
 <script src="fluidez.js?v=2"></script>
 
 </body>

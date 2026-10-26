@@ -6264,3 +6264,67 @@ html[data-tema="blackcard"] body #planTabs button[aria-selected="true"]{ color:#
     html body #planTabs button{ flex-direction:row; gap:8px; font-size:13.5px; min-height:46px; }
     .plan-num{ position:static; }
 }
+
+/*==================================================
+        EXTRAS: cobros que se repiten, ahorro, dividir, categorías, mis datos
+====================================================*/
+.sub-item, .cat-fila{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 8px;
+    border-radius:16px;
+}
+.sub-item + .sub-item, .cat-fila + .cat-fila{ border-top:1px solid var(--border); }
+.sub-item .mov-txt, .cat-fila .mov-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.sub-item .mov-txt strong, .cat-fila .mov-txt strong{ font-size:15px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sub-item .mov-txt small, .cat-fila .mov-txt small{ font-size:12.5px; color:var(--text-muted); }
+.sub-acciones{ display:flex; gap:6px; flex:0 0 auto; }
+html body .sub-acciones .mov-btn, html body .cat-fila .mov-btn{ width:auto; margin:0; padding:6px 12px; font-size:13px; }
+@media (max-width:420px){
+    .sub-item{ flex-wrap:wrap; }
+    .sub-acciones{ width:100%; padding-left:52px; }
+}
+
+/* Ahorro: barras sobre y bajo el cero */
+.ahorro-barras{ display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; align-items:stretch; margin-top:6px; }
+.ah-col{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; }
+.ah-monto{ font-size:12px; font-weight:700; color:var(--text-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.ah-monto.neg{ color:var(--red); }
+.ah-zona{ width:100%; height:150px; display:grid; grid-template-rows:2fr 1fr; }
+.ah-pos{ display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid var(--border); }
+.ah-neg{ display:flex; align-items:flex-start; justify-content:center; }
+.ah-pos i, .ah-neg i{ display:block; width:100%; max-width:34px; border-radius:8px 8px 3px 3px; background:color-mix(in srgb, var(--green) 70%, transparent); }
+.ah-neg i{ border-radius:3px 3px 8px 8px; background:color-mix(in srgb, var(--red) 70%, transparent); }
+.ah-neg i{ max-height:100%; }
+.ah-col.actual .ah-pos i{ background:var(--green); }
+.ah-col.actual .ah-neg i{ background:var(--red); }
+.ah-col.actual .ah-mes{ color:var(--text); }
+.ah-mes{ font-size:12px; font-weight:700; color:var(--text-muted); text-transform:capitalize; }
+.ah-col.sin-datos .ah-monto{ color:var(--text-muted); }
+
+/* Dividir una cuenta */
+.deudas-card .card-title{ align-items:center; }
+html body #dividirBtn{ width:auto; margin:0; flex:0 0 auto; }
+.dividir-form{ display:flex; flex-direction:column; gap:12px; margin:0 0 16px; padding:14px; border-radius:16px; background:var(--surface-light); border:1px solid var(--border); }
+.dividir-form[hidden]{ display:none; }
+.dividir-intro{ margin:0; font-size:13px; color:var(--text-muted); line-height:1.45; }
+.dividir-form input[type="text"], .dividir-form input[type="number"]{
+    width:100%; min-height:46px; margin:0; padding:10px 14px;
+    font:inherit; font-size:15px; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; outline:none;
+}
+.dividir-form input:focus{ border-color:var(--primary); }
+.dividir-yo{ display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; color:var(--text-soft); min-height:44px; }
+.dividir-yo input{ width:20px; height:20px; margin:0; accent-color:var(--primary); }
+.dividir-calculo{ margin:0; font-size:14px; font-weight:700; color:var(--text); }
+.dividir-calculo:empty{ display:none; }
+#dividirForm .comp-botones > button{ flex:1 1 120px; width:auto; margin:0; }
+
+/* Categorías */
+.categorias-lista{ width:100%; }
+.cat-fila.editando input{
+    flex:1; min-width:0; min-height:44px; margin:0; padding:8px 12px;
+    font:inherit; font-size:15px; color:var(--text);
+    background:var(--surface-light); border:1px solid var(--primary); border-radius:12px; outline:none;
+}
+html body .cat-fila.editando button[type="submit"]{ width:auto; margin:0; min-height:44px; padding:0 14px; }
+.cat-nota{ margin:10px 0 0; font-size:12.5px; color:var(--text-muted); }

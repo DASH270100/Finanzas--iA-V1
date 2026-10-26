@@ -4010,6 +4010,8 @@ function renderTodo() {
 
     plan.contar();
 
+    if (window.extras) extras.render();
+
     renderDeudas();
 
 }
