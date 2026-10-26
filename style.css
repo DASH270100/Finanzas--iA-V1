@@ -6143,3 +6143,82 @@ html[data-tema="blackcard"] #adminBuzonFiltros button.buzon-filtro[aria-selected
 #nombreNuevo:focus{ border-color:var(--primary); }
 #cuentaBloque .nombre-form button{ width:auto; margin:0; min-height:44px; padding:0 18px; }
 #cuentaBloque [hidden]{ display:none !important; }
+
+
+/*==================================================
+        ACCESIBILIDAD: contraste, tamaño para tocar, letra mínima
+====================================================*/
+
+/* Grises con contraste 4.5:1 o más en los estilos claros (WCAG AA) */
+html[data-tema="iridiscente"]:root{ --text-muted:#636879; }
+html[data-tema="atardecer"]:root{ --text-muted:#6D6989; }
+html[data-tema="matcha"]:root{ --text-muted:#666D5F; }
+html[data-tema="cherry"]:root{ --text-muted:#8E5D68; }
+html[data-tema="beige"]:root{ --text-muted:#736A5E; }
+
+/* Botones: al menos 44 px de alto para el dedo */
+html body button.mov-btn,
+html body .chip-ejemplo,
+html body button.btn-bloquear,
+html body .alc-modo-btn,
+html body button.btn-agregar,
+html body #vista-compartido select.comp-mes,
+html body button#btnResumen,
+html body #buzonAbrir{ min-height:44px; }
+
+/* Botones que se ven chicos: el área que se puede tocar crece sin cambiar el dibujo */
+.chip-beta, #demoSalir, .btn-ico{ position:relative; }
+.chip-beta::before, #demoSalir::before, .btn-ico::before{
+    content:"";
+    position:absolute;
+    inset:-8px -6px;
+}
+html body #vista-compartido .comp-mini .btn-ico{ width:36px; height:36px; }
+
+/* Letra mínima de 12 px */
+.st-semana b{ font-size:12px; }
+
+/* Los avisos de error se quedan hasta tocarlos */
+.toast{ cursor:pointer; }
+.toast.toast-error{ border-color:rgba(239,68,68,.55); }
+
+/*==================================================
+        BUSCADOR DE MOVIMIENTOS
+====================================================*/
+.actividad-card .card-title{ align-items:center; }
+html body button.btn-buscar{ width:auto; margin:0; display:inline-flex; align-items:center; gap:6px; flex:0 0 auto; }
+.btn-buscar .ico{ width:16px; height:16px; }
+.buscador{ display:flex; flex-direction:column; gap:10px; margin:0 0 12px; }
+.buscador[hidden]{ display:none; }
+.buscar-campo{
+    display:flex; align-items:center; gap:10px;
+    padding:0 14px;
+    min-height:46px;
+    border-radius:14px;
+    background:var(--surface-light);
+    border:1px solid var(--border);
+}
+.buscar-campo:focus-within{ border-color:var(--primary); }
+.buscar-campo .ico{ width:18px; height:18px; color:var(--text-muted); flex:0 0 auto; }
+#buscarTexto{
+    flex:1; min-width:0; margin:0; padding:10px 0;
+    border:0; outline:0; background:transparent; box-shadow:none;
+    color:var(--text); font:inherit; font-size:15px;
+}
+.buscar-filtros{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.buscar-tipos{ display:inline-flex; gap:4px; padding:3px; border-radius:999px; background:var(--surface-light); border:1px solid var(--border); }
+html body .buscar-tipos button{
+    width:auto; min-height:38px; margin:0; padding:6px 14px;
+    border:0; border-radius:999px; background:transparent; box-shadow:none; transform:none;
+    color:var(--text-muted); font:inherit; font-size:13px; font-weight:700; letter-spacing:normal; text-transform:none;
+}
+html body .buscar-tipos button[aria-checked="true"]{ background:var(--primary); color:#fff; }
+html[data-tema="blackcard"] body .buscar-tipos button[aria-checked="true"]{ color:#0A0A0A; }
+#buscarPeriodo{
+    width:auto; min-height:44px; margin:0; padding:8px 12px;
+    border-radius:12px; border:1px solid var(--border); background:var(--surface-light); color:var(--text);
+    font:inherit; font-size:13px; font-weight:600;
+}
+.buscar-resumen{ margin:0; font-size:13px; font-weight:600; color:var(--text-soft); }
+.buscar-resumen:empty{ display:none; }
+html body button.buscar-mas{ width:100%; margin-top:10px; }

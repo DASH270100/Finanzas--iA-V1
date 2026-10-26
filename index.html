@@ -48,7 +48,7 @@
     </script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=83">
+    <link rel="stylesheet" href="style.css?v=85">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -415,6 +415,7 @@
             <textarea
                 id="mensaje"
                 maxlength="500"
+                aria-label="Escribe tu gasto o ingreso"
                 placeholder="Ejemplo: Compré un Monster por 8 soles y almorcé por 18."></textarea>
 
             <div class="medios">
@@ -620,6 +621,33 @@
                         <p>Últimos movimientos registrados.</p>
 
                     </div>
+
+                    <button id="btnBuscar" class="mov-btn btn-buscar" type="button" aria-expanded="false" aria-controls="buscador"><svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg> Buscar</button>
+
+                </div>
+
+                <div id="buscador" class="buscador" hidden>
+
+                    <div class="buscar-campo">
+                        <svg class="ico" aria-hidden="true"><use href="#i-search"></use></svg>
+                        <input id="buscarTexto" type="search" autocomplete="off" enterkeyhint="search" placeholder="Rappi, taxi, BBVA, 25…" aria-label="Buscar movimientos">
+                    </div>
+
+                    <div class="buscar-filtros">
+                        <div class="buscar-tipos" role="radiogroup" aria-label="Tipo">
+                            <button type="button" role="radio" aria-checked="true" data-btipo="todo">Todo</button>
+                            <button type="button" role="radio" aria-checked="false" data-btipo="gasto">Gastos</button>
+                            <button type="button" role="radio" aria-checked="false" data-btipo="ingreso">Ingresos</button>
+                        </div>
+                        <select id="buscarPeriodo" aria-label="Periodo">
+                            <option value="todo">Desde el inicio</option>
+                            <option value="mes">Este mes</option>
+                            <option value="pasado">Mes pasado</option>
+                            <option value="3m">Últimos 3 meses</option>
+                        </select>
+                    </div>
+
+                    <p id="buscarResumen" class="buscar-resumen" role="status" aria-live="polite"></p>
 
                 </div>
 
@@ -1485,7 +1513,7 @@
 
 <!-- TOAST -->
 
-<div id="toast" class="toast" role="status">
+<div id="toast" class="toast" role="status" title="Toca para cerrar">
 
     <span id="toastTexto"></span>
 
@@ -1499,8 +1527,8 @@
 
 <script src="demo.js?v=58"></script>
 
-<script src="iconos.js?v=3"></script>
-<script src="script.js?v=78"></script>
+<script src="iconos.js?v=4"></script>
+<script src="script.js?v=80"></script>
 <script src="resumen.js?v=3"></script>
 <script src="alcanza.js?v=3"></script>
 <script src="freelance.js?v=3"></script>

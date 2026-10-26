@@ -119,11 +119,18 @@ function mostrarToast(mensaje) {
 
     clearTimeout(toastTimer);
 
+    // Más tiempo si el texto es largo; los errores se quedan hasta tocarlos (o 15 s)
+    const esError = /^(❌|⚠️)/.test(String(mensaje));
+
+    $("toast").classList.toggle("toast-error", esError);
+
+    const ms = esError ? 15000 : Math.min(9000, Math.max(3000, String(mensaje).length * 55));
+
     toastTimer = setTimeout(() => {
 
         $("toast").classList.remove("mostrar");
 
-    }, 3000);
+    }, ms);
 
 }
 
@@ -294,10 +301,13 @@ async function api(accion, extra = {}, pin = leerPin()) {
 
     }
 
+    // Las acciones que cambian algo piden los datos actualizados en la misma respuesta (una llamada en vez de dos)
+    const conDatos = !SIN_DATOS.has(accion) && !accion.startsWith("admin_");
+
     const r = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ accion, pin, ...extra })
+        body: JSON.stringify({ accion, pin, ...extra, ...(conDatos ? { conDatos: true } : {}) })
     });
 
     if (!r.ok) throw new Error("Error de red (" + r.status + ")");
@@ -316,9 +326,26 @@ async function api(accion, extra = {}, pin = leerPin()) {
 
     }
 
+    if (conDatos && data.datos && data.datos.ok) {
+
+        aplicarDatos(data.datos);
+
+        guardarCache(data.datos);
+
+        ultimaCarga = Date.now();
+
+        datosFrescos = Date.now();
+
+    }
+
     return data;
 
 }
+
+const SIN_DATOS = new Set(["leer", "login", "preguntar", "estilo", "transcribir", "tipoCambio", "analizar",
+    "misSugerencias", "sugerenciasVistas", "push", "avisoPush", "cambiarClave", "salir"]);
+
+let datosFrescos = 0;
 
 function sinEncabezado(filas, primeraCelda) {
 
@@ -490,6 +517,9 @@ if ("serviceWorker" in navigator) {
 let ultimaCarga = 0;
 
 async function cargarDatos() {
+
+    // La acción de recién ya trajo todo actualizado: no hace falta pedirlo otra vez
+    if (Date.now() - datosFrescos < 2500) { datosFrescos = 0; return; }
 
     const data = await api("leer");
 
@@ -1740,14 +1770,80 @@ function renderBienvenida() {
 
 }
 
+// =========================
+// BUSCADOR DE MOVIMIENTOS
+// =========================
+
+const busqueda = { abierto: false, texto: "", tipo: "todo", periodo: "todo", limite: 40 };
+
+const sinTildesB = (t) => String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+const busquedaActiva = () => busqueda.abierto && (!!busqueda.texto || busqueda.tipo !== "todo" || busqueda.periodo !== "todo");
+
+function coincideBusqueda(m) {
+
+    if (busqueda.tipo === "gasto" && !esGasto(m)) return false;
+
+    if (busqueda.tipo === "ingreso" && !esIngreso(m)) return false;
+
+    if (busqueda.periodo !== "todo") {
+
+        if (!m.fecha) return false;
+
+        const hoy = new Date();
+
+        const k = claveMes(m.fecha);
+
+        if (busqueda.periodo === "mes" && k !== claveMes(hoy)) return false;
+
+        if (busqueda.periodo === "pasado" && k !== claveMes(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1))) return false;
+
+        if (busqueda.periodo === "3m" && m.fecha < new Date(hoy.getFullYear(), hoy.getMonth() - 2, 1)) return false;
+
+    }
+
+    const q = sinTildesB(busqueda.texto);
+
+    if (!q) return true;
+
+    // Cada palabra tiene que aparecer en algún lado (descripción, categoría, tarjeta o monto)
+    const donde = sinTildesB([m.descripcion, m.categoria, m.medio, m.monto, numero(m.monto).toFixed(2)].join(" "));
+
+    return q.split(/\s+/).every((w) => donde.includes(w.replace(/^s\/\.?/, "")));
+
+}
+
 function renderActividad() {
 
-    const recientes = [...estado.movimientos]
+    const buscando = busquedaActiva();
+
+    const todos = [...estado.movimientos]
+        .filter((m) => !buscando || coincideBusqueda(m))
         .sort((a, b) =>
             ((b.fecha ? b.fecha.getTime() : 0) - (a.fecha ? a.fecha.getTime() : 0)) ||
             (b.idx - a.idx)
-        )
-        .slice(0, 8);
+        );
+
+    const recientes = todos.slice(0, buscando ? busqueda.limite : 8);
+
+    // Resumen de lo encontrado
+    if (buscando) {
+
+        const g = sumar(todos.filter(esGastoReal)), i = sumar(todos.filter(esIngresoReal));
+
+        $("buscarResumen").textContent = todos.length
+            ? `${todos.length} ${todos.length === 1 ? "movimiento" : "movimientos"}` + (g > 0 ? ` · gastos ${money(g)}` : "") + (i > 0 ? ` · ingresos ${money(i)}` : "")
+            : "";
+
+    } else if ($("buscarResumen")) $("buscarResumen").textContent = "";
+
+    if (buscando && !todos.length) {
+
+        $("actividad").innerHTML = `<div class="vacio-guia"><div class="vacio-icono">🔍</div><strong>No encontré nada</strong><p>Prueba con otra palabra o cambia el periodo.</p></div>`;
+
+        return;
+
+    }
 
     if (!recientes.length) {
 
@@ -1828,7 +1924,9 @@ function renderActividad() {
         </div>
         ${g.lista.map(fila).join("")}`;
 
-    }).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>`;
+    }).join("") + `<datalist id="listaCategorias">${opcionesCategorias}</datalist>` +
+        (buscando && todos.length > recientes.length
+            ? `<button type="button" class="mov-btn buscar-mas" data-buscar-mas>Mostrar ${Math.min(40, todos.length - recientes.length)} más</button>` : "");
 
 }
 
@@ -6327,6 +6425,67 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
     $("registrar").addEventListener("click", registrarMovimiento);
+
+    // Buscador de movimientos
+    $("btnBuscar").addEventListener("click", () => {
+
+        busqueda.abierto = !busqueda.abierto;
+
+        $("buscador").hidden = !busqueda.abierto;
+
+        $("btnBuscar").setAttribute("aria-expanded", String(busqueda.abierto));
+
+        $("btnBuscar").innerHTML = busqueda.abierto
+            ? `${ico("x")} Cerrar` : `${ico("search")} Buscar`;
+
+        busqueda.limite = 40;
+
+        renderActividad();
+
+        if (busqueda.abierto) $("buscarTexto").focus();
+
+    });
+
+    let tBuscar = null;
+
+    $("buscarTexto").addEventListener("input", () => {
+
+        clearTimeout(tBuscar);
+
+        tBuscar = setTimeout(() => { busqueda.texto = $("buscarTexto").value; busqueda.limite = 40; renderActividad(); }, 180);
+
+    });
+
+    $("buscador").addEventListener("click", (e) => {
+
+        const b = e.target.closest("[data-btipo]");
+
+        if (!b) return;
+
+        busqueda.tipo = b.dataset.btipo;
+
+        document.querySelectorAll("[data-btipo]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+
+        busqueda.limite = 40;
+
+        renderActividad();
+
+    });
+
+    $("buscarPeriodo").addEventListener("change", (e) => { busqueda.periodo = e.target.value; busqueda.limite = 40; renderActividad(); });
+
+    $("actividad").addEventListener("click", (e) => {
+
+        if (!e.target.closest("[data-buscar-mas]")) return;
+
+        busqueda.limite += 40;
+
+        renderActividad();
+
+    });
+
+    // Tocar el aviso lo cierra
+    $("toast").addEventListener("click", () => { clearTimeout(toastTimer); $("toast").classList.remove("mostrar"); });
 
     medios.iniciar();
 
