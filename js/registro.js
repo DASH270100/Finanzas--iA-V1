@@ -1066,8 +1066,11 @@ const pasos = (() => {
 
         clearTimeout(reloj);
 
-        caja().innerHTML = `<div class="pasos-caja"><span class="pasos-moneda" aria-hidden="true"><i>S/</i></span><ol class="pasos">${claves.map((k) =>
-            `<li data-k="${k}"><span class="paso-ico" aria-hidden="true"></span><span class="paso-txt">${TEXTOS[k] || k}</span></li>`).join("")}</ol></div>`;
+        // El dibujo de la izquierda cambia con cada estilo (todo es CSS: style.css › MOMENTOS)
+        caja().innerHTML = `<div class="pasos-caja"><span class="cargador" aria-hidden="true"><i></i><i></i><i></i><i></i></span>` +
+            `<div class="pasos-info"><ol class="pasos">${claves.map((k) =>
+            `<li data-k="${k}"><span class="paso-ico" aria-hidden="true"></span><span class="paso-txt">${TEXTOS[k] || k}</span></li>`).join("")}</ol>` +
+            `<div class="pasos-barra" aria-hidden="true">${claves.map(() => "<i></i>").join("")}</div></div></div>`;
 
     }
 
@@ -1090,6 +1093,8 @@ const pasos = (() => {
 
         });
 
+        caja().querySelectorAll(".pasos-barra i").forEach((b, j) => b.classList.toggle("lleno", j <= i));
+
     }
 
     // Mientras se espera una sola llamada, pasa al siguiente paso después de un rato
@@ -1106,6 +1111,8 @@ const pasos = (() => {
         clearTimeout(reloj);
 
         items().forEach((li) => { li.classList.remove("activo"); li.classList.add("hecho"); });
+
+        caja().querySelectorAll(".pasos-barra i").forEach((b) => b.classList.add("lleno"));
 
         await dormir(450);
 

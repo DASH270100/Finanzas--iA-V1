@@ -6362,29 +6362,13 @@ button.mov-btn:has(> .ico){ display:inline-flex; align-items:center; justify-con
         BILLETE AL REGISTRAR
         (el billete o moneda más cercana al monto)
 ====================================================*/
-.pasos-caja{ display:flex; align-items:center; gap:16px; }
-.pasos-caja .pasos{ flex:1; }
-.pasos-moneda{
-    flex:0 0 auto; width:52px; height:52px; border-radius:50%;
-    display:grid; place-items:center;
-    background:radial-gradient(circle at 35% 30%, #fff6c9, #e2b93b 45%, #a77d14);
-    box-shadow:inset 0 0 0 3px rgba(255,255,255,.35), inset 0 0 0 6px rgba(120,85,10,.35), 0 6px 16px rgba(167,125,20,.35);
-    animation:monedaGira 1.4s ease-in-out infinite;
-}
-.pasos-moneda i{ font-style:normal; font-weight:900; font-size:16px; color:#7a5a08; letter-spacing:-.5px; }
-@keyframes monedaGira{
-    0%{ transform:rotateY(0) translateY(0); }
-    40%{ transform:rotateY(180deg) translateY(-6px); }
-    80%,100%{ transform:rotateY(360deg) translateY(0); }
-}
-
 .billete-overlay{
     --bt-tinte:#7c5cfc;
     position:fixed; inset:0; z-index:100000;
     display:grid; place-items:center; padding:24px 16px;
     background:
         radial-gradient(60% 45% at 50% 38%, color-mix(in srgb, var(--bt-tinte) 55%, transparent), transparent 70%),
-        rgba(8,10,20,.78);
+        var(--bt-fondo, rgba(8,10,20,.78));
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     animation:btFondo .25s ease both;
     cursor:pointer;
@@ -6394,7 +6378,7 @@ button.mov-btn:has(> .ico){ display:inline-flex; align-items:center; justify-con
 @keyframes btFondo{ from{ opacity:0; } }
 @keyframes btFondoOut{ to{ opacity:0; } }
 
-.billete-caja{ text-align:center; color:#fff; max-width:340px; width:100%; }
+.billete-caja{ text-align:center; color:var(--bt-tinta, #fff); max-width:340px; width:100%; }
 .billete-escena{ position:relative; height:190px; display:grid; place-items:center; perspective:900px; margin-bottom:18px; }
 .bt-capa{
     position:absolute;
@@ -6457,7 +6441,7 @@ button.mov-btn:has(> .ico){ display:inline-flex; align-items:center; justify-con
 
 .billete-verbo{ margin:0; font-size:13px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; opacity:.75; animation:btTexto .4s .25s ease both; }
 .billete-monto{ margin:4px 0 6px; font-size:40px; font-weight:900; letter-spacing:-1px; font-variant-numeric:tabular-nums; animation:btTexto .4s .32s ease both; }
-.es-ingreso .billete-monto{ color:#6ee7a8; }
+.es-ingreso .billete-monto{ color:var(--bt-entro, #6ee7a8); }
 .billete-detalle{ margin:0; font-size:15px; opacity:.88; animation:btTexto .4s .4s ease both; }
 .billete-mas{ margin:6px 0 0; font-size:13px; opacity:.65; }
 .billete-mas:empty{ display:none; }
@@ -6470,5 +6454,262 @@ button.mov-btn:has(> .ico){ display:inline-flex; align-items:center; justify-con
 @keyframes btTexto{ from{ opacity:0; transform:translateY(8px); } }
 
 @media (prefers-reduced-motion: reduce){
-    .pasos-moneda, .bt-capa, .bt-billete::after, .billete-verbo, .billete-monto, .billete-detalle, .billete-listo{ animation:none !important; }
+    .cargador, .cargador *, .cargador *::before, .cargador *::after, .bt-capa, .bt-billete::after, .billete-verbo, .billete-monto, .billete-detalle, .billete-listo{ animation:none !important; }
 }
+
+
+/*==================================================
+        MOMENTOS: lo que se ve mientras se registra y al terminar.
+        Cada estilo tiene su propio dibujo animado (todo en CSS).
+        Marcado: .cargador > i ×4 (se usan los que hagan falta)
+====================================================*/
+
+/* Espera: dibujo a la izquierda, paso actual grande y barra de avance */
+.pasos-caja{ display:flex; align-items:center; gap:18px; padding:4px 0; }
+.pasos-info{ flex:1; min-width:0; }
+.pasos-caja .pasos li{ display:none; opacity:1; }
+.pasos-caja .pasos li.activo,
+.pasos-caja .pasos:not(:has(.activo)) li:last-child{ display:flex; }
+.pasos-caja .pasos li .paso-ico{ display:none; }
+.pasos-caja .pasos li.activo,
+.pasos-caja .pasos li.hecho{ font-size:16px; font-weight:700; color:var(--text); animation:pasoEntra .35s ease both; }
+.pasos-barra{ display:flex; gap:5px; margin-top:12px; }
+.pasos-barra i{ flex:1; height:4px; border-radius:4px; background:color-mix(in srgb, var(--text) 14%, transparent); overflow:hidden; position:relative; }
+.pasos-barra i::after{ content:""; position:absolute; inset:0; background:var(--acento, var(--primary)); transform:scaleX(0); transform-origin:left; transition:transform .5s cubic-bezier(.2,.8,.2,1); }
+.pasos-barra i.lleno::after{ transform:scaleX(1); }
+
+.cargador{ position:relative; flex:0 0 auto; width:84px; height:84px; }
+.cargador i{ position:absolute; display:none; font-style:normal; }
+@keyframes cg-gira{ to{ transform:rotate(360deg); } }
+
+/* NOCHE: la moneda de sol que salta y gira, con su sombra */
+:is(html:not([data-tema]), html[data-tema="noche"]) .cargador{ perspective:400px; }
+:is(html:not([data-tema]), html[data-tema="noche"]) .cargador i:nth-child(1){
+    display:grid; place-items:center; inset:10px 10px 14px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff6c9, #e2b93b 45%, #a77d14);
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.35), inset 0 0 0 7px rgba(120,85,10,.35);
+    animation:cg-moneda 1.4s cubic-bezier(.5,0,.5,1) infinite;
+}
+:is(html:not([data-tema]), html[data-tema="noche"]) .cargador i:nth-child(1)::after{ content:"S/"; font-weight:900; font-size:19px; color:#7a5a08; letter-spacing:-.5px; }
+:is(html:not([data-tema]), html[data-tema="noche"]) .cargador i:nth-child(2){ display:block; left:22px; right:22px; bottom:2px; height:7px; border-radius:50%; background:rgba(0,0,0,.45); filter:blur(3px); animation:cg-sombra 1.4s cubic-bezier(.5,0,.5,1) infinite; }
+@keyframes cg-moneda{ 0%{ transform:translateY(0) rotateY(0); } 45%{ transform:translateY(-16px) rotateY(180deg); } 90%,100%{ transform:translateY(0) rotateY(360deg); } }
+@keyframes cg-sombra{ 0%,100%{ transform:scaleX(1); opacity:.7; } 45%{ transform:scaleX(.55); opacity:.3; } }
+
+/* IRIDISCENTE: una burbuja de jabón que tiembla y cambia de color */
+html[data-tema="iridiscente"] .cargador i:nth-child(1){
+    display:block; inset:8px; border-radius:50%;
+    background:conic-gradient(from 0deg, #ffc6ea, #c3d4ff, #c4fff0, #fff1bd, #ffc6ea);
+    animation:cg-gira 3.2s linear infinite, cg-burbuja 2.4s ease-in-out infinite;
+}
+html[data-tema="iridiscente"] .cargador i:nth-child(2){
+    display:block; inset:13px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.92), rgba(255,255,255,.35) 62%, rgba(255,255,255,.1));
+    animation:cg-burbuja 2.4s ease-in-out infinite;
+}
+html[data-tema="iridiscente"] .cargador i:nth-child(3){ display:block; width:16px; height:8px; left:24px; top:22px; border-radius:50%; background:#fff; transform:rotate(-35deg); }
+@keyframes cg-burbuja{
+    0%,100%{ border-radius:50%; }
+    30%{ border-radius:44% 56% 53% 47% / 55% 45% 55% 45%; }
+    65%{ border-radius:56% 44% 46% 54% / 45% 55% 45% 55%; }
+}
+
+/* ATARDECER: el sol sube y baja sobre el mar */
+html[data-tema="atardecer"] .cargador{ overflow:hidden; border-radius:18px; background:linear-gradient(180deg, #2A1D63 0%, #5B2F86 40%, #C2506F 75%, #FF8A5B 100%); }
+html[data-tema="atardecer"] .cargador i:nth-child(1){
+    display:block; width:34px; height:34px; left:25px; bottom:6px; border-radius:50%;
+    background:radial-gradient(circle, #FFF1C2, #FFB35C 70%);
+    box-shadow:0 0 22px 4px rgba(255,179,92,.7);
+    animation:cg-sol 2.6s ease-in-out infinite;
+}
+html[data-tema="atardecer"] .cargador i:nth-child(2){
+    display:block; left:0; right:0; bottom:0; height:24px;
+    background:repeating-linear-gradient(180deg, #1B1450 0 4px, rgba(255,179,92,.45) 4px 5px);
+}
+@keyframes cg-sol{ 0%,100%{ transform:translateY(22px); } 50%{ transform:translateY(-22px); } }
+
+/* VIDRIO: tres luces que giran detrás de un vidrio esmerilado */
+html[data-tema="vidrio"] .cargador i:nth-child(-n+3){
+    display:block; width:38px; height:38px; left:23px; top:23px; border-radius:50%;
+    mix-blend-mode:screen; animation:cg-orbita 2.2s ease-in-out infinite;
+}
+html[data-tema="vidrio"] .cargador i:nth-child(1){ background:#7C5CFC; }
+html[data-tema="vidrio"] .cargador i:nth-child(2){ background:#FF5FA2; animation-delay:-.73s; }
+html[data-tema="vidrio"] .cargador i:nth-child(3){ background:#3FD0FF; animation-delay:-1.46s; }
+html[data-tema="vidrio"] .cargador i:nth-child(4){
+    display:block; inset:10px; border-radius:22px;
+    background:linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.28);
+    -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
+}
+@keyframes cg-orbita{ from{ transform:rotate(0) translateX(17px) rotate(0); } to{ transform:rotate(360deg) translateX(17px) rotate(-360deg); } }
+
+/* NEÓN: radar azul eléctrico que barre y encuentra un punto */
+html[data-tema="neon"] .cargador i:nth-child(1){ display:block; inset:6px; border-radius:50%; border:1.5px solid rgba(0,200,255,.55); box-shadow:0 0 14px rgba(46,91,255,.6), inset 0 0 14px rgba(46,91,255,.35); }
+html[data-tema="neon"] .cargador i:nth-child(2){ display:block; inset:6px; border-radius:50%; background:conic-gradient(from 0deg, rgba(0,200,255,0) 0deg 260deg, rgba(0,200,255,.85) 360deg); animation:cg-gira 1.6s linear infinite; }
+html[data-tema="neon"] .cargador i:nth-child(3){ display:block; inset:27px; border-radius:50%; border:1px solid rgba(0,200,255,.35); }
+html[data-tema="neon"] .cargador i:nth-child(4){ display:block; width:8px; height:8px; left:56px; top:22px; border-radius:50%; background:#7DF9FF; box-shadow:0 0 10px #7DF9FF; animation:cg-blip 1.6s ease-out infinite; }
+@keyframes cg-blip{ 0%,55%{ opacity:0; transform:scale(.4); } 66%{ opacity:1; transform:scale(1.3); } 100%{ opacity:0; transform:scale(1); } }
+
+/* ÓRBITA: un planeta con su anillo y una luna que da vueltas */
+html[data-tema="orbita"] .cargador i:nth-child(1){ display:block; width:32px; height:32px; left:26px; top:26px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #FFD98A, #FF6B3D 60%, #B8352A); box-shadow:0 0 18px rgba(255,107,61,.5); }
+html[data-tema="orbita"] .cargador i:nth-child(2),
+html[data-tema="orbita"] .cargador i:nth-child(3){ display:block; inset:4px; border-radius:50%; transform:rotate(-22deg) scaleY(.36); }
+html[data-tema="orbita"] .cargador i:nth-child(2){ border:1.5px solid rgba(255,180,140,.6); }
+html[data-tema="orbita"] .cargador i:nth-child(3)::after{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    background:radial-gradient(circle at 50% 0, #fff 0 6px, transparent 7px);
+    animation:cg-gira 1.8s linear infinite;
+}
+
+/* BLACK CARD: una tarjeta negra que gira y un brillo dorado la cruza */
+html[data-tema="blackcard"] .cargador{ perspective:320px; }
+html[data-tema="blackcard"] .cargador i:nth-child(1){
+    display:block; left:6px; right:6px; top:21px; bottom:21px; border-radius:7px; overflow:hidden;
+    background:linear-gradient(135deg, #222, #0A0A0A);
+    box-shadow:inset 0 0 0 1px #D9C29A, 0 12px 22px rgba(0,0,0,.55);
+    animation:cg-tarjeta 2.6s cubic-bezier(.6,0,.3,1) infinite;
+}
+html[data-tema="blackcard"] .cargador i:nth-child(1)::before{ content:""; position:absolute; left:9px; top:13px; width:13px; height:10px; border-radius:2px; background:linear-gradient(135deg, #F3E2B6, #B8975B); }
+html[data-tema="blackcard"] .cargador i:nth-child(1)::after{ content:""; position:absolute; inset:0; background:linear-gradient(105deg, transparent 35%, rgba(243,226,182,.6) 50%, transparent 65%); animation:cg-destello 2.6s ease-in-out infinite; }
+@keyframes cg-tarjeta{ 0%,25%{ transform:rotateY(0); } 50%,75%{ transform:rotateY(180deg); } 100%{ transform:rotateY(360deg); } }
+@keyframes cg-destello{ 0%,70%{ transform:translateX(-130%); } 95%,100%{ transform:translateX(130%); } }
+
+/* MATCHA: el batidor da vueltas en el bol y sube la espuma */
+html[data-tema="matcha"] .cargador i:nth-child(1){ display:block; left:8px; right:8px; bottom:10px; height:34px; border-radius:0 0 40px 40px; background:linear-gradient(180deg, #EFE9D8, #D9D1BA); box-shadow:0 6px 12px rgba(80,90,50,.18); }
+html[data-tema="matcha"] .cargador i:nth-child(2){ display:block; left:10px; right:10px; bottom:37px; height:14px; border-radius:50%; background:radial-gradient(ellipse, #C4DB97, #6E9A4E 85%); }
+html[data-tema="matcha"] .cargador i:nth-child(3){ display:block; left:18px; right:18px; bottom:22px; height:44px; transform:scaleY(.26); }
+html[data-tema="matcha"] .cargador i:nth-child(3)::after{ content:""; position:absolute; inset:0; border-radius:50%; border:3px dashed rgba(255,255,255,.75); animation:cg-gira 1.1s linear infinite; }
+html[data-tema="matcha"] .cargador i:nth-child(4){ display:block; width:7px; height:7px; left:39px; bottom:46px; border-radius:50%; background:#F7F4EA; box-shadow:11px 5px 0 -1px #F7F4EA, -10px 6px 0 -2px #F7F4EA; animation:cg-espuma 1.6s ease-out infinite; }
+@keyframes cg-espuma{ 0%{ transform:translateY(0) scale(.6); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(-24px) scale(1); opacity:0; } }
+
+/* CHERRY: dos cerezas que se mecen como péndulo */
+html[data-tema="cherry"] .cargador i:nth-child(1){
+    display:block; left:20px; top:4px; width:44px; height:74px;
+    transform-origin:50% 4px; animation:cg-pendulo .9s ease-in-out infinite alternate;
+}
+html[data-tema="cherry"] .cargador i:nth-child(1)::before{ content:""; position:absolute; left:6px; right:6px; top:4px; height:44px; border:3px solid #3E7A2E; border-bottom:0; border-radius:50% 50% 0 0 / 100% 100% 0 0; }
+html[data-tema="cherry"] .cargador i:nth-child(1)::after{
+    content:""; position:absolute; left:-6px; bottom:4px; width:56px; height:26px;
+    background:
+        radial-gradient(circle at 9px 8px, #FFD6E0 0 3px, transparent 3.5px),
+        radial-gradient(circle at 41px 8px, #FFD6E0 0 3px, transparent 3.5px),
+        radial-gradient(circle at 12px 13px, #D7263D 0 12px, transparent 12.5px),
+        radial-gradient(circle at 44px 13px, #D7263D 0 12px, transparent 12.5px);
+    filter:drop-shadow(2px 2px 0 rgba(58,10,20,.9));
+}
+html[data-tema="cherry"] .cargador i:nth-child(2){ display:block; left:44px; top:0; width:18px; height:10px; border-radius:0 100% 0 100%; background:#5BA142; transform-origin:0 100%; animation:cg-hoja .9s ease-in-out infinite alternate; }
+@keyframes cg-pendulo{ from{ transform:rotate(-18deg); } to{ transform:rotate(18deg); } }
+@keyframes cg-hoja{ from{ transform:rotate(-10deg); } to{ transform:rotate(14deg); } }
+
+/* MINIMAL BEIGE: un cuentakilómetros de números serif */
+html[data-tema="beige"] .cargador{ overflow:hidden; border-bottom:1px solid var(--text); }
+html[data-tema="beige"] .cargador i:nth-child(-n+2){ display:block; top:0; width:42px; font-family:"Instrument Serif",serif; font-size:64px; line-height:84px; text-align:center; color:var(--text); }
+html[data-tema="beige"] .cargador i:nth-child(1){ left:0; }
+html[data-tema="beige"] .cargador i:nth-child(2){ left:42px; font-style:italic; }
+html[data-tema="beige"] .cargador i:nth-child(-n+2)::before{ content:"0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9\A 0"; white-space:pre; display:block; animation:cg-rodillo 6s cubic-bezier(.7,0,.3,1) infinite; }
+html[data-tema="beige"] .cargador i:nth-child(2)::before{ animation-duration:2.4s; }
+@keyframes cg-rodillo{0%{transform:translateY(0)} 4.50%,10.00%{transform:translateY(-84px)} 14.50%,20.00%{transform:translateY(-168px)} 24.50%,30.00%{transform:translateY(-252px)} 34.50%,40.00%{transform:translateY(-336px)} 44.50%,50.00%{transform:translateY(-420px)} 54.50%,60.00%{transform:translateY(-504px)} 64.50%,70.00%{transform:translateY(-588px)} 74.50%,80.00%{transform:translateY(-672px)} 84.50%,90.00%{transform:translateY(-756px)} 94.50%,100%{transform:translateY(-840px)}}
+
+/* AURORA: la luz azul, crema y naranja se mueve detrás de un vidrio */
+html[data-tema="aurora"] .cargador i:nth-child(1){ display:block; inset:10px; border-radius:50%; background:conic-gradient(from 0deg, #3D6BFF, #F4E6CC, #FF8A3D, #3D6BFF); filter:blur(9px); animation:cg-gira 2.6s linear infinite; }
+html[data-tema="aurora"] .cargador i:nth-child(2){ display:block; width:30px; height:30px; left:8px; top:44px; border-radius:50%; background:#FF8A3D; filter:blur(8px); animation:cg-deriva 2.2s ease-in-out infinite alternate; }
+html[data-tema="aurora"] .cargador i:nth-child(3){
+    display:grid; place-items:center; inset:8px; border-radius:24px;
+    background:linear-gradient(160deg, rgba(255,255,255,.2), rgba(255,255,255,.04));
+    border:1px solid rgba(255,255,255,.32);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+}
+html[data-tema="aurora"] .cargador i:nth-child(3)::after{ content:"✳"; color:#F5F3EE; font-size:24px; line-height:1; animation:cg-gira 5s linear infinite; }
+@keyframes cg-deriva{ from{ transform:translate(0,0); } to{ transform:translate(40px,-34px); } }
+
+/* Y2K HOLO: estrella de cromo que gira con destello y un anillo holográfico */
+html[data-tema="chrome"] .cargador i:nth-child(1){
+    display:block; inset:0; border-radius:50%;
+    background:conic-gradient(#5B6CFF, #B47BFF, #FF9BD2, #FFE27A, #9BFFB8, #5BD8FF, #5B6CFF);
+    -webkit-mask:radial-gradient(closest-side, transparent 84%, #000 86% 96%, transparent 98%);
+    mask:radial-gradient(closest-side, transparent 84%, #000 86% 96%, transparent 98%);
+    animation:cg-gira 3s linear infinite reverse;
+}
+html[data-tema="chrome"] .cargador i:nth-child(2){ display:block; inset:10px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.45' stop-color='%239AA8E8'/%3E%3Cstop offset='.55' stop-color='%231C2250'/%3E%3Cstop offset='.7' stop-color='%23C9D3FF'/%3E%3Cstop offset='1' stop-color='%23fff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 0C53 36 64 47 100 50C64 53 53 64 50 100C47 64 36 53 0 50C36 47 47 36 50 0Z' fill='url(%23c)'/%3E%3C/svg%3E") center/contain no-repeat; filter:drop-shadow(0 0 8px rgba(200,215,255,.9)); animation:cg-estrella 1.8s cubic-bezier(.6,0,.3,1) infinite; }
+html[data-tema="chrome"] .cargador i:nth-child(3){ display:block; width:10px; height:10px; left:37px; top:37px; border-radius:50%; background:#fff; box-shadow:0 0 16px 6px rgba(170,190,255,.9); animation:cg-flash 1.8s ease-in-out infinite; }
+@keyframes cg-estrella{ 0%{ transform:rotate(0) scale(.82); } 50%{ transform:rotate(90deg) scale(1.06); } 100%{ transform:rotate(180deg) scale(.82); } }
+@keyframes cg-flash{ 0%,100%{ opacity:.25; transform:scale(.5); } 50%{ opacity:1; transform:scale(1.1); } }
+html[data-tema="chrome"] .pasos-barra i{ border-radius:0; height:6px; }
+html[data-tema="chrome"] .pasos-barra i::after{ background:var(--lima); }
+
+/* IDEA ROJA: un punto rojo recorre un cuadrado negro */
+html[data-tema="rojo"] .cargador i:nth-child(1){ display:block; inset:16px; border:1.5px solid var(--text); }
+html[data-tema="rojo"] .cargador i:nth-child(2){ display:block; width:14px; height:14px; left:9px; top:9px; border-radius:50%; background:#FF4A1C; animation:cg-recorre 2.4s cubic-bezier(.7,0,.3,1) infinite; }
+html[data-tema="rojo"] .cargador i:nth-child(3){ display:block; width:7px; height:7px; left:38px; top:38px; background:#FF4A1C; animation:cg-parpadeo 1.2s steps(2) infinite; }
+@keyframes cg-recorre{ 0%,100%{ transform:translate(0,0); } 25%{ transform:translate(52px,0); } 50%{ transform:translate(52px,52px); } 75%{ transform:translate(0,52px); } }
+@keyframes cg-parpadeo{ 50%{ opacity:0; } }
+html[data-tema="rojo"] .pasos-barra i{ border-radius:0; height:2px; }
+html[data-tema="rojo"] .pasos-barra i::after{ background:#141414; }
+
+
+/* ===== Al terminar: el billete entra distinto en cada estilo ===== */
+
+/* Estilos claros: fondo claro y letra oscura */
+html[data-tema="iridiscente"] .billete-overlay{ --bt-fondo:rgba(240,242,250,.82); --bt-tinta:#1B1D2A; --bt-entro:#0E9F6E; }
+html[data-tema="matcha"] .billete-overlay{ --bt-fondo:rgba(243,240,230,.86); --bt-tinta:#2E3A24; --bt-entro:#3F7A35; }
+html[data-tema="cherry"] .billete-overlay{ --bt-fondo:rgba(255,233,238,.86); --bt-tinta:#3A0A14; --bt-entro:#1E9E6A; }
+html[data-tema="beige"] .billete-overlay{ --bt-fondo:rgba(245,241,234,.9); --bt-tinta:#1F1B16; --bt-entro:#4F6B4A; }
+html[data-tema="rojo"] .billete-overlay{ --bt-fondo:rgba(236,233,227,.92); --bt-tinta:#141414; --bt-entro:#2F7D4F; }
+html[data-tema="aurora"] .billete-overlay{ --bt-fondo:rgba(5,5,7,.72); --bt-entro:#F4E6CC; }
+html[data-tema="chrome"] .billete-overlay{ --bt-fondo:rgba(4,5,12,.84); --bt-entro:#D4FF3A; }
+
+/* Iridiscente: aparece como burbuja que se infla */
+html[data-tema="iridiscente"] .billete-overlay .bt-capa{ animation-name:bt-burbuja !important; animation-duration:.8s !important; }
+@keyframes bt-burbuja{ 0%{ opacity:0; transform:scale(.2); border-radius:50%; } 60%{ opacity:1; transform:scale(1.08); } 80%{ transform:scale(.97); } 100%{ transform:scale(1); } }
+
+/* Atardecer: sube como el sol, con resplandor */
+html[data-tema="atardecer"] .billete-overlay .bt-capa{ animation-name:bt-amanece !important; animation-duration:1s !important; }
+@keyframes bt-amanece{ 0%{ opacity:0; transform:translateY(90px); filter:drop-shadow(0 0 0 rgba(255,179,92,0)); } 100%{ opacity:1; filter:drop-shadow(0 0 30px rgba(255,179,92,.55)); } }
+
+/* Vidrio: de borroso a nítido */
+html[data-tema="vidrio"] .billete-overlay .bt-capa{ animation-name:bt-enfoca !important; animation-duration:.8s !important; }
+@keyframes bt-enfoca{ 0%{ opacity:0; transform:scale(1.25); filter:blur(18px); } 100%{ opacity:1; filter:blur(0); } }
+
+/* Neón: se prende como un letrero que parpadea */
+html[data-tema="neon"] .billete-overlay .bt-capa{ animation-name:bt-parpadeo !important; animation-duration:.9s !important; animation-timing-function:linear !important; }
+@keyframes bt-parpadeo{ 0%{ opacity:0; transform:translateX(-6px) skewX(-8deg); } 10%{ opacity:1; } 18%{ opacity:.15; transform:translateX(5px); } 28%{ opacity:1; transform:translateX(-2px) skewX(3deg); } 36%{ opacity:.4; } 46%,100%{ opacity:1; } }
+
+/* Órbita: entra girando en espiral */
+html[data-tema="orbita"] .billete-overlay .bt-capa{ animation-name:bt-espiral !important; animation-duration:1s !important; }
+@keyframes bt-espiral{ 0%{ opacity:0; transform:rotate(-220deg) scale(.15); } 100%{ opacity:1; } }
+
+/* Black card: se voltea como una tarjeta */
+html[data-tema="blackcard"] .billete-escena{ perspective:700px; }
+html[data-tema="blackcard"] .billete-overlay .bt-capa{ animation-name:bt-voltea !important; animation-duration:1s !important; }
+@keyframes bt-voltea{ 0%{ opacity:0; transform:rotateY(-180deg) scale(.8); } 40%{ opacity:1; } 100%{ opacity:1; } }
+
+/* Matcha: flota despacio */
+html[data-tema="matcha"] .billete-overlay .bt-capa{ animation-name:bt-flota !important; animation-duration:1.1s !important; animation-timing-function:cubic-bezier(.2,.7,.2,1) !important; }
+@keyframes bt-flota{ 0%{ opacity:0; transform:translateY(30px) rotate(-4deg); } 100%{ opacity:1; } }
+
+/* Cherry: cae y rebota como sticker */
+html[data-tema="cherry"] .billete-overlay .bt-capa{ animation-name:bt-rebota !important; animation-duration:.9s !important; animation-timing-function:linear !important; }
+@keyframes bt-rebota{ 0%{ opacity:0; transform:translateY(-160px) rotate(-10deg); } 45%{ opacity:1; transform:translateY(0) rotate(4deg); } 62%{ transform:translateY(-26px) rotate(-2deg); } 78%{ transform:translateY(0) rotate(1deg); } 88%{ transform:translateY(-6px); } 100%{ } }
+html[data-tema="cherry"] .bt-billete{ box-shadow:5px 5px 0 #3A0A14; outline:2px solid #3A0A14; }
+
+/* Beige: aparece despacio, sin sombras */
+html[data-tema="beige"] .billete-overlay .bt-capa{ animation-name:bt-sereno !important; animation-duration:1.1s !important; }
+@keyframes bt-sereno{ 0%{ opacity:0; transform:translateY(12px); } 100%{ opacity:1; } }
+html[data-tema="beige"] .bt-billete{ box-shadow:0 1px 0 rgba(31,27,22,.25); }
+
+/* Aurora: emerge del vidrio esmerilado */
+html[data-tema="aurora"] .billete-overlay .bt-capa{ animation-name:bt-emerge !important; animation-duration:1s !important; }
+@keyframes bt-emerge{ 0%{ opacity:0; transform:scale(.92); filter:blur(14px) brightness(1.6); } 100%{ opacity:1; filter:none; } }
+html[data-tema="aurora"] .bt-billete::after{ background:linear-gradient(105deg, transparent 30%, rgba(244,230,204,.5) 45%, rgba(255,138,61,.35) 55%, transparent 65%); }
+
+/* Y2K Holo: entra girando con destello y brillo holográfico */
+html[data-tema="chrome"] .billete-overlay .bt-capa{ animation-name:bt-holo !important; animation-duration:.9s !important; }
+@keyframes bt-holo{ 0%{ opacity:0; transform:scale(.4) rotate(-25deg); filter:brightness(3); } 60%{ opacity:1; transform:scale(1.06) rotate(3deg); filter:brightness(1.4); } 100%{ filter:none; } }
+html[data-tema="chrome"] .bt-billete::after{ background:linear-gradient(105deg, transparent 25%, rgba(91,108,255,.55) 38%, rgba(255,155,210,.55) 46%, rgba(255,226,122,.55) 54%, rgba(155,255,184,.5) 62%, transparent 75%); mix-blend-mode:screen; }
+html[data-tema="chrome"] .billete-escena::after{ content:""; position:absolute; width:70px; height:70px; right:30px; top:-6px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='c' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.45' stop-color='%239AA8E8'/%3E%3Cstop offset='.55' stop-color='%231C2250'/%3E%3Cstop offset='.7' stop-color='%23C9D3FF'/%3E%3Cstop offset='1' stop-color='%23fff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 0C53 36 64 47 100 50C64 53 53 64 50 100C47 64 36 53 0 50C36 47 47 36 50 0Z' fill='url(%23c)'/%3E%3C/svg%3E") center/contain no-repeat; filter:drop-shadow(0 0 12px rgba(200,215,255,.9)); animation:cg-flash 1.2s .4s ease-in-out both; }
+
+/* Idea roja: entra recto desde el costado, plano, con su punto rojo */
+html[data-tema="rojo"] .billete-overlay .bt-capa{ animation-name:bt-desliza !important; animation-duration:.7s !important; animation-timing-function:cubic-bezier(.7,0,.2,1) !important; }
+@keyframes bt-desliza{ 0%{ opacity:0; transform:translateX(-80px); } 100%{ opacity:1; } }
+html[data-tema="rojo"] .bt-billete{ border-radius:3px; box-shadow:none; }
+html[data-tema="rojo"] .billete-escena::after{ content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#FF4A1C; right:40px; top:18px; animation:bt-sereno .4s .6s both; }
