@@ -554,7 +554,10 @@ const TEMAS = {
     blackcard: "#0A0A0A",
     matcha: "#F3F0E6",
     cherry: "#FFE9EE",
-    beige: "#F5F1EA"
+    beige: "#F5F1EA",
+    aurora: "#050507",
+    chrome: "#04050C",
+    rojo: "#ECE9E3"
 };
 
 // Los que tiene todo el mundo (su CSS está en la web)

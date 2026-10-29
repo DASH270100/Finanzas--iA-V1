@@ -4628,16 +4628,16 @@ html .registro .medios.medios > button.btn-medio#btnAudio.grabando{
 }
 
 /* Temas con barra tipo píldora: solo íconos redondos dentro de la barra */
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro textarea{ min-width:0; }
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro textarea{ min-width:0; }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .medios{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .medios{
     flex:none;
     flex-wrap:nowrap;
     gap:4px;
     margin:0;
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
     width:44px;
     height:44px;
     min-height:44px;
@@ -4647,12 +4647,12 @@ html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[
     color:var(--text-muted);
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
     background:var(--surface-light);
     color:var(--text);
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .btn-medio span{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .btn-medio span{
     position:absolute;
     width:1px;
     height:1px;
@@ -4668,15 +4668,15 @@ html[data-tema="vidrio"] .registro .medios.medios > button.btn-medio:is(#btnAudi
 html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ color:#3A3F55; }
 html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{ background:rgba(4,5,13,.07); color:#04050D; }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro .medios.medios > button.btn-medio#btnAudio.grabando{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio#btnAudio.grabando{
     background:#FF3B5C;
     color:#fff;
 }
 
 @media (max-width:480px){
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .medios{ gap:0; }
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ width:40px; height:40px; min-height:40px; }
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"]) .registro textarea{ padding-left:18px; padding-right:8px; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .medios{ gap:0; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ width:40px; height:40px; min-height:40px; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro textarea{ padding-left:18px; padding-right:8px; }
 }
 
 
@@ -4710,6 +4710,24 @@ html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[
     background:
         linear-gradient(90deg, transparent 0 58%, #1F1B16 58% 58.8%, transparent 58.8%),
         linear-gradient(180deg, #F5F1EA 0 70%, #D9C8B0 70%);
+}
+.tema-muestra.m-aurora{
+    background:
+        radial-gradient(circle at 78% 18%, rgba(244,230,204,.95) 0, transparent 22%),
+        conic-gradient(from 200deg at 80% 20%, transparent 0deg, #3D6BFF 40deg, #F4E6CC 95deg, #FF8A3D 125deg, transparent 190deg),
+        #050507;
+}
+.tema-muestra.m-chrome{
+    background:
+        radial-gradient(60% 50% at 50% 0%, #1538FF 0, transparent 70%),
+        linear-gradient(115deg, transparent 0 55%, #B47BFF 60%, #FF9BD2 66%, #FFE27A 72%, #9BFFB8 78%, transparent 84%),
+        #04050C;
+}
+.tema-muestra.m-rojo{
+    background:
+        radial-gradient(circle at 78% 26%, #FF4A1C 0 9%, transparent 10%),
+        linear-gradient(180deg, transparent 0 62%, #FF4A1C 62% 74%, transparent 74%) 18% 0/22% 100% no-repeat,
+        #ECE9E3;
 }
 
 /*==================================================
@@ -5707,6 +5725,9 @@ html #alcanzaForm .alc-modo > button.alc-modo-btn[aria-checked="true"]{
 html[data-tema="blackcard"]{ --comp-b:#EDEAE3; }
 html[data-tema="cherry"]{ --comp-b:#2B1418; }
 html[data-tema="beige"]{ --comp-b:#B08D57; }
+html[data-tema="aurora"]{ --comp-b:#FF8A3D; }
+html[data-tema="chrome"]{ --comp-b:#00B8FF; }
+html[data-tema="rojo"]{ --comp-b:#141414; }
 html[data-tema="matcha"]{ --comp-b:#D9A441; }
 html[data-tema="atardecer"]{ --comp-b:#FFC24B; }
 
@@ -5722,7 +5743,10 @@ html[data-tema="orbita"] #switchCuenta,
 html[data-tema="blackcard"] #switchCuenta,
 html[data-tema="matcha"] #switchCuenta,
 html[data-tema="cherry"] #switchCuenta,
-html[data-tema="beige"] #switchCuenta{
+html[data-tema="beige"] #switchCuenta,
+html[data-tema="aurora"] #switchCuenta,
+html[data-tema="chrome"] #switchCuenta,
+html[data-tema="rojo"] #switchCuenta{
     max-width:820px;
     margin-left:auto;
     margin-right:auto;
