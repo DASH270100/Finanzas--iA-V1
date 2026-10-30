@@ -27,6 +27,7 @@ const estado = {
     movimientos: [],
     deudas: [],
     dashboard: [],
+    ciclo: null,
     mes: null,
     mostrarTodasLasDeudas: false,
     editando: null,
@@ -486,6 +487,11 @@ function aplicarDatos(data) {
     estado.porCobrar = n.porCobrar;
 
     estado.compartido = data.compartido || { activo: null, recibidas: [], enviada: null };
+
+    // Ciclo de sueldo: desde qué día cuenta el saldo (null = desde siempre)
+    const inicioCiclo = data.ciclo && parseFecha(data.ciclo.inicio);
+
+    estado.ciclo = inicioCiclo ? { inicio: inicioCiclo } : null;
 
     if (window.__irAlBuzon && estado.usuario && estado.usuario.rol === "admin" && !modoDemo) {
 

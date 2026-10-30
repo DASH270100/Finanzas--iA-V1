@@ -17,32 +17,49 @@ function valorDashboard(etiqueta) {
 
 }
 
+// Movimientos que cuentan para el saldo: desde el inicio del ciclo de sueldo (o todos)
+function enCiclo(m) {
+
+    if (!estado.ciclo) return true;
+
+    return !!m.fecha && m.fecha >= estado.ciclo.inicio;
+
+}
+
+// Saldo en efectivo de una lista: las compras con tarjeta se descuentan al pagar la tarjeta, no al comprar
+function saldoDe(lista) {
+
+    const esCompraTarjeta = (m) => !!m.medio && esGasto(m) && !esPagoTarjeta(m);
+
+    return sumar(lista.filter(esIngreso)) - sumar(lista.filter((m) => esGasto(m) && !esCompraTarjeta(m)));
+
+}
+
 function renderDashboard() {
 
     // Ingresos y gastos reales: sin préstamos ni reembolsos.
     // El saldo es todo lo que entró menos todo lo que salió (incluye préstamos y reembolsos),
     // calculado aquí desde Movimientos y no desde la hoja Dashboards.
+    // Con ciclo de sueldo activo, todo cuenta solo desde ese día; lo de antes queda «aparte».
     const hayMovimientos = estado.movimientos.length > 0;
 
+    const lista = estado.movimientos.filter(enCiclo);
+
     const ingresos = hayMovimientos
-        ? sumar(estado.movimientos.filter(esIngresoReal))
+        ? sumar(lista.filter(esIngresoReal))
         : valorDashboard("ingresos");
 
     const gastos = hayMovimientos
-        ? sumar(estado.movimientos.filter(esGastoReal))
+        ? sumar(lista.filter(esGastoReal))
         : valorDashboard("gastos");
 
     $("ingresos").textContent = money(ingresos);
 
     $("gastos").textContent = money(gastos);
 
-    // Saldo en efectivo (lo que hay en tu cuenta): las compras con tarjeta se descuentan
-    // cuando pagas la tarjeta, no al comprar. El pago de tarjeta sí baja el saldo.
-    const esCompraTarjeta = (m) => !!m.medio && esGasto(m) && !esPagoTarjeta(m);
+    const saldo = hayMovimientos ? saldoDe(lista) : valorDashboard("saldo");
 
-    const saldo = hayMovimientos
-        ? sumar(estado.movimientos.filter(esIngreso)) - sumar(estado.movimientos.filter((m) => esGasto(m) && !esCompraTarjeta(m)))
-        : valorDashboard("saldo");
+    const aparte = estado.ciclo ? saldoDe(estado.movimientos.filter((m) => !enCiclo(m))) : 0;
 
     const deudaTarjetas = hayMovimientos ? infoTarjetas().reduce((t, x) => t + x.deuda, 0) : 0;
 
@@ -50,9 +67,15 @@ function renderDashboard() {
 
     if (nota) {
 
-        nota.hidden = !(deudaTarjetas > 0.005);
+        const partes = [];
 
-        nota.textContent = `Debes ${money(deudaTarjetas)} en tarjetas`;
+        if (deudaTarjetas > 0.005) partes.push(`Debes ${money(deudaTarjetas)} en tarjetas`);
+
+        if (estado.ciclo && Math.abs(aparte) > 0.005) partes.push(`Aparte: ${money(aparte)}`);
+
+        nota.hidden = !partes.length;
+
+        nota.textContent = partes.join(" · ");
 
     }
 
@@ -60,9 +83,26 @@ function renderDashboard() {
 
     $("hsDeuda").textContent = money(deudaTarjetas);
 
+    $("hsAparteChip").hidden = !(estado.ciclo && Math.abs(aparte) > 0.005);
+
+    $("hsAparte").textContent = money(aparte);
+
     $("saldo").textContent = money(saldo);
 
-    // Resumen grande de los estilos Iridiscente y Atardecer
+    // Etiqueta y botón del ciclo
+    const desde = estado.ciclo ? estado.ciclo.inicio.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "") : "";
+
+    const etiqueta = estado.ciclo ? `Saldo desde el ${desde}` : "Saldo actual";
+
+    $("saldoLabel").textContent = etiqueta;
+
+    $("hsLabel").textContent = etiqueta;
+
+    document.querySelectorAll(".ciclo-abrir .ciclo-txt").forEach((el) => {
+        el.textContent = estado.ciclo ? "Cambiar inicio" : "Empezar con mi sueldo";
+    });
+
+    // Resumen grande de los estilos con tarjeta de saldo
     $("hsSaldo").textContent = money(saldo);
     $("hsIngresos").textContent = money(ingresos);
     $("hsGastos").textContent = money(gastos);

@@ -3867,7 +3867,7 @@ html[data-tema="atardecer"] .header .saludo{ margin-bottom:4px; }
     html[data-tema="atardecer"] .hs-txt{ display:none; }
 
     html[data-tema="iridiscente"] .hs-chips,
-    html[data-tema="atardecer"] .hs-chips{ flex-wrap:nowrap; }
+    html[data-tema="atardecer"] .hs-chips{ flex-wrap:wrap; }
 
     html[data-tema="iridiscente"] .btn-bloquear,
     html[data-tema="atardecer"] .btn-bloquear{ top:10px; right:10px; }
@@ -6713,3 +6713,37 @@ html[data-tema="rojo"] .billete-overlay .bt-capa{ animation-name:bt-desliza !imp
 @keyframes bt-desliza{ 0%{ opacity:0; transform:translateX(-80px); } 100%{ opacity:1; } }
 html[data-tema="rojo"] .bt-billete{ border-radius:3px; box-shadow:none; }
 html[data-tema="rojo"] .billete-escena::after{ content:""; position:absolute; width:16px; height:16px; border-radius:50%; background:#FF4A1C; right:40px; top:18px; animation:bt-sereno .4s .6s both; }
+
+/*==================================================
+        EMPEZAR CON MI SUELDO (ciclo de sueldo)
+====================================================*/
+button.ciclo-abrir{
+    display:inline-flex; align-items:center; gap:7px;
+    width:auto; min-height:36px; margin:10px 0 0; padding:7px 14px;
+    border-radius:999px;
+    border:1px solid color-mix(in srgb, currentColor 35%, transparent);
+    background:color-mix(in srgb, currentColor 8%, transparent);
+    color:inherit;
+    font:inherit; font-size:13px; font-weight:600; letter-spacing:0; text-transform:none;
+    box-shadow:none; transform:none; cursor:pointer;
+}
+button.ciclo-abrir:hover{ background:color-mix(in srgb, currentColor 16%, transparent); box-shadow:none; transform:none; }
+button.ciclo-abrir .ico{ width:15px; height:15px; flex:0 0 auto; }
+.card.saldo button.ciclo-abrir{ color:var(--text-soft); display:flex; }
+.hero-saldo button.hs-ciclo{ position:relative; z-index:1; margin-top:14px; }
+html[data-tema="rojo"] .hero-saldo button.hs-ciclo,
+html[data-tema="chrome"] .hero-saldo button.hs-ciclo{ border-radius:4px; }
+html[data-tema="chrome"] .hero-saldo button.hs-ciclo{ font-family:"Space Mono",monospace; font-size:11px; letter-spacing:.06em; color:var(--lima); margin-bottom:6px; }
+
+.ciclo-box label.ciclo-campo{ font-size:13px; font-weight:700; color:var(--text-soft); margin-bottom:-6px; }
+.ciclo-box input[type="date"]{ font-size:16px; min-height:46px; }
+.ciclo-pista{ margin:-4px 0 0; font-size:13px; color:var(--text-muted); }
+.ciclo-cuentas{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ciclo-cuentas > div{ padding:12px 14px; border-radius:14px; background:var(--surface-light); border:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+.ciclo-cuentas span{ font-size:12px; color:var(--text-muted); font-weight:600; }
+.ciclo-cuentas strong{ font-size:20px; color:var(--text); font-variant-numeric:tabular-nums; }
+.ciclo-cuentas .ciclo-nuevo{ border-color:color-mix(in srgb, var(--primary) 55%, transparent); background:color-mix(in srgb, var(--primary) 12%, var(--surface-light)); }
+.ciclo-box button.ciclo-quitar{ background:transparent; border:1px solid var(--border); color:var(--text-soft); box-shadow:none; margin-top:-4px; }
+.ciclo-box button.ciclo-quitar:hover{ background:var(--surface-light); color:var(--text); transform:none; box-shadow:none; }
+.hero-saldo .hs-chip{ white-space:nowrap; }
+.hero-saldo .hs-chips{ flex-wrap:wrap; }

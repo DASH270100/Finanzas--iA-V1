@@ -32,7 +32,7 @@
     <script src="js/arranque.js?v=1"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=94">
+    <link rel="stylesheet" href="style.css?v=95">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -156,6 +156,35 @@
         <p id="billeteDetalle" class="billete-detalle"></p>
         <p id="billeteMas" class="billete-mas"></p>
     </div>
+</div>
+
+<div id="cicloOverlay" class="pin-overlay" hidden>
+
+    <form id="cicloForm" class="card pin-box buzon-box ciclo-box" role="dialog" aria-modal="true" aria-labelledby="cicloTitulo" novalidate>
+
+        <button id="cicloCerrar" class="buzon-x" type="button" aria-label="Cerrar">✕</button>
+
+        <h2 id="cicloTitulo">Empezar con tu sueldo</h2>
+
+        <p class="buzon-intro">Tu saldo contará solo lo que entre y salga desde el día que elijas. Lo de antes queda aparte: no se borra nada y tus estadísticas siguen igual.</p>
+
+        <label class="ciclo-campo" for="cicloFecha">Contar desde el</label>
+        <input id="cicloFecha" type="date" required>
+        <p id="cicloPista" class="ciclo-pista"></p>
+
+        <div class="ciclo-cuentas" aria-live="polite">
+            <div class="ciclo-nuevo"><span>Empiezas con</span><strong id="cicloEmpieza">S/ 0.00</strong></div>
+            <div><span>Queda aparte</span><strong id="cicloAparte">S/ 0.00</strong></div>
+        </div>
+
+        <div id="cicloError" class="pin-error" role="alert"></div>
+
+        <button id="cicloOk" type="submit">Empezar desde aquí</button>
+
+        <button id="cicloQuitar" class="ciclo-quitar" type="button" hidden>Volver a contar todo</button>
+
+    </form>
+
 </div>
 
 <div id="buzonOverlay" class="pin-overlay buzon-overlay" hidden>
@@ -319,7 +348,7 @@
 
                 <div id="heroSaldo" class="hero-saldo">
 
-                    <span class="hs-label">Saldo actual</span>
+                    <span id="hsLabel" class="hs-label">Saldo actual</span>
 
                     <strong id="hsSaldo" class="hs-saldo">S/ 0.00</strong>
 
@@ -331,7 +360,11 @@
 
                         <span id="hsDeudaChip" class="hs-chip" hidden>💳 <span class="hs-txt">Tarjetas</span> <b id="hsDeuda">S/ 0.00</b></span>
 
+                        <span id="hsAparteChip" class="hs-chip" hidden title="Lo que tenías antes de tu sueldo">💰 <span class="hs-txt">Aparte</span> <b id="hsAparte">S/ 0.00</b></span>
+
                     </div>
+
+                    <button class="ciclo-abrir hs-ciclo" type="button"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg><span class="ciclo-txt">Empezar con mi sueldo</span></button>
 
                 </div>
 
@@ -516,11 +549,13 @@
 
                 <div class="card-info">
 
-                    <span class="card-label">Saldo actual</span>
+                    <span id="saldoLabel" class="card-label">Saldo actual</span>
 
                     <h2 id="saldo">S/ 0.00</h2>
 
                     <small id="saldoNota" class="card-nota" hidden></small>
+
+                    <button class="ciclo-abrir" type="button"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg><span class="ciclo-txt">Empezar con mi sueldo</span></button>
 
                 </div>
 
@@ -1605,16 +1640,17 @@
 
 <script src="graficos.js?v=58"></script>
 
-<script src="demo.js?v=59"></script>
+<script src="demo.js?v=60"></script>
 
 <script src="iconos.js?v=5"></script>
-<script src="js/nucleo.js?v=3"></script>
+<script src="js/nucleo.js?v=4"></script>
 <script src="js/cuenta.js?v=1"></script>
-<script src="js/inicio.js?v=1"></script>
+<script src="js/inicio.js?v=2"></script>
 <script src="js/secciones.js?v=1"></script>
 <script src="js/registro.js?v=4"></script>
 <script src="js/eventos.js?v=1"></script>
 <script src="js/billete.js?v=2"></script>
+<script src="js/ciclo.js?v=1"></script>
 <script src="resumen.js?v=4"></script>
 <script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>

@@ -1226,8 +1226,15 @@ const DemoBackend = (() => {
                     metas: clonar(db.metas),
                     tarjetas: clonar(db.tarjetas),
                     porCobrar: clonar(db.porCobrar),
-                    compartido: clonar(db.compartido)
+                    compartido: clonar(db.compartido),
+                    ciclo: db.ciclo ? { inicio: db.ciclo } : null
                 });
+
+            case "ciclo":
+                if (p.quitar) { db.ciclo = null; return ok({ ciclo: null }); }
+                if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(String(p.inicio || ""))) return fallo("Elige una fecha válida");
+                db.ciclo = p.inicio;
+                return ok({ ciclo: { inicio: p.inicio } });
 
             case "registrar": return registrar(p);
             case "agregar": return agregar(p);
