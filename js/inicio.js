@@ -627,12 +627,30 @@ function formularioEdicion(m) {
 
 function gastosDelPeriodo(clave) {
 
+    if (clave === "ciclo") return estado.movimientos.filter((m) => esGastoReal(m) && enCiclo(m));
+
     return estado.movimientos.filter((m) =>
         esGastoReal(m) &&
         (clave === "all" || (m.fecha && claveMes(m.fecha) === clave))
     );
 
 }
+
+// Periodo del inicio (gráfico y categorías destacadas): con «nuevo mes» activo, por defecto desde el sueldo.
+// Estadísticas sigue por mes de calendario (estado.mes).
+function periodoInicio() {
+
+    const v = estado.mesInicio;
+
+    if (v === "ciclo") return estado.ciclo ? "ciclo" : estado.mes;
+
+    if (v) return v;
+
+    return estado.ciclo ? "ciclo" : estado.mes;
+
+}
+
+const fechaSueldo = (d) => d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "");
 
 const sumar = (lista) => lista.reduce((s, m) => s + m.monto, 0);
 
@@ -662,13 +680,15 @@ function actualizarSelectorMes() {
         lista.map((c) => `<option value="${c}">${esc(nombreMes(c))}</option>`).join("") +
         '<option value="all">Todo el historial</option>';
 
-    ["filtroMes", "filtroMesStats"].forEach((id) => {
+    const deSueldo = estado.ciclo ? `<option value="ciclo">Desde mi sueldo (${fechaSueldo(estado.ciclo.inicio)})</option>` : "";
 
-        $(id).innerHTML = opciones;
+    $("filtroMes").innerHTML = deSueldo + opciones;
 
-        $(id).value = estado.mes;
+    $("filtroMes").value = periodoInicio();
 
-    });
+    $("filtroMesStats").innerHTML = opciones;
+
+    $("filtroMesStats").value = estado.mes;
 
 }
 
@@ -695,7 +715,9 @@ function renderCatTiles(grupos) {
 
 function renderResumenPeriodo() {
 
-    const gastos = gastosDelPeriodo(estado.mes);
+    const periodo = periodoInicio();
+
+    const gastos = gastosDelPeriodo(periodo);
 
     const total = sumar(gastos);
 
@@ -705,9 +727,11 @@ function renderResumenPeriodo() {
 
     $("totalGastado").textContent = money(total);
 
-    $("subtituloGrafico").textContent = estado.mes === "all"
+    $("subtituloGrafico").textContent = periodo === "all"
         ? "Distribución de todos tus gastos"
-        : "Distribución de tus gastos en " + nombreMes(estado.mes);
+        : periodo === "ciclo"
+            ? `Lo que gastaste desde tu sueldo del ${fechaSueldo(estado.ciclo.inicio)}`
+            : "Distribución de tus gastos en " + nombreMes(periodo);
 
     if (!grupos.length) {
 
@@ -716,7 +740,7 @@ function renderResumenPeriodo() {
             : "Tu análisis aparecerá aquí";
 
         $("insightTexto").textContent = estado.movimientos.length
-            ? "Prueba con otro mes o registra un gasto."
+            ? (periodo === "ciclo" ? "Aún no gastas nada de tu sueldo. Lo que registres aparecerá aquí." : "Prueba con otro mes o registra un gasto.")
             : "Registra tu primer gasto y te diré en qué se va tu plata.";
 
         return;
@@ -729,9 +753,9 @@ function renderResumenPeriodo() {
 
     let texto = `${money(top.total)} · ${pct}% de tus gastos`;
 
-    if (estado.mes !== "all") {
+    if (periodo !== "all" && periodo !== "ciclo") {
 
-        const [y, m] = estado.mes.split("-").map(Number);
+        const [y, m] = periodo.split("-").map(Number);
 
         const previo = claveMes(new Date(y, m - 2, 1));
 

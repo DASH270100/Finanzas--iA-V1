@@ -125,6 +125,8 @@ const ciclo = (() => {
 
             await api("ciclo", valores);
 
+            estado.mesInicio = null;   // el gráfico del inicio vuelve a «Desde mi sueldo»
+
             await cargarDatos();
 
             renderTodo();

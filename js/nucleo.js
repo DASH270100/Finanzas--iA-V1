@@ -28,6 +28,7 @@ const estado = {
     deudas: [],
     dashboard: [],
     ciclo: null,
+    mesInicio: null,
     mes: null,
     mostrarTodasLasDeudas: false,
     editando: null,

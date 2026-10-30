@@ -411,11 +411,27 @@ function mostrarVista(nombre) {
 
 }
 
-function cambiarMes(valor) {
+// «desde»: qué selector lo cambió ("inicio" = el del gráfico del inicio, que además tiene «Desde mi sueldo»)
+function cambiarMes(valor, desde) {
 
-    estado.mes = valor;
+    if (desde === "inicio") {
 
-    ["filtroMes", "filtroMesStats"].forEach((id) => { $(id).value = valor; });
+        estado.mesInicio = valor;
+
+        if (valor !== "ciclo") estado.mes = valor;
+
+    } else {
+
+        estado.mes = valor;
+
+        // Sin «nuevo mes», los dos selectores van juntos
+        if (!estado.ciclo) estado.mesInicio = null;
+
+    }
+
+    $("filtroMes").value = periodoInicio();
+
+    $("filtroMesStats").value = estado.mes;
 
     renderResumenPeriodo();
 

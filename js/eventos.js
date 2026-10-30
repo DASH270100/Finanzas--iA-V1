@@ -1234,7 +1234,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    $("filtroMes").addEventListener("change", (e) => cambiarMes(e.target.value));
+    $("filtroMes").addEventListener("change", (e) => cambiarMes(e.target.value, "inicio"));
 
     $("filtroMesStats").addEventListener("change", (e) => cambiarMes(e.target.value));
 
