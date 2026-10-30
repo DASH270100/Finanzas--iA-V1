@@ -377,7 +377,8 @@ function normalizarDatos(data) {
             categoria: String(f[2] ?? "").trim(),
             descripcion: String(f[3] ?? "").trim(),
             monto: numero(f[4]),
-            medio: String(f[7] ?? "").trim()
+            medio: String(f[7] ?? "").trim(),
+            inicioCiclo: String(f[8] ?? "").trim().toLowerCase() === "inicio"
         }))
         .filter((m) =>
             (m.fechaTexto !== "" || m.descripcion !== "") &&
@@ -489,9 +490,12 @@ function aplicarDatos(data) {
     estado.compartido = data.compartido || { activo: null, recibidas: [], enviada: null };
 
     // Ciclo de sueldo: desde qué día cuenta el saldo (null = desde siempre)
+    // Cuenta desde el sueldo marcado (por orden de registro); si lo borraron, desde su fecha
     const inicioCiclo = data.ciclo && parseFecha(data.ciclo.inicio);
 
-    estado.ciclo = inicioCiclo ? { inicio: inicioCiclo } : null;
+    const ancla = n.movimientos.find((m) => m.inicioCiclo);
+
+    estado.ciclo = inicioCiclo ? { inicio: ancla && ancla.fecha ? ancla.fecha : inicioCiclo, fila: ancla ? ancla.fila : null, sueldo: ancla || null } : null;
 
     if (window.__irAlBuzon && estado.usuario && estado.usuario.rol === "admin" && !modoDemo) {
 

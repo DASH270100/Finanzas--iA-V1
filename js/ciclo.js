@@ -1,91 +1,115 @@
-// Finanzas IA · ciclo.js — «Empezar con mi sueldo»: el saldo cuenta solo desde el día que elijas.
-// Lo de antes queda aparte (no se borra nada). Se guarda por persona en el Apps Script (acción "ciclo").
+// Finanzas IA · ciclo.js — «Registrar nuevo mes»: el saldo empieza desde tu sueldo.
+// Cuenta por orden de registro: el sueldo y todo lo que registres después. Lo de antes queda aparte
+// (no se borra nada). El Apps Script marca el sueldo en la hoja (acción "ciclo").
 "use strict";
 
 const ciclo = (() => {
 
-    const SUELDO = /sueldo|salario|quincena|planilla|pago de (mi )?trabajo|me pagaron/i;
+    const SUELDO = /sueldo|salario|quincena|planilla|me pagaron|pago (de|del) (mi )?trabajo/i;
 
-    const aTexto = (d) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    const esSueldo = (m) => !!m && esIngreso(m) && SUELDO.test(`${m.categoria} ${m.descripcion}`);
 
-    const aInput = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    // Para ofrecer «¿Es tu sueldo?» tras registrar: lo que parece sueldo o un ingreso grande
+    const puedeSerSueldo = (m) => esSueldo(m) || (!!m && esIngreso(m) && !esPrestamo(m) && !esReembolso(m) && m.monto >= 500);
 
-    const deInput = (v) => {
-        const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+    const cuando = (d) => {
+        if (!d) return "";
+        const t = formatearFecha(d);
+        return t === "Hoy" || t === "Ayer" ? t.toLowerCase() : d.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "");
     };
 
-    const corto = (d) => d.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+    let opciones = [];   // ingresos recientes que se pueden elegir
 
-    // El sueldo más reciente de los últimos 20 días (para sugerir la fecha)
-    function ultimoSueldo() {
+    // Ingresos de los últimos 20 días (primero los que parecen sueldo), máx. 3
+    function recientes() {
 
         const limite = new Date();
 
         limite.setDate(limite.getDate() - 20);
 
         return estado.movimientos
-            .filter((m) => esIngreso(m) && m.fecha && m.fecha >= limite && SUELDO.test(`${m.categoria} ${m.descripcion}`))
-            .sort((a, b) => b.fecha - a.fecha)[0] || null;
+            .filter((m) => esIngreso(m) && m.fecha && m.fecha >= limite && !esReembolso(m) && !esPrestamo(m))
+            .sort((a, b) => (esSueldo(b) - esSueldo(a)) || (b.fila - a.fila))
+            .slice(0, 3);
 
     }
 
-    // Cuánto tendrías desde esa fecha y cuánto queda aparte
-    function calcular(desde) {
+    const elegido = () => {
+        const r = document.querySelector('input[name="cicloOrigen"]:checked');
+        return r ? r.value : "";
+    };
 
-        const antes = estado.movimientos.filter((m) => !m.fecha || m.fecha < desde);
+    // Cuánto tendrías y cuánto queda aparte
+    function calcular() {
 
-        const despues = estado.movimientos.filter((m) => m.fecha && m.fecha >= desde);
+        const v = elegido();
 
-        return { empieza: saldoDe(despues), aparte: saldoDe(antes) };
+        if (v === "nuevo") {
+
+            const monto = Number($("cicloMonto").value) || 0;
+
+            return { empieza: monto, aparte: saldoDe(estado.movimientos) };
+
+        }
+
+        const m = opciones[Number(v)];
+
+        if (!m) return null;
+
+        return {
+            empieza: saldoDe(estado.movimientos.filter((x) => x.fila >= m.fila)),
+            aparte: saldoDe(estado.movimientos.filter((x) => x.fila < m.fila))
+        };
 
     }
 
     function actualizar() {
 
-        const desde = deInput($("cicloFecha").value);
-
         $("cicloError").textContent = "";
 
-        if (!desde) { $("cicloEmpieza").textContent = "—"; $("cicloAparte").textContent = "—"; return; }
+        $("cicloMonto").closest(".ciclo-op").classList.toggle("activa", elegido() === "nuevo");
 
-        const { empieza, aparte } = calcular(desde);
+        const c = calcular();
 
-        $("cicloEmpieza").textContent = money(empieza);
+        $("cicloEmpieza").textContent = c ? money(c.empieza) : "—";
 
-        $("cicloAparte").textContent = money(aparte);
-
-        const s = ultimoSueldo();
-
-        $("cicloPista").textContent = s && s.fecha.getTime() === desde.getTime()
-            ? `Es el día en que registraste tu sueldo (${money(s.monto)}).`
-            : s
-                ? `Tu último sueldo registrado fue el ${corto(s.fecha)} (${money(s.monto)}).`
-                : "Si aún no registraste tu sueldo, escríbelo en la barra (ej: «me pagaron 2500») y queda dentro.";
+        $("cicloAparte").textContent = c ? money(c.aparte) : "—";
 
     }
 
-    function abrir() {
+    // «sugerido»: el sueldo que se acaba de registrar (opcional)
+    function abrir(sugerido) {
 
-        const s = ultimoSueldo();
+        opciones = recientes();
 
-        const sugerida = estado.ciclo ? estado.ciclo.inicio : (s ? s.fecha : new Date());
+        if (sugerido && !opciones.some((m) => m.fila === sugerido.fila)) opciones.unshift(sugerido);
 
-        const f = $("cicloFecha");
+        $("cicloRecientes").innerHTML = opciones.map((m, i) => `
+            <label class="ciclo-op">
+                <input type="radio" name="cicloOrigen" value="${i}">
+                <span class="ciclo-op-txt">${esc(m.descripcion || m.categoria)} <small>${cuando(m.fecha)}${estado.ciclo && estado.ciclo.fila === m.fila ? " · mes actual" : ""}</small></span>
+                <b>${money(m.monto)}</b>
+            </label>`).join("");
 
-        f.max = aInput(new Date());
+        // Selección inicial: el sugerido, o el sueldo más reciente que no sea el del mes actual, o registrar uno nuevo
+        let i = sugerido ? opciones.findIndex((m) => m.fila === sugerido.fila) : opciones.findIndex((m) => esSueldo(m) && !(estado.ciclo && estado.ciclo.fila === m.fila));
 
-        f.value = aInput(sugerida);
+        const radios = document.querySelectorAll('input[name="cicloOrigen"]');
+
+        radios.forEach((r) => { r.checked = false; });
+
+        if (i >= 0) radios[i].checked = true;
+        else document.querySelector('input[name="cicloOrigen"][value="nuevo"]').checked = true;
+
+        $("cicloMonto").value = "";
 
         $("cicloQuitar").hidden = !estado.ciclo;
-
-        $("cicloOk").textContent = estado.ciclo ? "Guardar nueva fecha" : "Empezar desde aquí";
 
         $("cicloOverlay").hidden = false;
 
         actualizar();
 
-        setTimeout(() => f.focus(), 50);
+        if (elegido() === "nuevo") setTimeout(() => $("cicloMonto").focus(), 60);
 
     }
 
@@ -129,7 +153,12 @@ const ciclo = (() => {
 
         document.addEventListener("click", (e) => { if (e.target.closest(".ciclo-abrir")) abrir(); });
 
-        $("cicloFecha").addEventListener("input", actualizar);
+        $("cicloForm").addEventListener("change", actualizar);
+
+        $("cicloMonto").addEventListener("input", () => {
+            document.querySelector('input[name="cicloOrigen"][value="nuevo"]').checked = true;
+            actualizar();
+        });
 
         $("cicloCerrar").addEventListener("click", cerrar);
 
@@ -141,22 +170,37 @@ const ciclo = (() => {
 
             e.preventDefault();
 
-            const desde = deInput($("cicloFecha").value);
+            const v = elegido();
 
-            if (!desde) { $("cicloError").textContent = "Elige una fecha."; return; }
+            if (v === "nuevo") {
 
-            if (desde > new Date()) { $("cicloError").textContent = "La fecha no puede ser futura."; return; }
+                const monto = Number($("cicloMonto").value);
 
-            guardar({ inicio: aTexto(desde) }, `💸 Listo: tu saldo cuenta desde el ${desde.getDate()}/${desde.getMonth() + 1}`);
+                if (!(monto > 0)) { $("cicloError").textContent = "Escribe cuánto te pagaron."; $("cicloMonto").focus(); return; }
+
+                guardar({ monto }, `💼 Nuevo mes: empiezas con ${money(monto)}`);
+
+                return;
+
+            }
+
+            const m = opciones[Number(v)];
+
+            if (!m) { $("cicloError").textContent = "Elige con qué sueldo empiezas."; return; }
+
+            guardar({
+                fila: m.fila,
+                orig: { tipo: m.tipo, categoria: m.categoria, descripcion: m.descripcion, monto: m.monto }
+            }, `💼 Nuevo mes desde tu ${(m.descripcion || "sueldo").toLowerCase()} de ${money(m.monto)}`);
 
         });
 
-        $("cicloQuitar").addEventListener("click", () => guardar({ quitar: true }, "Tu saldo vuelve a contar todo"));
+        $("cicloQuitar").addEventListener("click", () => guardar({ quitar: true }, "Tu saldo vuelve a contar todo junto"));
 
     }
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar();
 
-    return { abrir, calcular };
+    return { abrir, esSueldo, puedeSerSueldo };
 
 })();

@@ -758,6 +758,25 @@ function mostrarRegistrados(nuevos) {
         `✅ Registrado${nuevos.length > 1 ? ` (${nuevos.length} movimientos)` : ""}:<br>` +
         lineas.join("<br>");
 
+    // ¿Registró su sueldo? Ofrecer empezar el mes con él (no se hace solo)
+    const sueldo = typeof ciclo !== "undefined" ? nuevos.find(ciclo.puedeSerSueldo) : null;
+
+    if (sueldo) {
+
+        const b = document.createElement("button");
+
+        b.type = "button";
+
+        b.className = "ciclo-sugerencia";
+
+        b.textContent = `¿Es tu sueldo? Empezar nuevo mes con ${money(sueldo.monto)}`;
+
+        b.addEventListener("click", () => ciclo.abrir(sueldo));
+
+        caja.appendChild(b);
+
+    }
+
 }
 
 // «pagué la cuota de la moto» / «pagué cuota préstamo BCP 350» / «pagué la cuota» (si solo tienes un préstamo)

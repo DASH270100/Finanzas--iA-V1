@@ -32,7 +32,7 @@
     <script src="js/arranque.js?v=1"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=95">
+    <link rel="stylesheet" href="style.css?v=96">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -164,13 +164,19 @@
 
         <button id="cicloCerrar" class="buzon-x" type="button" aria-label="Cerrar">✕</button>
 
-        <h2 id="cicloTitulo">Empezar con tu sueldo</h2>
+        <h2 id="cicloTitulo">Registrar nuevo mes</h2>
 
-        <p class="buzon-intro">Tu saldo contará solo lo que entre y salga desde el día que elijas. Lo de antes queda aparte: no se borra nada y tus estadísticas siguen igual.</p>
+        <p class="buzon-intro">Tu saldo empieza desde tu sueldo. Lo que tenías antes, y lo que gastaste antes de que te pagaran, queda aparte. No se borra nada: tus movimientos y estadísticas se quedan como están.</p>
 
-        <label class="ciclo-campo" for="cicloFecha">Contar desde el</label>
-        <input id="cicloFecha" type="date" required>
-        <p id="cicloPista" class="ciclo-pista"></p>
+        <fieldset class="ciclo-opciones">
+            <legend>¿Con qué sueldo empiezas?</legend>
+            <div id="cicloRecientes"></div>
+            <label class="ciclo-op ciclo-op-nuevo">
+                <input type="radio" name="cicloOrigen" value="nuevo">
+                <span class="ciclo-op-txt">Registrar mi sueldo ahora</span>
+                <span class="ciclo-monto"><span>S/</span><input id="cicloMonto" type="number" inputmode="decimal" min="0" step="0.01" placeholder="2500" aria-label="Cuánto te pagaron"></span>
+            </label>
+        </fieldset>
 
         <div class="ciclo-cuentas" aria-live="polite">
             <div class="ciclo-nuevo"><span>Empiezas con</span><strong id="cicloEmpieza">S/ 0.00</strong></div>
@@ -179,9 +185,9 @@
 
         <div id="cicloError" class="pin-error" role="alert"></div>
 
-        <button id="cicloOk" type="submit">Empezar desde aquí</button>
+        <button id="cicloOk" type="submit">Empezar nuevo mes</button>
 
-        <button id="cicloQuitar" class="ciclo-quitar" type="button" hidden>Volver a contar todo</button>
+        <button id="cicloQuitar" class="ciclo-quitar" type="button" hidden>Volver a contar todo junto</button>
 
     </form>
 
@@ -363,8 +369,6 @@
                         <span id="hsAparteChip" class="hs-chip" hidden title="Lo que tenías antes de tu sueldo">💰 <span class="hs-txt">Aparte</span> <b id="hsAparte">S/ 0.00</b></span>
 
                     </div>
-
-                    <button class="ciclo-abrir hs-ciclo" type="button"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg><span class="ciclo-txt">Empezar con mi sueldo</span></button>
 
                 </div>
 
@@ -554,8 +558,6 @@
                     <h2 id="saldo">S/ 0.00</h2>
 
                     <small id="saldoNota" class="card-nota" hidden></small>
-
-                    <button class="ciclo-abrir" type="button"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg><span class="ciclo-txt">Empezar con mi sueldo</span></button>
 
                 </div>
 
@@ -1016,6 +1018,26 @@
             </form>
 
             <div id="alcanzaResultado" class="alcanza-resultado" aria-live="polite"></div>
+
+        </section>
+
+        <!-- NUEVO MES (empezar con el sueldo) -->
+
+        <section id="mesCard" class="card mes-card" data-plan="ingresos">
+
+            <div class="card-title">
+
+                <div>
+
+                    <h2><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-repeat"></use></svg>Nuevo mes</h2>
+
+                    <p id="mesEstado">¿Te pagaron? Empieza el mes con tu sueldo y lo de antes queda aparte.</p>
+
+                </div>
+
+            </div>
+
+            <button class="ciclo-abrir mes-btn" type="button">Registrar nuevo mes</button>
 
         </section>
 
@@ -1640,17 +1662,17 @@
 
 <script src="graficos.js?v=58"></script>
 
-<script src="demo.js?v=60"></script>
+<script src="demo.js?v=61"></script>
 
 <script src="iconos.js?v=5"></script>
-<script src="js/nucleo.js?v=4"></script>
+<script src="js/nucleo.js?v=5"></script>
 <script src="js/cuenta.js?v=1"></script>
-<script src="js/inicio.js?v=2"></script>
+<script src="js/inicio.js?v=3"></script>
 <script src="js/secciones.js?v=1"></script>
-<script src="js/registro.js?v=4"></script>
+<script src="js/registro.js?v=5"></script>
 <script src="js/eventos.js?v=1"></script>
 <script src="js/billete.js?v=2"></script>
-<script src="js/ciclo.js?v=1"></script>
+<script src="js/ciclo.js?v=2"></script>
 <script src="resumen.js?v=4"></script>
 <script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>

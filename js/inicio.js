@@ -22,6 +22,8 @@ function enCiclo(m) {
 
     if (!estado.ciclo) return true;
 
+    if (estado.ciclo.fila) return m.fila >= estado.ciclo.fila;
+
     return !!m.fecha && m.fecha >= estado.ciclo.inicio;
 
 }
@@ -92,15 +94,19 @@ function renderDashboard() {
     // Etiqueta y botón del ciclo
     const desde = estado.ciclo ? estado.ciclo.inicio.toLocaleDateString("es-PE", { day: "numeric", month: "short" }).replace(".", "") : "";
 
-    const etiqueta = estado.ciclo ? `Saldo desde el ${desde}` : "Saldo actual";
+    const etiqueta = estado.ciclo ? `Saldo desde tu sueldo del ${desde}` : "Saldo actual";
 
     $("saldoLabel").textContent = etiqueta;
 
     $("hsLabel").textContent = etiqueta;
 
-    document.querySelectorAll(".ciclo-abrir .ciclo-txt").forEach((el) => {
-        el.textContent = estado.ciclo ? "Cambiar inicio" : "Empezar con mi sueldo";
-    });
+    const mesEstado = $("mesEstado");
+
+    if (mesEstado) {
+        mesEstado.textContent = estado.ciclo
+            ? `Tu mes empezó con tu sueldo del ${desde}. Antes de eso te quedaba ${money(aparte)}, que está aparte. Cuando te vuelvan a pagar, registra el nuevo mes.`
+            : "¿Te pagaron? Empieza el mes con tu sueldo: tu saldo contará desde ahí y lo de antes queda aparte.";
+    }
 
     // Resumen grande de los estilos con tarjeta de saldo
     $("hsSaldo").textContent = money(saldo);

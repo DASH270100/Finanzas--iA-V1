@@ -6747,3 +6747,31 @@ html[data-tema="chrome"] .hero-saldo button.hs-ciclo{ font-family:"Space Mono",m
 .ciclo-box button.ciclo-quitar:hover{ background:var(--surface-light); color:var(--text); transform:none; box-shadow:none; }
 .hero-saldo .hs-chip{ white-space:nowrap; }
 .hero-saldo .hs-chips{ flex-wrap:wrap; }
+
+/* Nuevo mes: tarjeta en Planificar › Ingresos, opciones y sugerencia tras registrar el sueldo */
+.mes-card button.mes-btn{ display:flex; justify-content:center; width:100%; margin-top:4px; min-height:46px; background:var(--primary); color:#fff; border:0; font-size:15px; }
+.mes-card button.mes-btn:hover{ background:var(--primary-hover); }
+.ciclo-opciones{ border:0; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.ciclo-opciones legend{ font-size:13px; font-weight:700; color:var(--text-soft); margin-bottom:8px; padding:0; }
+#cicloRecientes{ display:flex; flex-direction:column; gap:8px; }
+label.ciclo-op{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 14px; border-radius:14px; cursor:pointer;
+    background:var(--surface-light); border:1.5px solid var(--border);
+    font-size:14px; color:var(--text);
+}
+label.ciclo-op:has(input:checked){ border-color:var(--primary); background:color-mix(in srgb, var(--primary) 10%, var(--surface-light)); }
+label.ciclo-op input[type="radio"]{ width:18px; height:18px; min-height:0; margin:0; padding:0; flex:0 0 auto; accent-color:var(--primary); box-shadow:none; }
+.ciclo-op-txt{ flex:1; min-width:0; font-weight:600; }
+.ciclo-op-txt small{ display:block; font-weight:500; color:var(--text-muted); font-size:12px; }
+label.ciclo-op b{ font-variant-numeric:tabular-nums; }
+.ciclo-monto{ display:flex; align-items:center; gap:6px; flex-basis:100%; padding-left:28px; }
+.ciclo-monto span{ font-weight:700; color:var(--text-soft); }
+.ciclo-monto input{ flex:1; min-height:44px; font-size:17px; font-weight:700; margin:0; }
+button.ciclo-sugerencia{
+    display:block; width:100%; margin-top:12px; min-height:44px;
+    background:color-mix(in srgb, var(--primary) 14%, transparent);
+    border:1.5px solid var(--primary); color:var(--text);
+    font-weight:700; font-size:14px; box-shadow:none;
+}
+button.ciclo-sugerencia:hover{ background:color-mix(in srgb, var(--primary) 24%, transparent); transform:none; box-shadow:none; }

@@ -246,7 +246,7 @@ const DemoBackend = (() => {
 
         if (esIngreso) {
 
-            if (/\b(sueldo|salario|quincena)\b/.test(norm)) return "Sueldo";
+            if (/\b(sueldo|salario|quincena|planilla)\b|me pagaron|me depositaron/.test(norm)) return "Sueldo";
 
             if (/\b(freelance|freelancer|proyecto|logo|diseno|cliente|chamba|comision)\b/.test(norm)) return "Freelance";
 
@@ -1230,11 +1230,25 @@ const DemoBackend = (() => {
                     ciclo: db.ciclo ? { inicio: db.ciclo } : null
                 });
 
-            case "ciclo":
-                if (p.quitar) { db.ciclo = null; return ok({ ciclo: null }); }
-                if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(String(p.inicio || ""))) return fallo("Elige una fecha válida");
-                db.ciclo = p.inicio;
-                return ok({ ciclo: { inicio: p.inicio } });
+            case "ciclo": {
+                const limpiar = () => db.movimientos.forEach((r, i) => { if (i > 0) r[8] = ""; });
+                if (p.quitar) { limpiar(); db.ciclo = null; return ok({ ciclo: null }); }
+                let fila = 0;
+                if (p.monto != null && p.monto !== "") {
+                    const monto = Number(p.monto);
+                    if (!(monto > 0)) return fallo("Escribe cuánto te pagaron");
+                    nuevaFilaMov("Ingreso", "Sueldo", "Sueldo", monto, "");
+                    fila = db.movimientos.length;
+                } else {
+                    fila = Number(p.fila);
+                    const r = db.movimientos[fila - 1];
+                    if (!r || String(r[1]).toLowerCase() !== "ingreso") return fallo("Elige un ingreso");
+                }
+                limpiar();
+                db.movimientos[fila - 1][8] = "inicio";
+                db.ciclo = String(db.movimientos[fila - 1][0]).replace(/"/g, "");
+                return ok({ ciclo: { inicio: db.ciclo } });
+            }
 
             case "registrar": return registrar(p);
             case "agregar": return agregar(p);
