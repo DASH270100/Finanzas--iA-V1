@@ -756,6 +756,8 @@ async function entrarDemo() {
 
     if (modoDemo) return;
 
+    if (typeof tutorial !== "undefined") tutorial.reiniciar();
+
     DemoBackend.reset();
 
     modoDemo = true;
@@ -793,6 +795,8 @@ async function entrarDemo() {
 async function salirDemo() {
 
     if (!modoDemo) return;
+
+    if (typeof tutorial !== "undefined") tutorial.reiniciar();
 
     modoDemo = false;
 
@@ -2181,6 +2185,8 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     $("bloquear").addEventListener("click", async () => {
+
+        if (typeof tutorial !== "undefined") tutorial.reiniciar();
 
         // Cierra la sesión también en el servidor (sin esperar más de 1.5 s)
         if (!modoDemo && leerPin()) await Promise.race([api("salir").catch(() => {}), dormir(1500)]);

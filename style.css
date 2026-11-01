@@ -6775,3 +6775,49 @@ button.ciclo-sugerencia{
     font-weight:700; font-size:14px; box-shadow:none;
 }
 button.ciclo-sugerencia:hover{ background:color-mix(in srgb, var(--primary) 24%, transparent); transform:none; box-shadow:none; }
+
+/*==================================================
+        TUTORIAL (recorrido la primera vez)
+====================================================*/
+.tuto-overlay{ position:fixed; inset:0; z-index:99000; }
+.tuto-overlay[hidden]{ display:none !important; }
+html.tuto-abierto body{ overflow:hidden; }
+/* El foco de luz: un hueco con sombra gigante que oscurece todo lo demás */
+.tuto-luz{
+    position:fixed; border-radius:18px; pointer-events:none;
+    box-shadow:0 0 0 2px color-mix(in srgb, var(--primary) 80%, #fff), 0 0 0 200vmax rgba(5,6,14,.72);
+    transition:left .35s cubic-bezier(.2,.8,.2,1), top .35s cubic-bezier(.2,.8,.2,1), width .35s cubic-bezier(.2,.8,.2,1), height .35s cubic-bezier(.2,.8,.2,1);
+}
+.tuto-luz.sin{ left:50% !important; top:50% !important; width:0 !important; height:0 !important; box-shadow:0 0 0 200vmax rgba(5,6,14,.72); }
+.tuto-caja{
+    position:fixed; width:min(340px, calc(100vw - 32px));
+    padding:18px 18px 14px; border-radius:20px;
+    background:linear-gradient(var(--surface), var(--surface)), var(--bg);
+    border:1px solid var(--border);
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+    color:var(--text);
+    transition:left .35s cubic-bezier(.2,.8,.2,1), top .35s cubic-bezier(.2,.8,.2,1);
+}
+.tuto-caja.centro{ left:50% !important; top:50% !important; transform:translate(-50%,-50%); }
+.tuto-caja.entra > *{ animation:tutoEntra .35s ease both; }
+@keyframes tutoEntra{ from{ opacity:0; transform:translateY(6px); } }
+.tuto-top{ display:flex; align-items:center; justify-content:space-between; min-height:6px; }
+.tuto-top:has(.tuto-cuenta:empty){ display:none; }
+.tuto-cuenta{ font-size:12px; font-weight:600; color:var(--text-muted); }
+.tuto-puntos{ display:flex; gap:4px; }
+.tuto-puntos i{ width:6px; height:6px; border-radius:6px; background:color-mix(in srgb, var(--text) 20%, transparent); transition:width .25s ease, background .25s ease; }
+.tuto-puntos i.on{ width:18px; background:var(--primary); }
+.tuto-caja h2{ margin:8px 0 6px; font-size:19px; line-height:1.25; }
+.tuto-caja p{ margin:0; font-size:14.5px; line-height:1.5; color:var(--text-soft); }
+.tuto-acciones{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; }
+.tuto-der{ display:flex; gap:8px; }
+.tuto-caja button{ width:auto; min-height:42px; margin:0; padding:0 16px; border-radius:999px; font-size:14px; font-weight:700; box-shadow:none; transform:none; }
+.tuto-caja button[hidden]{ display:none; }
+.tuto-caja button.tuto-sig{ background:var(--primary); color:#fff; border:0; }
+.tuto-caja button.tuto-atras{ background:transparent; border:1px solid var(--border); color:var(--text-soft); }
+.tuto-caja button.tuto-saltar{ background:transparent; border:0; color:var(--text-muted); padding:0 6px; text-decoration:underline; text-underline-offset:3px; }
+.tuto-caja button:hover{ transform:none; box-shadow:none; filter:brightness(1.08); }
+@media (prefers-reduced-motion:reduce){
+    .tuto-luz, .tuto-caja{ transition:none; }
+    .tuto-caja.entra > *{ animation:none; }
+}

@@ -40,6 +40,8 @@ function renderTodo() {
 
     renderDeudas();
 
+    if (typeof tutorial !== "undefined") tutorial.quizas();
+
 }
 
 function mostrarErrorCarga(mostrar) {

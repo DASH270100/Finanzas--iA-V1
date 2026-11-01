@@ -32,7 +32,7 @@
     <script src="js/arranque.js?v=1"></script>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=96">
+    <link rel="stylesheet" href="style.css?v=97">
     <link rel="stylesheet" href="vidrio.css?v=1">
 
 </head>
@@ -155,6 +155,22 @@
         <p id="billeteMonto" class="billete-monto"></p>
         <p id="billeteDetalle" class="billete-detalle"></p>
         <p id="billeteMas" class="billete-mas"></p>
+    </div>
+</div>
+
+<div id="tutoOverlay" class="tuto-overlay" hidden>
+    <div id="tutoLuz" class="tuto-luz sin" aria-hidden="true"></div>
+    <div id="tutoCaja" class="tuto-caja centro" role="dialog" aria-modal="true" aria-labelledby="tutoTitulo" aria-describedby="tutoTexto">
+        <div class="tuto-top"><span id="tutoCuenta" class="tuto-cuenta"></span><span id="tutoPuntos" class="tuto-puntos" aria-hidden="true"></span></div>
+        <h2 id="tutoTitulo"></h2>
+        <p id="tutoTexto"></p>
+        <div class="tuto-acciones">
+            <button id="tutoSaltar" class="tuto-saltar" type="button">Saltar</button>
+            <span class="tuto-der">
+                <button id="tutoAtras" class="tuto-atras" type="button">Atrás</button>
+                <button id="tutoSig" class="tuto-sig" type="button">Siguiente</button>
+            </span>
+        </div>
     </div>
 </div>
 
@@ -1481,6 +1497,20 @@
 
             </div>
 
+            <div id="tutoBloque" class="config-bloque">
+
+                <div>
+
+                    <h3><svg class="ico h-ico" aria-hidden="true" focusable="false"><use href="#i-sparkles"></use></svg>Cómo usar la app</h3>
+
+                    <p>Un recorrido corto por las partes principales.</p>
+
+                </div>
+
+                <button id="tutoVer" class="mov-btn" type="button">Ver tutorial</button>
+
+            </div>
+
             <div id="buzonBloque" class="config-bloque">
 
                 <div>
@@ -1669,10 +1699,11 @@
 <script src="js/cuenta.js?v=1"></script>
 <script src="js/inicio.js?v=4"></script>
 <script src="js/secciones.js?v=2"></script>
-<script src="js/registro.js?v=5"></script>
-<script src="js/eventos.js?v=2"></script>
+<script src="js/registro.js?v=6"></script>
+<script src="js/eventos.js?v=3"></script>
 <script src="js/billete.js?v=2"></script>
 <script src="js/ciclo.js?v=3"></script>
+<script src="js/tutorial.js?v=2"></script>
 <script src="resumen.js?v=4"></script>
 <script src="alcanza.js?v=4"></script>
 <script src="freelance.js?v=3"></script>
