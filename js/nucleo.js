@@ -568,7 +568,8 @@ const TEMAS = {
     beige: "#F5F1EA",
     aurora: "#050507",
     chrome: "#04050C",
-    rojo: "#ECE9E3"
+    rojo: "#ECE9E3",
+    mesa: "#000000"
 };
 
 // Los que tiene todo el mundo (su CSS está en la web)

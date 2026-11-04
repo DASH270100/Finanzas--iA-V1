@@ -4628,16 +4628,16 @@ html .registro .medios.medios > button.btn-medio#btnAudio.grabando{
 }
 
 /* Temas con barra tipo píldora: solo íconos redondos dentro de la barra */
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro textarea{ min-width:0; }
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro textarea{ min-width:0; }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .medios{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .medios{
     flex:none;
     flex-wrap:nowrap;
     gap:4px;
     margin:0;
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){
     width:44px;
     height:44px;
     min-height:44px;
@@ -4647,12 +4647,12 @@ html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[
     color:var(--text-muted);
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{
     background:var(--surface-light);
     color:var(--text);
 }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .btn-medio span{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .btn-medio span{
     position:absolute;
     width:1px;
     height:1px;
@@ -4668,15 +4668,15 @@ html[data-tema="vidrio"] .registro .medios.medios > button.btn-medio:is(#btnAudi
 html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ color:#3A3F55; }
 html[data-tema="neon"] .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto):hover{ background:rgba(4,5,13,.07); color:#04050D; }
 
-html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio#btnAudio.grabando{
+html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro .medios.medios > button.btn-medio#btnAudio.grabando{
     background:#FF3B5C;
     color:#fff;
 }
 
 @media (max-width:480px){
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .medios{ gap:0; }
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ width:40px; height:40px; min-height:40px; }
-    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"]) .registro textarea{ padding-left:18px; padding-right:8px; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .medios{ gap:0; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro .medios.medios > button.btn-medio:is(#btnAudio,#btnFoto){ width:40px; height:40px; min-height:40px; }
+    html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[data-tema="neon"],[data-tema="orbita"],[data-tema="blackcard"],[data-tema="matcha"],[data-tema="cherry"],[data-tema="beige"],[data-tema="aurora"],[data-tema="chrome"],[data-tema="rojo"],[data-tema="mesa"]) .registro textarea{ padding-left:18px; padding-right:8px; }
 }
 
 
@@ -4722,6 +4722,13 @@ html:is([data-tema="iridiscente"],[data-tema="atardecer"],[data-tema="vidrio"],[
         radial-gradient(60% 50% at 50% 0%, #1538FF 0, transparent 70%),
         linear-gradient(115deg, transparent 0 55%, #B47BFF 60%, #FF9BD2 66%, #FFE27A 72%, #9BFFB8 78%, transparent 84%),
         #04050C;
+}
+.tema-muestra.m-mesa{
+    background:
+        linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.05)) 30% 30% / 26% 52% no-repeat,
+        linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04)) 58% 36% / 26% 52% no-repeat,
+        radial-gradient(circle at 82% 70%, #8F88FF 0 9%, transparent 10%),
+        #000;
 }
 .tema-muestra.m-rojo{
     background:
@@ -5728,6 +5735,7 @@ html[data-tema="beige"]{ --comp-b:#B08D57; }
 html[data-tema="aurora"]{ --comp-b:#FF8A3D; }
 html[data-tema="chrome"]{ --comp-b:#00B8FF; }
 html[data-tema="rojo"]{ --comp-b:#141414; }
+html[data-tema="mesa"]{ --comp-b:#F4F4F5; }
 html[data-tema="matcha"]{ --comp-b:#D9A441; }
 html[data-tema="atardecer"]{ --comp-b:#FFC24B; }
 
@@ -5746,7 +5754,8 @@ html[data-tema="cherry"] #switchCuenta,
 html[data-tema="beige"] #switchCuenta,
 html[data-tema="aurora"] #switchCuenta,
 html[data-tema="chrome"] #switchCuenta,
-html[data-tema="rojo"] #switchCuenta{
+html[data-tema="rojo"] #switchCuenta,
+html[data-tema="mesa"] #switchCuenta{
     max-width:820px;
     margin-left:auto;
     margin-right:auto;
@@ -6821,3 +6830,65 @@ html.tuto-abierto body{ overflow:hidden; }
     .tuto-luz, .tuto-caja{ transition:none; }
     .tuto-caja.entra > *{ animation:none; }
 }
+
+
+/* ===== MESA: momentos ===== */
+/* Espera: una carta boca abajo que se voltea y una ficha lila que salta */
+html[data-tema="mesa"] .cargador{ perspective:400px; }
+html[data-tema="mesa"] .cargador i:nth-child(1),
+html[data-tema="mesa"] .cargador i:nth-child(2){
+    display:block; left:16px; top:6px; width:48px; height:66px; border-radius:9px;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 10px 20px rgba(0,0,0,.6);
+    animation:mesa-voltea 2s cubic-bezier(.6,0,.3,1) infinite;
+}
+html[data-tema="mesa"] .cargador i:nth-child(1){ background:linear-gradient(#1A1A1D, #1A1A1D) padding-box; }
+html[data-tema="mesa"] .cargador i:nth-child(1)::after{ content:""; position:absolute; inset:7px; border-radius:5px; background:repeating-linear-gradient(135deg, rgba(255,255,255,.85) 0 3px, transparent 3px 8px); opacity:.75; }
+html[data-tema="mesa"] .cargador i:nth-child(2){
+    background:linear-gradient(160deg, rgba(255,255,255,.2), rgba(255,255,255,.06)), #1A1A1D;
+    display:grid; place-items:center;
+    color:#F4F4F5; font-weight:600; font-size:20px; letter-spacing:-.04em;
+    animation-name:mesa-voltea-b;
+}
+html[data-tema="mesa"] .cargador i:nth-child(2)::after{ content:"S/"; }
+html[data-tema="mesa"] .cargador i:nth-child(3){
+    display:block; width:20px; height:20px; right:4px; bottom:6px; border-radius:50%;
+    background:#8F88FF; border:3px dashed rgba(255,255,255,.85); box-sizing:border-box;
+    animation:mesa-ficha 2s ease-in-out infinite;
+}
+@keyframes mesa-voltea{ 0%,30%{ transform:rotateY(0); } 50%,80%{ transform:rotateY(180deg); } 100%{ transform:rotateY(360deg); } }
+@keyframes mesa-voltea-b{ 0%,30%{ transform:rotateY(-180deg); } 50%,80%{ transform:rotateY(0); } 100%{ transform:rotateY(180deg); } }
+@keyframes mesa-ficha{ 0%,40%,100%{ transform:translateY(0) rotate(0); } 55%{ transform:translateY(-12px) rotate(90deg); } 70%{ transform:translateY(0) rotate(180deg); } }
+html[data-tema="mesa"] .pasos-barra i{ height:3px; }
+html[data-tema="mesa"] .pasos-barra i::after{ background:#F4F4F5; }
+
+/* Al terminar: el billete es una carta repartida y la moneda es una ficha */
+html[data-tema="mesa"] .billete-overlay{ --bt-fondo:rgba(0,0,0,.86); --bt-entro:#C9C5FF; }
+html[data-tema="mesa"] .billete-escena{ perspective:800px; height:230px; }
+html[data-tema="mesa"] .bt-billete{
+    width:150px; height:208px; border-radius:16px;
+    background:linear-gradient(160deg, rgba(255,255,255,.2), rgba(255,255,255,.05)), #19191C;
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.2), 0 30px 50px rgba(0,0,0,.7);
+}
+html[data-tema="mesa"] .bt-hilo,
+html[data-tema="mesa"] .bt-texto{ display:none; }
+html[data-tema="mesa"] .bt-num{ font-weight:600; letter-spacing:-.04em; text-shadow:none; }
+html[data-tema="mesa"] .bt-num-a{ top:14px; left:16px; font-size:40px; }
+html[data-tema="mesa"] .bt-num-b{ bottom:14px; right:16px; font-size:24px; transform:rotate(180deg); opacity:.7; }
+html[data-tema="mesa"] .bt-sello{ right:auto; left:50%; top:58%; transform:translate(-50%,-50%); width:auto; height:auto; background:none; box-shadow:none; }
+html[data-tema="mesa"] .bt-sello .ico{ width:52px; height:52px; stroke-width:1.4; }
+html[data-tema="mesa"] .bt-billete::after{ background:linear-gradient(105deg, transparent 35%, rgba(255,255,255,.22) 50%, transparent 65%); }
+html[data-tema="mesa"] .billete-overlay .bt-capa{ animation-name:mesa-reparte !important; animation-duration:.8s !important; animation-timing-function:cubic-bezier(.2,.8,.2,1) !important; }
+@keyframes mesa-reparte{ 0%{ opacity:0; transform:translateY(160px) rotate(-14deg) rotateY(180deg); } 35%{ opacity:1; } }
+html[data-tema="mesa"] .bt-moneda{
+    width:140px; height:140px;
+    background:#8F88FF; color:#fff;
+    border:14px dashed rgba(255,255,255,.9);
+    box-sizing:border-box;
+    box-shadow:inset 0 0 0 6px #8F88FF, inset 0 0 0 8px rgba(255,255,255,.35), 0 24px 40px rgba(0,0,0,.6);
+}
+html[data-tema="mesa"] .bt-moneda::before{ display:none; }
+html[data-tema="mesa"] .bt-m-valor{ font-weight:650; letter-spacing:-.04em; }
+html[data-tema="mesa"] .billete-overlay{ background:radial-gradient(55% 40% at 50% 36%, rgba(255,255,255,.10), transparent 70%), rgba(0,0,0,.9); }
